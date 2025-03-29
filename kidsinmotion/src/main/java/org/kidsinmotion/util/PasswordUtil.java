@@ -20,6 +20,16 @@ public class PasswordUtil {
      * @return true if the password matches, false otherwise
      */
     public static boolean checkPassword(String plainPassword, String hashedPassword) {
-        return BCrypt.checkpw(plainPassword, hashedPassword);
+        // Handle null inputs
+        if (plainPassword == null || hashedPassword == null) {
+            return false;
+        }
+        
+        try {
+            return BCrypt.checkpw(plainPassword, hashedPassword);
+        } catch (IllegalArgumentException e) {
+            // Handle invalid hash format
+            return false;
+        }
     }
 }

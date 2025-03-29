@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 public class JWTUtil {
     private static final Logger LOGGER = Logger.getLogger(JWTUtil.class.getName());
     private static final Key SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
-    private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    private static long EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
     
     /**
      * Generate a JWT token for a user

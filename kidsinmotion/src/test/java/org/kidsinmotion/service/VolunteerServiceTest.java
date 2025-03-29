@@ -419,13 +419,14 @@ class VolunteerServiceTest {
     @Test
     void testCountVolunteers() {
         // Arrange
-        when(volunteerDAO.countByEventId(1)).thenReturn(3);
-
+        when(volunteerDAO.countByEventId(1)).thenReturn(3); // Ensure this mock is set up
+    
         // Act
         int result = volunteerService.countVolunteers(1);
-
+        System.out.println("Actual result: " + result);
+    
         // Assert
-        assertEquals(3, result);
+        assertEquals(3, result); // This is correctly checking for 3
         
         // Verify
         verify(volunteerDAO, times(1)).countByEventId(1);
