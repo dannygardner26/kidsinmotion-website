@@ -1,0 +1,55 @@
+plugins {
+    id 'java'
+    id 'war'
+    id 'org.gretty' version '3.0.6'
+}
+
+group = 'org.kidsinmotion'
+version = '1.0.0'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Servlet API
+    providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
+    
+    // JSON processing
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.0'
+    
+    // Database
+    implementation 'mysql:mysql-connector-java:8.0.27'
+    
+    // Security
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.2'
+    implementation 'org.mindrot:jbcrypt:0.4'
+    
+    // Logging
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'ch.qos.logback:logback-classic:1.2.6'
+    
+    // Testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation 'org.mockito:mockito-core:3.12.4'
+    testImplementation 'org.mockito:mockito-junit-jupiter:3.12.4'
+}
+
+gretty {
+    contextPath = '/kidsinmotion'
+    httpPort = 8080
+    servletContainer = 'tomcat9'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+war {
+    archiveFileName = "kidsinmotion.war"
+}
