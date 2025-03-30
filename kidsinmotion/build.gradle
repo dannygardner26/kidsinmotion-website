@@ -1,12 +1,12 @@
 plugins {
     id 'java'
     id 'war'
-    id 'org.gretty' version '4.0.3'
+    id 'org.gretty' version '4.0.3'  // Keep the 4.0.3 version
 }
 
 group = 'org.kidsinmotion'
 version = '1.0.0'
-sourceCompatibility = '11'
+sourceCompatibility = '17'  // Update to Java 17
 
 repositories {
     mavenCentral()
@@ -48,7 +48,7 @@ gretty {
     httpPort = 8080
 
     // Use Jetty instead of Tomcat for better compatibility
-    servletContainer = 'jetty11'
+    servletContainer = 'jetty11'  // Keep jetty11 for Java 17
 
     // Enable debug mode for more information
     debugSuspend = false
@@ -62,6 +62,9 @@ gretty {
 
     // Log configuration
     logbackConfigFile = 'src/main/resources/logback.xml'
+    
+    // Enable static file serving
+    inplaceMode = 'hard'
 }
 
 test {
