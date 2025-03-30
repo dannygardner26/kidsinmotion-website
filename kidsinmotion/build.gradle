@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'war'
-    id 'org.gretty' version '3.0.6'
+    id 'org.gretty' version '4.0.3'
 }
 
 group = 'org.kidsinmotion'
@@ -15,24 +15,24 @@ repositories {
 dependencies {
     // Servlet API
     providedCompile 'javax.servlet:javax.servlet-api:4.0.1'
-    
+
     // JSON processing
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.0'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.0'
-    
+
     // Database
     implementation 'mysql:mysql-connector-java:8.0.27'
-    
+
     // Security
     implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.2'
     implementation 'org.mindrot:jbcrypt:0.4'
-    
+
     // Logging
     implementation 'org.slf4j:slf4j-api:1.7.32'
     implementation 'ch.qos.logback:logback-classic:1.2.6'
-    
+
     // Testing
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
@@ -42,10 +42,26 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:3.12.4'
 }
 
+// Gretty Configuration
 gretty {
     contextPath = '/kidsinmotion'
     httpPort = 8080
-    servletContainer = 'tomcat9'
+
+    // Use Jetty instead of Tomcat for better compatibility
+    servletContainer = 'jetty11'
+
+    // Enable debug mode for more information
+    debugSuspend = false
+    debugPort = 5005
+
+    // Auto-reload on changes
+    scanInterval = 1
+
+    // Make the application available externally
+    host = '0.0.0.0'
+
+    // Log configuration
+    logbackConfigFile = 'src/main/resources/logback.xml'
 }
 
 test {
