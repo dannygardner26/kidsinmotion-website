@@ -182,9 +182,11 @@ class ParticipantDAOTest {
         assertEquals(2, participants.size(), "Should find 2 participants for event");
         
         // Verify participants are ordered by last name, first name
-        assertEquals("John", participants.get(0).getChildFirstName(), "First participant should be John Doe");
-        assertEquals("Jane", participants.get(1).getChildFirstName(), "Second participant should be Jane Doe");
+        assertEquals("John", participants.get(1).getChildFirstName(), "First participant should be John Doe");
+        assertEquals("Jane", participants.get(0).getChildFirstName(), "Second participant should be Jane Doe");
     }
+
+    
     
     @Test
     void testFindByParentEventAndChild() {

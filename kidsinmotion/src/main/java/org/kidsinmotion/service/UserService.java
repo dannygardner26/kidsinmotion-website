@@ -10,7 +10,22 @@ import java.util.logging.Logger;
 
 public class UserService {
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
-    private final UserDAO userDAO = new UserDAO();
+    private final UserDAO userDAO;
+    
+    /**
+     * Default constructor for backward compatibility
+     */
+    public UserService() {
+        this.userDAO = new UserDAO();
+    }
+    
+    /**
+     * Constructor with dependency injection for testing
+     * @param userDAO the user DAO
+     */
+    public UserService(UserDAO userDAO) {
+        this.userDAO = userDAO;
+    }
     
     /**
      * Get a user by ID

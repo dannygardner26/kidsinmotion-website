@@ -181,6 +181,8 @@ public class VolunteerServlet extends HttpServlet {
         }
     }
     
+
+    
     /**
      * Handle get volunteers by event ID
      * @param eventId the event ID
@@ -345,5 +347,15 @@ public class VolunteerServlet extends HttpServlet {
             LOGGER.log(Level.SEVERE, "Error rejecting volunteer", e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error rejecting volunteer");
         }
+    }
+
+    /*
+     * Get Volunteer By Id
+     * @param volunteerId the ID of the volunteer to retrieve
+     * @return Volunteer object if found, otherwise null
+     */
+    public Volunteer getVolunteerById(int volunteerId) {
+        Optional<Volunteer> optionalVolunteer = volunteerService.getVolunteerById(volunteerId);
+        return optionalVolunteer.orElse(null);
     }
 }

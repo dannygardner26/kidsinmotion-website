@@ -420,7 +420,6 @@ class VolunteerServiceTest {
     void testCountVolunteers() {
         // Arrange
         when(volunteerDAO.countByEventId(1)).thenReturn(3); // Ensure this mock is set up
-    
         // Act
         int result = volunteerService.countVolunteers(1);
         System.out.println("Actual result: " + result);

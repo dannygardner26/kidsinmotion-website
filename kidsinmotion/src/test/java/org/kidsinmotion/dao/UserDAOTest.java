@@ -7,7 +7,9 @@ import org.kidsinmotion.util.DatabaseUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +38,17 @@ class UserDAOTest {
         try (PreparedStatement stmt = conn.prepareStatement(
                 "INSERT INTO users (email, password_hash, first_name, last_name, role, phone_number) " +
                 "VALUES (?, ?, ?, ?, ?, ?)")) {
+
+          
+                        
+            stmt.setString(1, "admin@kidsinmotion.org");
+            stmt.setString(2, "$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG");
+            stmt.setString(3, "Admin");
+            stmt.setString(4, "User");
+            stmt.setString(5, "ADMIN");
+            stmt.setString(6, "555-123-4567");
+            stmt.executeUpdate();
+            
             
             // Test user 1
             stmt.setString(1, "test1@example.com");
@@ -102,6 +115,12 @@ class UserDAOTest {
     void testFindAll() {
         List<User> users = userDAO.findAll();
         // We have the admin user (id=1) plus our two test users
+        try {
+            printUsersTable();
+        } catch (SQLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         assertTrue(users.size() >= 3, "Should find at least 3 users");
         
         // Verify our test users are in the list
@@ -119,6 +138,33 @@ class UserDAOTest {
         assertTrue(foundTest1, "Should find test1@example.com");
         assertTrue(foundTest2, "Should find test2@example.com");
     }
+
+    void printUsersTable() throws SQLException {
+    Connection conn = null;
+    Statement stmt = null;
+    ResultSet rs = null;
+    
+    try {
+        conn = DatabaseUtil.getConnection();
+        stmt = conn.createStatement();
+        rs = stmt.executeQuery("SELECT * FROM users");
+        
+        System.out.println("==== Users in Database ====");
+        int count = 0;
+        while (rs.next()) {
+            count++;
+            System.out.println("ID: " + rs.getInt("id") + 
+                ", Email: " + rs.getString("email") + 
+                ", First Name: " + rs.getString("first_name") + 
+                ", Last Name: " + rs.getString("last_name") + 
+                ", Role: " + rs.getString("role"));
+        }
+        System.out.println("Total users: " + count);
+        System.out.println("==========================");
+    } finally {
+        DatabaseUtil.closeQuietly(rs, stmt, conn);
+    }
+}
     
     @Test
     void testFindByRole() {

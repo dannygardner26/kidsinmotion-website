@@ -13,10 +13,35 @@ import java.util.logging.Logger;
 
 public class VolunteerService {
     private static final Logger LOGGER = Logger.getLogger(VolunteerService.class.getName());
-    private final VolunteerDAO volunteerDAO = new VolunteerDAO();
-    private final UserDAO userDAO = new UserDAO();
-    private final EventDAO eventDAO = new EventDAO();
-    private final EventService eventService = new EventService();
+    private final VolunteerDAO volunteerDAO;
+    private final UserDAO userDAO;
+    private final EventDAO eventDAO;
+    private final EventService eventService;
+    
+    /**
+     * Default constructor for backward compatibility
+     */
+    public VolunteerService() {
+        this.volunteerDAO = new VolunteerDAO();
+        this.userDAO = new UserDAO();
+        this.eventDAO = new EventDAO();
+        this.eventService = new EventService();
+    }
+    
+    /**
+     * Constructor with dependency injection for testing
+     * @param volunteerDAO the volunteer DAO
+     * @param userDAO the user DAO
+     * @param eventDAO the event DAO
+     * @param eventService the event service
+     */
+    public VolunteerService(VolunteerDAO volunteerDAO, UserDAO userDAO, 
+                           EventDAO eventDAO, EventService eventService) {
+        this.volunteerDAO = volunteerDAO;
+        this.userDAO = userDAO;
+        this.eventDAO = eventDAO;
+        this.eventService = eventService;
+    }
     
     /**
      * Get a volunteer by ID

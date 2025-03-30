@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
@@ -61,13 +62,15 @@ class EventServiceTest {
     @Test
     void testGetEventById() {
         // Arrange
+        System.out.println("Setting up mock: eventDAO.findById(1) should return: " + testEvent);
         when(eventDAO.findById(1)).thenReturn(Optional.of(testEvent));
 
         // Act
         Optional<Event> result = eventService.getEventById(1);
+        System.out.println("Result from eventService.getEventById(1): " + result);
 
         // Assert
-        assertTrue(result.isPresent());
+        assertTrue(result.isPresent(), "Result should be present with mocked data");
         assertEquals(testEvent.getId(), result.get().getId());
         assertEquals(testEvent.getTitle(), result.get().getTitle());
         
