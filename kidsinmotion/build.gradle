@@ -65,6 +65,13 @@ gretty {
     
     // Enable static file serving
     inplaceMode = 'hard'
+    
+    // Ensure all files are included in the WAR
+    webappCopy {
+        into('WEB-INF/classes') {
+            from 'src/main/resources'
+        }
+    }
 }
 
 test {
@@ -73,4 +80,6 @@ test {
 
 war {
     archiveFileName = "kidsinmotion.war"
+    // Set duplicates strategy to handle duplicate entries
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

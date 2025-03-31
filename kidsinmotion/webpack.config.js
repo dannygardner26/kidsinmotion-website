@@ -67,12 +67,16 @@ module.exports = {
   ],
   devServer: {
     static: {
-      directory: path.resolve(__dirname, 'src/main/webapp/static')
+      directory: path.resolve(__dirname, '../src/main/webapp/static')
     },
     port: 3000,
     historyApiFallback: true,
     proxy: {
-      '/api': 'http://localhost:8080'
+      '/api': {
+        target: 'http://localhost:8080/kidsinmotion',
+        changeOrigin: true,
+        secure: false
+      }
     }
   }
 };

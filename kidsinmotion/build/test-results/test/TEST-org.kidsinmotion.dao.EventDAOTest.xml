@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="org.kidsinmotion.dao.EventDAOTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2025-03-31T20:51:39" hostname="LAPTOP_NO-57" time="0.572">
+  <properties/>
+  <testcase name="testFindUpcoming()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.316"/>
+  <testcase name="testFindNeedingVolunteers()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.035"/>
+  <testcase name="testFindAll()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.024"/>
+  <testcase name="testFindBySportType()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.039"/>
+  <testcase name="testFindById()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.024"/>
+  <testcase name="testFindPast()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.024"/>
+  <testcase name="testDelete()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.035"/>
+  <testcase name="testSaveNew()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.03"/>
+  <testcase name="testUpdate()" classname="org.kidsinmotion.dao.EventDAOTest" time="0.033"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
