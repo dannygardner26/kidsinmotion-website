@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-@WebFilter(urlPatterns = {"/*"})
+@WebFilter(urlPatterns = {"/api/*"})
 public class CORSFilter implements Filter {
     private static final Logger LOGGER = Logger.getLogger(CORSFilter.class.getName());
     

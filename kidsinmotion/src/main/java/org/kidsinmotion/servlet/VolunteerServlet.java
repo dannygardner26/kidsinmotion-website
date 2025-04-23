@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-@WebServlet(urlPatterns = {"/api/volunteers/*", "/api/events/*/volunteers"})
+@WebServlet(urlPatterns = {"/api/volunteers/*"})
 public class VolunteerServlet extends HttpServlet {
     private static final Logger LOGGER = Logger.getLogger(VolunteerServlet.class.getName());
     private final VolunteerService volunteerService = new VolunteerService();

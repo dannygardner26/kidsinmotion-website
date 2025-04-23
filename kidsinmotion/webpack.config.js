@@ -67,7 +67,7 @@ module.exports = {
   ],
   devServer: {
     static: {
-      directory: path.resolve(__dirname, '../src/main/webapp/static')
+      directory: path.resolve(__dirname, 'src/main/webapp/static')
     },
     port: 3000,
     historyApiFallback: true,
