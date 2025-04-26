@@ -1,0 +1,357 @@
+/* Kids in Motion - Main CSS */
+
+:root {
+    --imperial-red: #e64f50;
+    --indigo-dye: #2f506a;
+    --isabelline: #ede9e7;
+    --black: #060606;
+    --jet: #383838;
+    
+    --primary: var(--indigo-dye);
+    --primary-light: #3a6587;
+    --secondary: var(--imperial-red);
+    --secondary-light: #eb7172;
+    --background: var(--isabelline);
+    --text: var(--black);
+    --text-light: var(--jet);
+    --text-on-dark: white;
+  }
+  
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: 'Open Sans', sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  
+  .container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--primary);
+  }
+  
+  h1 {
+    font-size: 2.5rem;
+  }
+  
+  h2 {
+    font-size: 2rem;
+  }
+  
+  h3 {
+    font-size: 1.75rem;
+  }
+  
+  h4 {
+    font-size: 1.5rem;
+  }
+  
+  p {
+    margin-bottom: 1rem;
+  }
+  
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  
+  a:hover {
+    color: var(--primary-light);
+  }
+  
+  /* Buttons */
+  .btn {
+    display: inline-block;
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .btn-primary {
+    background-color: var(--primary);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--primary-light);
+  }
+  
+  .btn-secondary {
+    background-color: var(--secondary);
+    color: white;
+  }
+  
+  .btn-secondary:hover {
+    background-color: var(--secondary-light);
+  }
+  
+  .btn-outline {
+    border: 2px solid var(--primary);
+    background-color: transparent;
+    color: var(--primary);
+  }
+  
+  .btn-outline:hover {
+    background-color: var(--primary);
+    color: white;
+  }
+  
+  /* Forms */
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-control {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: white;
+  }
+  
+  .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.2);
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+  }
+  
+  /* Card */
+  .card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  
+  .card-header {
+    padding: 1rem;
+    background-color: var(--primary);
+    color: white;
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+  
+  .card-footer {
+    padding: 1rem;
+    background-color: #f9f9f9;
+    border-top: 1px solid #eee;
+  }
+  
+  /* Hero Section */
+  .hero {
+    background-color: var(--primary);
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+  }
+  
+  .hero h1 {
+    color: white;
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .hero p {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  /* Navigation */
+  .navbar {
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1rem 0;
+  }
+  
+  .navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .navbar-logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+  
+  .navbar-logo img {
+    height: 40px;
+  }
+  
+  .navbar-menu {
+    display: flex;
+    list-style: none;
+  }
+  
+  .navbar-item {
+    margin-left: 1.5rem;
+  }
+  
+  .navbar-link {
+    color: var(--text);
+    font-weight: 600;
+    padding: 0.5rem;
+  }
+  
+  .navbar-link:hover {
+    color: var(--primary);
+  }
+  
+  .navbar-link.active {
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+  }
+  
+  /* Utilities */
+  .text-center {
+    text-align: center;
+  }
+  
+  .mb-1 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .mb-2 {
+    margin-bottom: 1rem;
+  }
+  
+  .mb-3 {
+    margin-bottom: 1.5rem;
+  }
+  
+  .mb-4 {
+    margin-bottom: 2rem;
+  }
+  
+  .mt-1 {
+    margin-top: 0.5rem;
+  }
+  
+  .mt-2 {
+    margin-top: 1rem;
+  }
+  
+  .mt-3 {
+    margin-top: 1.5rem;
+  }
+  
+  .mt-4 {
+    margin-top: 2rem;
+  }
+  
+  /* Grid System */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+  
+  .col {
+    flex: 1;
+    padding: 0 15px;
+  }
+  
+  .col-half {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding: 0 15px;
+  }
+  
+  .col-third {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    padding: 0 15px;
+  }
+  
+  .col-two-thirds {
+    flex: 0 0 66.666667%;
+    max-width: 66.666667%;
+    padding: 0 15px;
+  }
+  
+  .col-fourth {
+    flex: 0 0 25%;
+    max-width: 25%;
+    padding: 0 15px;
+  }
+  
+  /* Events */
+  .event-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .event-card .card-body {
+    flex: 1;
+  }
+  
+  .event-meta {
+    margin-bottom: 1rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+  }
+  
+  .event-meta i {
+    margin-right: 0.5rem;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .col-half, .col-third, .col-two-thirds, .col-fourth {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+    
+    .navbar-container {
+      flex-direction: column;
+    }
+    
+    .navbar-menu {
+      margin-top: 1rem;
+      width: 100%;
+      justify-content: center;
+    }
+    
+    .navbar-item {
+      margin: 0 0.75rem;
+    }
+  }
+
+/*# sourceMappingURL=main.b17f63e7.css.map*/
