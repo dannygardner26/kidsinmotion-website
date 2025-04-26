@@ -33,7 +33,8 @@ const Dashboard = () => {
       });
       
       if (!profileResponse.ok) {
-        throw new Error('Failed to fetch user profile');
+        const errorText = await profileResponse.text(); // Try to get more details
+        throw new Error(`Failed to fetch user profile: ${profileResponse.status} ${profileResponse.statusText}. ${errorText}`);
       }
       
       const userData = await profileResponse.json();
@@ -68,7 +69,7 @@ const Dashboard = () => {
       setError(error.message);
       
       // If unauthorized, redirect to login
-      if (error.message.includes('unauthorized')) {
+      if (error.message.includes('unauthorized') || error.message.includes('401')) {
         localStorage.removeItem('token');
         navigate('/login');
       }

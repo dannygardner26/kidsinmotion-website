@@ -11,6 +11,7 @@
     "author": "Kids in Motion Team",
     "license": "MIT",
     "dependencies": {
+        "firebase": "^11.6.1",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.11.2"
