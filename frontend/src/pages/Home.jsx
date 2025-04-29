@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 
 const Home = () => {
@@ -32,88 +33,238 @@ const Home = () => {
   
   return (
     <Layout>
-      {/* Hero Section */}
-      <section className="hero">
-        <div className="container">
+      {/* Hero Section with Parallax */}
+      <section className="hero" style={{ height: '100vh', display: 'flex', alignItems: 'center' }}>
+        <div className="hero-bg" style={{ backgroundImage: 'url("/img/hero-bg.jpg")' }}></div>
+        
+        <div className="hero-shapes">
+          <div className="hero-shape shape-1"></div>
+          <div className="hero-shape shape-2"></div>
+          <div className="hero-shape shape-3"></div>
+        </div>
+        
+        <div className="container hero-content">
           <h1>Empowering Every Kid to Play</h1>
           <p>
-            Kids in Motion provides free sports clinics and equipment to kids who may not have access, helping them learn new games, build skills, and develop confidence.
+            Kids in Motion provides free sports clinics and equipment to kids who may not have access, 
+            helping them learn new games, build skills, and develop confidence.
           </p>
-          <a href="/events" className="btn btn-secondary">Get Involved</a>
+          <Link to="/events" className="btn btn-secondary">Get Involved</Link>
+        </div>
+        
+        <div className="hero-wave">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
+            <path
+              fill="#ede9e7"
+              fillOpacity="1"
+              d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,75C840,75,960,53,1080,48C1200,43,1320,53,1380,58.7L1440,64L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
+            ></path>
+          </svg>
         </div>
       </section>
       
       {/* Mission Section */}
-      <section className="container mt-4">
-        <div className="row">
-          <div className="col-half">
-            <h2>Our Mission</h2>
-            <p>
-              Kids in Motion is on a mission to make sports accessible to every child. Through free sports clinics and donated equipment, we give kids—especially those facing financial or opportunity barriers—the chance to explore new sports, develop skills, and build lasting friendships.
-            </p>
-            <p>
-              Founded by high school athletes who believe in the power of sports, we aim to break down the financial and social barriers that prevent kids from playing. Whether it's baseball, soccer, basketball, or other sports, our clinics provide a fun, supportive environment where kids can learn from experienced athletes and discover their potential.
-            </p>
-            <a href="/about" className="btn btn-outline mt-2">Learn More</a>
-          </div>
-          <div className="col-half">
-            <img src="/img/team-photo.jpg" alt="Kids in Motion Team" style={{ width: '100%', borderRadius: '8px' }} />
+      <section className="section">
+        <div className="container">
+          <div className="row">
+            <div className="col-half fade-in">
+              <h2>Our Mission</h2>
+              <p>
+                Kids in Motion is on a mission to make sports accessible to every child. Through free 
+                sports clinics and donated equipment, we give kids—especially those facing financial or 
+                opportunity barriers—the chance to explore new sports, develop skills, and build lasting friendships.
+              </p>
+              <p>
+                Founded by high school athletes who believe in the power of sports, we aim to break down 
+                the financial and social barriers that prevent kids from playing. Whether it's baseball, 
+                soccer, basketball, or other sports, our clinics provide a fun, supportive environment 
+                where kids can learn from experienced athletes and discover their potential.
+              </p>
+              <Link to="/about" className="btn btn-outline mt-2">Learn More</Link>
+            </div>
+            <div className="col-half slide-in-right">
+              <img 
+                src="/img/team-photo.jpg" 
+                alt="Kids in Motion Team" 
+                style={{ width: '100%', borderRadius: '8px', boxShadow: '0 15px 30px rgba(0,0,0,0.1)' }}
+              />
+            </div>
           </div>
         </div>
       </section>
       
       {/* Upcoming Events Section */}
-      <section className="container mt-4">
-        <h2>Upcoming Events</h2>
-        
-        {isLoading ? (
-          <p>Loading events...</p>
-        ) : upcomingEvents.length > 0 ? (
-          <div className="row">
-            {upcomingEvents.map(event => (
-              <div className="col-third" key={event.id}>
-                <div className="card event-card">
-                  <div className="card-header">
-                    <h3>{event.title}</h3>
-                  </div>
-                  <div className="card-body">
-                    <div className="event-meta">
-                      <p><i className="far fa-calendar"></i> {formatDate(event.startDate)}</p>
-                      <p><i className="fas fa-map-marker-alt"></i> {event.location}</p>
-                      <p><i className="fas fa-running"></i> {event.sportType}</p>
+      <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
+        <div className="container">
+          <div className="section-head fade-in">
+            <h2>Upcoming Events</h2>
+          </div>
+          
+          {isLoading ? (
+            <div className="text-center">
+              <div className="loading-spinner"></div>
+              <p>Loading events...</p>
+            </div>
+          ) : upcomingEvents.length > 0 ? (
+            <div className="row">
+              {upcomingEvents.map((event, index) => (
+                <div className={`col-third fade-in`} key={event.id} style={{ animationDelay: `${0.2 * index}s` }}>
+                  <div className="card event-card">
+                    <div className="card-header">
+                      <h3>{event.title}</h3>
                     </div>
-                    <p>{event.description}</p>
-                  </div>
-                  <div className="card-footer">
-                    <a href={`/events/${event.id}`} className="btn btn-primary">Learn More</a>
+                    <div className="card-body">
+                      <div className="event-meta">
+                        <p><i className="far fa-calendar"></i> {formatDate(event.startDate)}</p>
+                        <p><i className="fas fa-map-marker-alt"></i> {event.location}</p>
+                        <p><i className="fas fa-running"></i> {event.sportType}</p>
+                      </div>
+                      <p>{event.description}</p>
+                    </div>
+                    <div className="card-footer">
+                      <Link to={`/events/${event.id}`} className="btn btn-primary">Learn More</Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          ) : (
+            <div className="text-center fade-in">
+              <p>No upcoming events at the moment. Check back soon!</p>
+            </div>
+          )}
+          
+          <div className="text-center mt-3 fade-in">
+            <Link to="/events" className="btn btn-outline">View All Events</Link>
           </div>
-        ) : (
-          <p>No upcoming events at the moment. Check back soon!</p>
-        )}
+        </div>
+      </section>
+      
+      {/* Impact Section - New section with statistics */}
+      <section className="section">
+        <div className="container">
+          <div className="section-head fade-in">
+            <h2>Our Impact</h2>
+          </div>
+          
+          <div className="row">
+            <div className="col-fourth fade-in">
+              <div className="impact-stat text-center">
+                <div className="impact-number">500+</div>
+                <p>Children Served</p>
+              </div>
+            </div>
+            <div className="col-fourth fade-in" style={{ animationDelay: '0.2s' }}>
+              <div className="impact-stat text-center">
+                <div className="impact-number">25</div>
+                <p>Free Clinics</p>
+              </div>
+            </div>
+            <div className="col-fourth fade-in" style={{ animationDelay: '0.4s' }}>
+              <div className="impact-stat text-center">
+                <div className="impact-number">10</div>
+                <p>Communities</p>
+              </div>
+            </div>
+            <div className="col-fourth fade-in" style={{ animationDelay: '0.6s' }}>
+              <div className="impact-stat text-center">
+                <div className="impact-number">300+</div>
+                <p>Equipment Donations</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Testimonial Section - New */}
+      <section className="section parallax" style={{ 
+        backgroundImage: 'url("/img/testimonial-bg.jpg")', 
+        padding: '6rem 0',
+        position: 'relative'
+      }}>
+        <div className="overlay" style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          backgroundColor: 'rgba(47, 80, 106, 0.85)' 
+        }}></div>
         
-        <div className="text-center mt-3">
-          <a href="/events" className="btn btn-outline">View All Events</a>
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <div className="testimonial-slider fade-in">
+            <div className="testimonial text-center">
+              <div className="testimonial-quote">
+                <i className="fas fa-quote-left" style={{ fontSize: '2rem', color: 'var(--secondary)' }}></i>
+              </div>
+              <p style={{ fontSize: '1.25rem', color: 'white', maxWidth: '800px', margin: '1.5rem auto' }}>
+                "Kids in Motion has been a game-changer for my son. Before joining, he had never played
+                organized sports because of the cost. Now he's developing skills, making friends, and has
+                discovered a passion for soccer. The coaches are amazing and truly care about every child."
+              </p>
+              <div className="testimonial-author" style={{ color: 'white' }}>
+                <strong>Sarah Johnson</strong>, Parent
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       
       {/* Support Section */}
-      <section className="container mt-4 mb-4">
-        <div className="card">
-          <div className="card-header">
-            <h2 className="text-center">Help Every Kid Get in the Game</h2>
-          </div>
-          <div className="card-body text-center">
-            <p>
-              Your donations provide free sports clinics and equipment to kids who might not otherwise have the chance to play. Every contribution helps us reach more communities and inspire the next generation of athletes.
-            </p>
-            <a href="/donate" className="btn btn-secondary mt-2">Support Our Mission</a>
+      <section className="section">
+        <div className="container">
+          <div className="card fade-in">
+            <div className="card-header text-center">
+              <h2>Help Every Kid Get in the Game</h2>
+            </div>
+            <div className="card-body text-center">
+              <p>
+                Your donations provide free sports clinics and equipment to kids who might not otherwise 
+                have the chance to play. Every contribution helps us reach more communities and inspire 
+                the next generation of athletes.
+              </p>
+              <Link to="/donate" className="btn btn-secondary mt-2">Support Our Mission</Link>
+            </div>
           </div>
         </div>
       </section>
+      
+      {/* Custom CSS for this page */}
+      <style jsx>{`
+        .impact-number {
+          font-size: 3rem;
+          font-weight: 700;
+          color: var(--secondary);
+          margin-bottom: 0.5rem;
+        }
+        
+        .impact-stat {
+          padding: 2rem 1rem;
+          border-radius: 8px;
+          background-color: white;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .impact-stat:hover {
+          transform: translateY(-10px);
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading-spinner {
+          display: inline-block;
+          width: 50px;
+          height: 50px;
+          border: 3px solid rgba(47, 80, 106, 0.3);
+          border-radius: 50%;
+          border-top-color: var(--primary);
+          animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </Layout>
   );
 };
