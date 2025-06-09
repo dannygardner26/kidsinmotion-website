@@ -58,7 +58,7 @@ const Events = () => {
     <Layout>
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/img/events-bg.jpg")' }}></div>
+        <div className="hero-bg" style={{ backgroundImage: 'url("/assets/placeholder.png")' }}></div>
         
         <div className="container hero-content">
           <h1>Events & Clinics</h1>
@@ -164,7 +164,7 @@ const Events = () => {
             </div>
           ) : (
             <div className="text-center fade-in">
-              <img src="/img/no-results.svg" alt="No events found" style={{ maxWidth: '200px', margin: '2rem auto' }} />
+              <img src="/assets/placeholder.png" alt="No events found" style={{ maxWidth: '200px', margin: '2rem auto' }} />
               <p>No events found matching your criteria.</p>
               <button onClick={() => {
                 setFilter('upcoming');
@@ -174,15 +174,6 @@ const Events = () => {
               </button>
             </div>
           )}
-        </div>
-      </section>
-      
-      {/* Call to action section */}
-      <section className="section" style={{ backgroundColor: 'var(--primary)', color: 'white', textAlign: 'center' }}>
-        <div className="container fade-in">
-          <h2 style={{ color: 'white' }}>Want to Host an Event?</h2>
-          <p>If you're interested in bringing a Kids in Motion event to your school or community, we'd love to hear from you!</p>
-          <Link to="/contact" className="btn btn-secondary mt-3">Contact Us</Link>
         </div>
       </section>
       

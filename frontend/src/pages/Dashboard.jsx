@@ -197,7 +197,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <section className="hero" style={{ minHeight: '30vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/img/dashboard-bg.jpg")' }}></div>
+        <div className="hero-bg" style={{ backgroundImage: 'url("/assets/placeholder.png")' }}></div>
         
         <div className="container hero-content">
           <h1>Welcome, {user?.firstName}!</h1>

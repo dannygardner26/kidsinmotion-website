@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
 import Layout from '../components/Layout';
 
@@ -9,32 +9,27 @@ const Login = () => {
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Renamed for clarity
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const googleButtonDivRef = useRef(null);
 
   const queryParams = new URLSearchParams(location.search);
   const redirectUrl = queryParams.get('redirect') || '/dashboard';
 
-  // Check auth state on mount
+  // Firebase auth state listener
   useEffect(() => {
-    setIsLoading(true);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is signed in, redirect.
-        console.log("User already signed in:", user);
+        console.log("User signed in, navigating:", user);
         navigate(redirectUrl, { replace: true });
       } else {
-        // User is signed out.
         console.log("User not signed in.");
-        setIsLoading(false);
+        setIsLoading(false); // Ensure loading is false if no user
       }
     });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [navigate, redirectUrl]);
-
 
   const validateForm = () => {
     const errors = {};
@@ -71,114 +66,149 @@ const Login = () => {
     // No finally block needed for setIsLoading(false) here, as it's handled by the effect or error catch
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (response) => {
     setIsLoading(true);
     setError(null);
-    const provider = new GoogleAuthProvider();
-
+    console.log("Google Sign-In response:", response);
     try {
-      const result = await signInWithPopup(auth, provider);
-      // This gives you a Google Access Token. You can use it to access the Google API.
-      // const credential = GoogleAuthProvider.credentialFromResult(result);
-      // const token = credential.accessToken;
-      // The signed-in user info.
-      const user = result.user;
-      console.log("Google Sign in successful:", user);
+      const idToken = response.credential;
+      const credential = GoogleAuthProvider.credential(idToken);
+      await signInWithCredential(auth, credential);
       // Navigation is handled by onAuthStateChanged effect
+      // setIsLoading(false) will be handled by onAuthStateChanged or error
     } catch (error) {
-      // Handle Errors here.
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      // The email of the user's account used.
-      // const email = error.customData.email;
-      // The AuthCredential type that was used.
-      // const credential = GoogleAuthProvider.credentialFromError(error);
-      console.error('Google Sign in error:', errorCode, errorMessage);
-      setError(errorMessage || 'Google Sign-in failed.');
-      setIsLoading(false); // Set loading false only on error
+      console.error('Google Sign in error:', error);
+      setError(error.message || 'Google Sign-in failed.');
+      setIsLoading(false);
     }
-     // No finally block needed for setIsLoading(false) here, as it's handled by the effect or error catch
   };
 
-  // Render loading state or the login form
-  if (isLoading && !error) { // Show loading only if not already errored out
-      return <Layout><div className="container mt-4 text-center"><p>Loading...</p></div></Layout>;
-  }
+  useEffect(() => {
+    if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
+      window.google.accounts.id.initialize({
+        client_id: "839796180413-i0uvjtqpus9rj5pnvk7jngb31n6qvco4.apps.googleusercontent.com",
+        callback: handleGoogleSignIn,
+      });
+      window.google.accounts.id.renderButton(
+        googleButtonDivRef.current,
+        { theme: "outline", size: "large", type: "standard", text: "signin_with" } 
+      );
+      // Optional: google.accounts.id.prompt(); // For One Tap sign-in
+    } else {
+      // Handle case where Google script might not be loaded yet or div isn't rendered
+      // This might require a retry mechanism or ensuring script loads before component mount
+      console.log("Google GSI not ready or div not available yet.");
+    }
+    // Cleanup function for GSI if needed, though renderButton doesn't return a cleanup
+    // For prompt, one might use google.accounts.id.cancel()
+  }, []); // Run once on mount
+
+  // Initial loading state before Firebase auth check completes (optional, can be brief)
+  // The onAuthStateChanged will set isLoading to false if no user is found.
+  // If a user IS found, it navigates, so this loading state might not be visible for long.
+  // Consider if a global loading indicator is better if auth check is slow.
+  // For now, the existing isLoading logic should cover most cases.
+  // if (isLoading && !error) { 
+  //     return <Layout><div className="container mt-4 text-center"><p>Loading...</p></div></Layout>;
+  // }
 
 
   return (
     <Layout>
-      <div className="container mt-4">
-        <div className="row">
-          <div className="col-md-6 offset-md-3"> {/* Adjusted column for better centering */}
-            <div className="card shadow-sm"> {/* Added shadow for better UI */}
-              <div className="card-header bg-primary text-white"> {/* Styled header */}
-                <h1 className="mb-0">Login</h1>
+      {/* Use flexbox for centering */}
+      <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]"> 
+        {/* Adjust min-height based on header/footer */}
+        <div className="w-full max-w-md"> {/* Control the width of the card */}
+            <div className="card"> {/* Use theme card style (shadow included) */}
+              <div className="card-header"> {/* Use theme card-header style */}
+                {/* Ensure h1 color contrasts with header bg if needed, theme handles white text */}
+                <h1 className="text-2xl font-bold text-center mb-0">Login</h1> 
               </div>
               <div className="card-body">
                 {error && (
-                  <div className="alert alert-danger" role="alert">
-                    {error}
+                  // Use Tailwind for alert, leveraging theme colors
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span className="block sm:inline">{error}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleEmailPasswordLogin}>
-                  <div className="form-group mb-3"> {/* Added margin bottom */}
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="email">Email</label>
                     <input
                       type="email"
                       id="email"
-                      className={`form-control ${formErrors.email ? 'is-invalid' : ''}`}
+                      // Use theme form-control
+                      className={`form-control ${formErrors.email ? 'border-red-500' : ''}`} 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required // Added HTML5 required
+                      required 
                     />
                     {formErrors.email && (
-                      <div className="invalid-feedback">{formErrors.email}</div>
+                      // Simple error text styling
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p> 
                     )}
                   </div>
 
-                  <div className="form-group mb-3"> {/* Added margin bottom */}
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="password">Password</label>
                     <input
                       type="password"
                       id="password"
-                      className={`form-control ${formErrors.password ? 'is-invalid' : ''}`}
+                      // Use theme form-control
+                      className={`form-control ${formErrors.password ? 'border-red-500' : ''}`} 
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required // Added HTML5 required
+                      required 
                     />
                     {formErrors.password && (
-                      <div className="invalid-feedback">{formErrors.password}</div>
+                      // Simple error text styling
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.password}</p> 
                     )}
                   </div>
 
-                  <div className="d-grid gap-2 mb-3"> {/* Use d-grid for full-width button */}
-                    <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                  {/* Use theme button styles, add w-full for block display */}
+                  <div className="mt-4"> 
+                    <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
                       {isLoading ? 'Logging in...' : 'Login with Email'}
                     </button>
                   </div>
                 </form>
 
-                 <div className="text-center mb-3"> {/* Added margin bottom */}
-                   <span className="text-muted">OR</span>
+                 <div className="my-4 text-center">
+                   <span className="text-xs uppercase text-gray-400 font-semibold">OR</span>
                  </div>
 
-                 <div className="d-grid gap-2 mb-3"> {/* Use d-grid for full-width button */}
-                   <button onClick={handleGoogleSignIn} className="btn btn-danger" disabled={isLoading}> {/* Google uses red */}
-                     {isLoading ? 'Signing in...' : 'Sign in with Google'}
-                   </button>
+                 {/* Google Sign-in Button - Rendered by Google Identity Services */}
+                 <div className="mb-4 flex justify-center">
+                    <div id="googleSignInButtonDiv" ref={googleButtonDivRef}></div>
+                    {/* The Google button will be rendered here. Ensure this div is visible. */}
                  </div>
+                 {isLoading && (
+                    <div className="text-center text-sm text-gray-500">
+                        <span>Processing Google Sign-In...</span>
+                    </div>
+                 )}
 
-                <div className="mt-3 text-center">
-                  <p>Don't have an account? <Link to="/register">Register</Link></p>
-                  {/* Add Forgot Password link if needed */}
-                  {/* <p><Link to="/forgot-password">Forgot your password?</Link></p> */}
+
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-gray-600">
+                    Don't have an account?{' '}
+                    <Link 
+                      to="/register" 
+                      className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+                      style={{ display: 'inline-block', padding: '0.25rem', position: 'relative', zIndex: 10 }} // Ensure clickability
+                    >
+                      Register
+                    </Link>
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        {/* Removed extra closing div */}
       </div>
     </Layout>
   );

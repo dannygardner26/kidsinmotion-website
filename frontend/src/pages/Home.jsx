@@ -35,7 +35,7 @@ const Home = () => {
     <Layout>
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ height: '100vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/img/hero-bg.jpg")' }}></div>
+        <div className="hero-bg" style={{ backgroundImage: 'url("/assets/placeholder.png")' }}></div>
         
         <div className="hero-shapes">
           <div className="hero-shape shape-1"></div>
@@ -66,8 +66,10 @@ const Home = () => {
       {/* Mission Section */}
       <section className="section">
         <div className="container">
-          <div className="row">
-            <div className="col-half fade-in">
+          {/* Use Tailwind flexbox for layout: text left, image right - Using inline flex-basis for diagnosis */}
+          <div className="flex flex-row gap-8" style={{ display: 'flex', flexDirection: 'row' }}> 
+            {/* Text Column */}
+            <div className="fade-in" style={{ flexBasis: '60%', flexShrink: 0 }}> 
               <h2>Our Mission</h2>
               <p>
                 Kids in Motion is on a mission to make sports accessible to every child. Through free 
@@ -82,11 +84,12 @@ const Home = () => {
               </p>
               <Link to="/about" className="btn btn-outline mt-2">Learn More</Link>
             </div>
-            <div className="col-half slide-in-right">
-              <img 
-                src="/img/team-photo.jpg" 
-                alt="Kids in Motion Team" 
-                style={{ width: '100%', borderRadius: '8px', boxShadow: '0 15px 30px rgba(0,0,0,0.1)' }}
+            {/* Image Column */}
+            <div className="slide-in-right" style={{ flexBasis: '40%', flexShrink: 0 }}> 
+              <img
+                src="/assets/placeholder.png" 
+                alt="Kids playing sports" // Updated alt text for better description
+                style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 15px 30px rgba(0,0,0,0.1)', border: '5px solid #fff', outline: '1px solid #ccc' }}
               />
             </div>
           </div>
@@ -140,7 +143,7 @@ const Home = () => {
         </div>
       </section>
       
-      {/* Impact Section - New section with statistics */}
+      {/* Impact Section - Temporarily commented out
       <section className="section">
         <div className="container">
           <div className="section-head fade-in">
@@ -175,16 +178,30 @@ const Home = () => {
           </div>
         </div>
       </section>
+      */}
       
       {/* Testimonial Section - New */}
-      <section className="section parallax" style={{ 
-        backgroundImage: 'url("/img/testimonial-bg.jpg")', 
-        padding: '6rem 0',
-        position: 'relative'
-      }}>
+      <section className="section parallax" style={{ padding: '6rem 0', position: 'relative' }}>
+        {/* Added div for JS parallax */}
+        <div 
+          className="parallax-bg" 
+          style={{ 
+            backgroundImage: 'url("/assets/placeholder.png")',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundPosition: 'center',
+            backgroundSize: 'cover',
+            zIndex: 0
+          }}
+          data-speed="0.4" /* Optional: Adjust speed */
+        ></div>
+        
         <div className="overlay" style={{ 
           position: 'absolute', 
-          top: 0, 
+          top: 0,
           left: 0, 
           width: '100%', 
           height: '100%', 
@@ -197,13 +214,11 @@ const Home = () => {
               <div className="testimonial-quote">
                 <i className="fas fa-quote-left" style={{ fontSize: '2rem', color: 'var(--secondary)' }}></i>
               </div>
-              <p style={{ fontSize: '1.25rem', color: 'white', maxWidth: '800px', margin: '1.5rem auto' }}>
-                "Kids in Motion has been a game-changer for my son. Before joining, he had never played
-                organized sports because of the cost. Now he's developing skills, making friends, and has
-                discovered a passion for soccer. The coaches are amazing and truly care about every child."
+              <p style={{ fontSize: '1.25rem', color: 'white', maxWidth: '800px', margin: '1.5rem auto', border: '2px dashed yellow', padding: '1rem' }}>
+                [Placeholder Testimonial Text - Replace with a real quote about the positive impact of Kids in Motion.]
               </p>
               <div className="testimonial-author" style={{ color: 'white' }}>
-                <strong>Sarah Johnson</strong>, Parent
+                <strong>[Placeholder Author Name]</strong>, [Placeholder Role, e.g., Parent, Volunteer]
               </div>
             </div>
           </div>
@@ -212,19 +227,15 @@ const Home = () => {
       
       {/* Support Section */}
       <section className="section">
-        <div className="container">
-          <div className="card fade-in">
-            <div className="card-header text-center">
-              <h2>Help Every Kid Get in the Game</h2>
-            </div>
-            <div className="card-body text-center">
-              <p>
-                Your donations provide free sports clinics and equipment to kids who might not otherwise 
-                have the chance to play. Every contribution helps us reach more communities and inspire 
-                the next generation of athletes.
-              </p>
-              <Link to="/donate" className="btn btn-secondary mt-2">Support Our Mission</Link>
-            </div>
+        <div className="container text-center"> {/* Removed fade-in class */}
+          <h2>Help Every Kid Get in the Game</h2>
+          <p className="mt-1 mb-2"> {/* Added margin top/bottom for spacing */}
+            Your donations provide free sports clinics and equipment to kids who might not otherwise
+            have the chance to play. Every contribution helps us reach more communities and inspire
+            the next generation of athletes.
+          </p>
+          <div className="flex justify-center">
+            <Link to="/donate" className="btn btn-secondary mt-2">Support Our Mission</Link>
           </div>
         </div>
       </section>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { ArrowRight, Users, Award, Gift, Heart } from 'lucide-react';
 
 const About = () => {
   const teamMembers = [
@@ -8,319 +9,297 @@ const About = () => {
       name: 'Danny Gardner',
       role: 'Co-Founder & Director',
       bio: 'Danny is a student-athlete dedicated to making sports accessible for every child. With a passion for giving back, he leads the organization\'s clinics and outreach programs.',
-      image: '/img/team/danny.jpg'
+      image: '/assets/placeholder.png'
     },
     {
       name: 'Ryan Spiess',
       role: 'Co-Founder & Operations Lead',
       bio: 'Ryan manages the logistics behind our clinics and donation drives, ensuring every event runs smoothly and every piece of equipment finds a home.',
-      image: '/img/team/ryan.jpg'
+      image: '/assets/placeholder.png'
     },
     {
       name: 'Ty Callahan',
       role: 'Co-Founder & Community Coordinator',
       bio: 'Ty connects with local communities to expand our reach, helping bring Kids in Motion\'s mission to more kids across the state.',
-      image: '/img/team/ty.jpg'
+      image: '/assets/placeholder.png'
     },
     {
       name: 'Nate Wilner',
       role: 'Co-Founder & Marketing Lead',
       bio: 'Nate handles the creative side, promoting our events and spreading the word to ensure as many kids as possible can benefit from our programs.',
-      image: '/img/team/nate.jpg'
+      image: '/assets/placeholder.png'
+    }
+  ];
+
+  const services = [
+    {
+      icon: <Award className="h-12 w-12 text-indigo-600" />,
+      title: 'Free Sports Clinics',
+      description: 'We host free sports clinics across a range of games, giving kids the chance to learn from experienced athletes and develop their skills in a fun, supportive setting.'
+    },
+    {
+      icon: <Gift className="h-12 w-12 text-indigo-600" />,
+      title: 'Equipment Donations',
+      description: 'We collect and distribute gently used sports equipment to communities where kids may not have the resources to play.'
+    },
+    {
+      icon: <Users className="h-12 w-12 text-indigo-600" />,
+      title: 'Mentorship',
+      description: 'Beyond sports, we provide mentorship and a welcoming environment where kids can build confidence, make friends, and learn valuable life lessons.'
+    }
+  ];
+
+  const branches = [
+    {
+      title: "Logistics",
+      description: "The logistics team coordinates nonprofit status, manages equipment drives, handles funds, and ensures smooth operations between all branches."
+    },
+    {
+      title: "Member Outreach",
+      description: "This team recruits members to join and participate in events, coordinates roles, and manages attendance within the organization."
+    },
+    {
+      title: "Community Outreach",
+      description: "Community outreach handles communication with external organizations, including local little leagues, schools, and programs for kids with disabilities or limited resources."
+    },
+    {
+      title: "Event Coordination",
+      description: "This team secures locations for clinics, develops curriculum for players, coordinates equipment, and ensures everyone has a positive experience."
     }
   ];
 
   return (
     <Layout>
-      {/* Hero Section with Parallax */}
-      <section className="hero" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/img/about-bg.jpg")' }}></div>
-        
-        <div className="container hero-content">
-          <h1>About Kids in Motion</h1>
-          <p>Kids in Motion was founded by student-athletes to make sports accessible to all children. Through free clinics and donated equipment, we empower kids to play, grow, and build lifelong skills.</p>
-        </div>
-        
-        <div className="hero-wave">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
-            <path
-              fill="#ede9e7"
-              fillOpacity="1"
-              d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,75C840,75,960,53,1080,48C1200,43,1320,53,1380,58.7L1440,64L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-            ></path>
-          </svg>
-        </div>
-      </section>
-      
-      <section className="section">
-        <div className="container">
-          <div className="card mb-4 fade-in">
-            <div className="card-header">
-              <h2>Our Purpose</h2>
+      {/* Hero Section */}
+      <div className="relative bg-indigo-800 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="relative z-10 pb-8 bg-indigo-800 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
+            <svg
+              className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-indigo-800 transform translate-x-1/2"
+              fill="currentColor"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <polygon points="50,0 100,0 50,100 0,100" />
+            </svg>
+
+            <div className="pt-10 sm:pt-16 lg:pt-8 lg:pb-14 lg:mr-4 xl:mr-16">
+              <div className="sm:text-center lg:text-left px-4 sm:px-8 xl:pl-12">
+                <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
+                  <span className="block">About</span>
+                  <span className="block text-indigo-300">Kids in Motion</span>
+                </h1>
+                <p className="mt-3 text-base text-gray-200 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
+                  Kids in Motion was founded by student-athletes to make sports accessible to all children. Through free clinics and donated equipment, we empower kids to play, grow, and build lifelong skills.
+                </p>
+              </div>
             </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-half">
-                  <p>
-                    At Kids in Motion, we believe that every child deserves the opportunity to play sports, regardless of their background. Sports teach teamwork, discipline, and resilience—values that extend far beyond the game.
-                  </p>
-                  <p>
-                    Our organization provides free sports clinics across a variety of games, including baseball, soccer, and more. We also collect and distribute gently used sports equipment, ensuring kids who may not have access to the gear they need can still participate.
-                  </p>
-                  <p>
-                    By connecting passionate athletes with communities in need, we aim to create a supportive environment where every child can discover their potential. Our goal is to remove barriers, foster a love for sports, and make sure no kid is left on the sidelines.
-                  </p>
-                </div>
-                <div className="col-half slide-in-right">
+          </div>
+        </div>
+        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
+          <img
+            className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
+            src="/assets/placeholder.png"
+            alt="Kids playing sports"
+          />
+        </div>
+      </div>
+
+      {/* Our Purpose Section */}
+      <div className="py-16 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Our Purpose
+            </h2>
+            <div className="mt-4 max-w-3xl mx-auto text-xl text-gray-500">
+              <p>
+                At Kids in Motion, we believe that every child deserves the opportunity to play sports, regardless of their background. Sports teach teamwork, discipline, and resilience—values that extend far beyond the game.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-16">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-12">
+              <div className="mt-10 lg:mt-0">
+                <p className="text-lg text-gray-500 mb-4">
+                  Our organization provides free sports clinics across a variety of games, including baseball, soccer, and more. We also collect and distribute gently used sports equipment, ensuring kids who may not have access to the gear they need can still participate.
+                </p>
+                <p className="text-lg text-gray-500">
+                  By connecting passionate athletes with communities in need, we aim to create a supportive environment where every child can discover their potential. Our goal is to remove barriers, foster a love for sports, and make sure no kid is left on the sidelines.
+                </p>
+              </div>
+              <div className="relative mt-10 lg:mt-0">
+                <div className="aspect-w-16 aspect-h-9 lg:aspect-none">
                   <img 
-                    src="/img/about-purpose.jpg" 
+                    className="rounded-xl shadow-xl object-cover object-center transform transition-transform duration-300 hover:scale-105" 
+                    src="/assets/placeholder.png" 
                     alt="Kids playing sports" 
-                    style={{ 
-                      width: '100%', 
-                      borderRadius: '8px',
-                      boxShadow: '0 15px 30px rgba(0, 0, 0, 0.1)',
-                      transition: 'transform 0.3s ease',
-                    }}
-                    className="hover-zoom"
                   />
                 </div>
               </div>
             </div>
           </div>
-          
-          <div className="card mb-4 fade-in">
-            <div className="card-header">
-              <h2>What We Do</h2>
-            </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-third slide-in-left" style={{ animationDelay: '0.1s' }}>
-                  <div className="text-center mb-3 service-icon">
-                    <i className="fas fa-running" style={{ fontSize: '3rem', color: 'var(--primary)' }}></i>
-                    <h3>Free Sports Clinics</h3>
+        </div>
+      </div>
+
+      {/* What We Do Section */}
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              What We Do
+            </h2>
+          </div>
+
+          <div className="mt-16">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+              {services.map((service, index) => (
+                <div key={index} className="flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                  <div className="px-6 py-8">
+                    <div className="flex items-center justify-center h-16">
+                      {service.icon}
+                    </div>
+                    <h3 className="mt-6 text-xl font-medium text-gray-900 text-center">
+                      {service.title}
+                    </h3>
+                    <p className="mt-4 text-base text-gray-500 text-center">
+                      {service.description}
+                    </p>
                   </div>
-                  <p>
-                    We host free sports clinics across a range of games, giving kids the chance to learn from experienced athletes and develop their skills in a fun, supportive setting.
-                  </p>
                 </div>
-                
-                <div className="col-third slide-in-left" style={{ animationDelay: '0.3s' }}>
-                  <div className="text-center mb-3 service-icon">
-                    <i className="fas fa-baseball-ball" style={{ fontSize: '3rem', color: 'var(--primary)' }}></i>
-                    <h3>Equipment Donations</h3>
-                  </div>
-                  <p>
-                    We collect and distribute gently used sports equipment to communities where kids may not have the resources to play.
-                  </p>
-                </div>
-                
-                <div className="col-third slide-in-left" style={{ animationDelay: '0.5s' }}>
-                  <div className="text-center mb-3 service-icon">
-                    <i className="fas fa-users" style={{ fontSize: '3rem', color: 'var(--primary)' }}></i>
-                    <h3>Mentorship</h3>
-                  </div>
-                  <p>
-                    Beyond sports, we provide mentorship and a welcoming environment where kids can build confidence, make friends, and learn valuable life lessons.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-          
-          <div className="section-head fade-in">
-            <h2>Meet Our Team</h2>
+        </div>
+      </div>
+
+      {/* Meet Our Team Section */}
+      <div className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Meet Our Team
+            </h2>
+            <p className="max-w-2xl mt-4 text-xl text-gray-500 mx-auto">
+              The passionate individuals behind Kids in Motion
+            </p>
           </div>
-          
-          <div className="row">
+
+          <div className="mt-16 space-y-12 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-12">
             {teamMembers.map((member, index) => (
-              <div 
-                className="col-half mb-4 fade-in" 
-                key={index} 
-                style={{ animationDelay: `${0.2 * index}s` }}
-              >
-                <div className="card team-card">
-                  <div className="card-body" style={{ display: 'flex', alignItems: 'center' }}>
-                    <div style={{ flexShrink: 0, marginRight: '15px', overflow: 'hidden', borderRadius: '50%' }}>
-                      <img 
-                        src={member.image} 
-                        alt={member.name}
-                        className="team-image"
-                        style={{ 
-                          width: '120px', 
-                          height: '120px', 
-                          borderRadius: '50%', 
-                          objectFit: 'cover',
-                          transition: 'transform 0.5s ease'
-                        }}
-                        onError={(e) => {
-                          e.target.src = '/img/team/placeholder.jpg';
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <h3>{member.name}</h3>
-                      <h4 style={{ color: 'var(--secondary)', marginBottom: '0.5rem' }}>{member.role}</h4>
-                      <p>{member.bio}</p>
-                    </div>
+              <div key={index} className="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg">
+                <div className="flex items-center space-x-6">
+                  <div className="flex-shrink-0">
+                    <img 
+                      className="h-24 w-24 rounded-full object-cover ring-4 ring-indigo-50 transition-all duration-300 group-hover:ring-indigo-200" 
+                      src={member.image} 
+                      alt={member.name}
+                      onError={(e) => {
+                        e.target.src = '/assets/placeholder.png';
+                      }} 
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-medium text-gray-900">{member.name}</h3>
+                    <p className="text-indigo-600 text-sm font-medium">{member.role}</p>
+                    <p className="mt-2 text-base text-gray-500">{member.bio}</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-          
-          <div className="card mb-4 fade-in">
-            <div className="card-header">
-              <h2>Our Structure</h2>
-            </div>
-            <div className="card-body">
-              <h3>Board of Directors</h3>
-              <p>
+        </div>
+      </div>
+
+      {/* Our Structure Section */}
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              Our Structure
+            </h2>
+          </div>
+
+          <div className="mt-12 max-w-4xl mx-auto">
+            <div className="bg-white rounded-xl shadow-md overflow-hidden p-6">
+              <h3 className="text-2xl font-medium text-gray-900">Board of Directors</h3>
+              <p className="mt-4 text-base text-gray-500">
                 Kids in Motion is led by our board of directors, consisting of the four co-founders and advisors from the community. The board meets regularly to plan events, coordinate fundraisers, and ensure the organization stays true to its mission.
               </p>
-              
-              <h3 className="mt-4">Branches</h3>
-              <div className="row mt-3">
-                <div className="col-half slide-in-left">
-                  <div className="branch-box">
-                    <h4>Logistics</h4>
-                    <p>
-                      The logistics team coordinates nonprofit status, manages equipment drives, handles funds, and ensures smooth operations between all branches.
-                    </p>
-                  </div>
-                  
-                  <div className="branch-box mt-3">
-                    <h4>Member Outreach</h4>
-                    <p>
-                      This team recruits members to join and participate in events, coordinates roles, and manages attendance within the organization.
-                    </p>
-                  </div>
+            </div>
+
+            <h3 className="mt-12 text-2xl font-medium text-gray-900 text-center">Branches</h3>
+            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+              {branches.map((branch, index) => (
+                <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                  <h4 className="text-xl font-medium text-indigo-600">{branch.title}</h4>
+                  <p className="mt-2 text-gray-500">{branch.description}</p>
                 </div>
-                
-                <div className="col-half slide-in-right">
-                  <div className="branch-box">
-                    <h4>Community Outreach</h4>
-                    <p>
-                      Community outreach handles communication with external organizations, including local little leagues, schools, and programs for kids with disabilities or limited resources.
-                    </p>
-                  </div>
-                  
-                  <div className="branch-box mt-3">
-                    <h4>Event Coordination</h4>
-                    <p>
-                      This team secures locations for clinics, develops curriculum for players, coordinates equipment, and ensures everyone has a positive experience.
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              <h3 className="mt-4">Supporting Roles</h3>
-              <p>
+              ))}
+            </div>
+
+            <div className="mt-12 bg-white rounded-xl shadow-md overflow-hidden p-6">
+              <h3 className="text-2xl font-medium text-gray-900">Supporting Roles</h3>
+              <p className="mt-4 text-base text-gray-500">
                 We also have dedicated volunteers who manage our social media presence, document our events through photography and video, maintain our website, and handle administrative tasks to keep the organization running smoothly.
               </p>
             </div>
           </div>
-          
-          <div className="card fade-in">
-            <div className="card-header">
-              <h2>Get Involved</h2>
-            </div>
-            <div className="card-body text-center">
-              <p className="mb-4">
-                Want to help us make sports accessible to every kid? There are many ways to support our mission and make a difference.
+        </div>
+      </div>
+
+      {/* Get Involved CTA */}
+      <div className="py-12 bg-indigo-700">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
+            <div>
+              <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+                Join Our Community
+              </h2>
+              <p className="mt-3 max-w-md mx-auto text-lg text-indigo-200 sm:text-xl md:mt-5 md:max-w-3xl">
+                Whether you're a parent, athlete, coach, or community member, there's a place for you in our organization. Together, we can make a difference in the lives of children through the power of sports.
               </p>
-              
-              <div className="row">
-                <div className="col-third">
-                  <Link to="/volunteer" className="btn btn-primary btn-block mb-3">Become a Volunteer</Link>
-                </div>
-                <div className="col-third">
-                  <Link to="/donate" className="btn btn-secondary btn-block mb-3">Make a Donation</Link>
-                </div>
-                <div className="col-third">
-                  <Link to="/contact" className="btn btn-outline btn-block mb-3">Contact Us</Link>
-                </div>
-              </div>
+            </div>
+            <div className="mt-10 lg:mt-0 flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-4">
+              <Link 
+                to="/volunteer" 
+                className="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-10 transition-all duration-300"
+              >
+                Become a Volunteer
+              </Link>
+              <Link 
+                to="/donate" 
+                className="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600 md:py-4 md:text-lg md:px-10 transition-all duration-300"
+              >
+                Make a Donation
+              </Link>
             </div>
           </div>
         </div>
-      </section>
-      
-      {/* Parallax testimonial section */}
-      <section className="section parallax" style={{ 
-        backgroundImage: 'url("/img/volunteer-bg.jpg")', 
-        backgroundAttachment: 'fixed',
-        padding: '6rem 0',
-        position: 'relative',
-        marginTop: '3rem'
-      }}>
-        <div className="overlay" style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          backgroundColor: 'rgba(47, 80, 106, 0.85)' 
-        }}></div>
-        
-        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="text-center" style={{ color: 'white', maxWidth: '800px', margin: '0 auto' }}>
-            <h2 style={{ color: 'white' }}>Join Our Community</h2>
-            <p style={{ fontSize: '1.25rem', marginBottom: '2rem' }}>
-              Whether you're a parent, athlete, coach, or community member, there's a place for you in our organization. Together, we can make a difference in the lives of children through the power of sports.
-            </p>
-            <Link to="/volunteer" className="btn btn-secondary">Sign Up Today</Link>
+      </div>
+
+      {/* Contact CTA */}
+      <div className="bg-white">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
+          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+            <span className="block">Ready to get started?</span>
+            <span className="block text-indigo-600">Contact us today.</span>
+          </h2>
+          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+            <div className="inline-flex rounded-md shadow">
+              <Link
+                to="/contact"
+                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300"
+              >
+                Contact Us
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </div>
           </div>
         </div>
-      </section>
-      
-      {/* Custom CSS for this page */}
-      <style jsx>{`
-        .team-card:hover .team-image {
-          transform: scale(1.1);
-        }
-        
-        .hover-zoom:hover {
-          transform: scale(1.03);
-        }
-        
-        .service-icon i {
-          transition: transform 0.3s ease;
-        }
-        
-        .service-icon:hover i {
-          transform: scale(1.2);
-        }
-        
-        .branch-box {
-          padding: 1.5rem;
-          border-radius: 8px;
-          background-color: #f8f8f8;
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .branch-box:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-        }
-        
-        .branch-box h4 {
-          color: var(--secondary);
-          margin-bottom: 1rem;
-        }
-        
-        @media (max-width: 768px) {
-          .team-card {
-            flex-direction: column;
-            text-align: center;
-          }
-          
-          .team-card img {
-            margin-right: 0;
-            margin-bottom: 1rem;
-          }
-        }
-      `}</style>
+      </div>
     </Layout>
   );
 };

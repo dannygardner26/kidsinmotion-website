@@ -57,6 +57,21 @@ const Layout = ({ children }) => {
     };
   }, [location.pathname]); // Re-run when route changes
 
+  const isTransparentHeaderPage = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about';
+
+  // Add/remove body class based on transparent header pages
+  useEffect(() => {
+    if (isTransparentHeaderPage) {
+      document.body.classList.add('transparent-header-page-body'); // Use a more generic class name
+    } else {
+      document.body.classList.remove('transparent-header-page-body');
+    }
+    // Cleanup on component unmount or path change
+    return () => {
+      document.body.classList.remove('transparent-header-page-body');
+    };
+  }, [location.pathname, isTransparentHeaderPage]); // Add isTransparentHeaderPage dependency
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -71,10 +86,15 @@ const Layout = ({ children }) => {
     setMenuOpen(!menuOpen);
   };
 
+  const isHomePage = location.pathname === '/';
+
+  // const isHomePage = location.pathname === '/'; // No longer needed directly here
+
   return (
     <div>
       {/* Header with scroll animation */}
-      <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
+      {/* Use isTransparentHeaderPage for the conditional class */}
+      <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${isTransparentHeaderPage && !isScrolled ? 'navbar-transparent' : ''}`}>
         <div className="container navbar-container">
           <Link to="/" className="navbar-logo">
             <svg width="40" height="40" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
@@ -160,9 +180,9 @@ const Layout = ({ children }) => {
         <div className="footer-wave">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
             <path
-              fill="#ede9e7"
+              fill="#2f506a"
               fillOpacity="1"
-              d="M0,32L48,37.3C96,43,192,53,288,58.7C384,64,480,64,576,58.7C672,53,768,43,864,48C960,53,1056,75,1152,74.7C1248,75,1344,53,1392,42.7L1440,32L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"
+              d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,75C840,75,960,53,1080,48C1200,43,1320,53,1380,58.7L1440,64L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
             ></path>
           </svg>
         </div>
