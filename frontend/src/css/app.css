@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Kids in Motion - Main CSS with animations and parallax support */
 
 :root {
@@ -29,6 +33,12 @@ body {
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
+  padding-top: 5rem; /* Default padding for non-home pages */
+}
+
+/* Remove top padding specifically for pages with transparent headers */
+body.transparent-header-page-body {
+  padding-top: 0;
 }
 
 .container {
@@ -124,6 +134,7 @@ a:hover {
 }
 
 .btn-secondary {
+  display: inline-block !important; /* Force display */
   background-color: var(--secondary);
   color: white;
   box-shadow: 0 2px 4px rgba(230, 79, 80, 0.2);
@@ -217,7 +228,6 @@ label {
 }
 
 .card:hover {
-  transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
@@ -245,6 +255,11 @@ label {
   padding: 6rem 0;
   text-align: center;
   overflow: hidden;
+}
+
+/* Remove top padding on hero section only for pages with transparent headers */
+body.transparent-header-page-body .hero { /* Keep this for the Home page */
+  padding-top: 0;
 }
 
 .hero-bg {
@@ -347,10 +362,18 @@ label {
   width: 100%;
   z-index: 1000;
   padding: 1rem 0;
-  transition: all 0.4s ease;
+  background-color: var(--primary); /* Default background */
+  transition: background-color 0.4s ease, box-shadow 0.4s ease, padding 0.4s ease;
+}
+
+/* Transparent state for Home page */
+.navbar.navbar-transparent {
+  background-color: transparent;
+  box-shadow: none; /* Remove shadow when transparent */
 }
 
 .navbar.scrolled {
+  padding: 0.5rem 0; /* Slightly reduce padding when scrolled */
   background-color: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
@@ -511,8 +534,9 @@ label {
 /* Section styles */
 .section {
   padding: 5rem 0;
-  position: relative;
-  overflow: hidden;
+  position: relative; /* Ensure stacking context */
+  z-index: 2; /* Stack above footer wave (z-index: 1) */
+  /* overflow: hidden; */ /* Removed to test button visibility */
 }
 
 .section-head {
@@ -621,6 +645,8 @@ label {
 .footer-content {
   position: relative;
   z-index: 2;
+  padding-left: 0; /* Remove horizontal padding */
+  padding-right: 0; /* Remove horizontal padding */
 }
 
 .footer-logo {
@@ -666,6 +692,32 @@ label {
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.7);
 }
+
+/* Footer Layout Adjustments */
+.footer .row {
+  display: flex;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens if needed */
+  gap: 2rem; /* Add space between columns */
+  justify-content: space-between; /* Distribute space */
+}
+
+.footer .col-third {
+  flex: 1; /* Allow columns to grow */
+  min-width: 250px; /* Minimum width before wrapping */
+  margin-bottom: 1.5rem; /* Add bottom margin for spacing when stacked */
+}
+
+/* Apply horizontal layout only on medium screens and up */
+@media (min-width: 768px) {
+  .footer .row {
+    flex-wrap: nowrap; /* Prevent wrapping on larger screens */
+  }
+  .footer .col-third {
+     flex-basis: 30%; /* Approximate width for three columns */
+     margin-bottom: 0; /* Remove bottom margin when horizontal */
+  }
+}
+
 
 /* Utilities */
 .text-center {

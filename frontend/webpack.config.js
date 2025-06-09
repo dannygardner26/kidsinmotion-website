@@ -17,7 +17,7 @@ module.exports = {
       directory: path.join(__dirname, 'public'), // Serve files from the public directory
     },
     compress: true,
-    port: 3000, // Use port 3000 (matches backend CORS config)
+    port: 3001, // Use port 3001 (matches backend CORS config)
     hot: true, // Enable Hot Module Replacement
     open: true, // Open the browser automatically
     proxy: {

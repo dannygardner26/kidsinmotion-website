@@ -595,16 +595,8 @@ const EventDetail = () => {
 
 // Helper function to get background image based on sport type
 function getSportBackground(sportType) {
-  if (!sportType) return '/img/events/default-bg.jpg';
-  
-  const sportTypeMap = {
-    'BASEBALL': '/img/events/baseball-bg.jpg',
-    'SOCCER': '/img/events/soccer-bg.jpg',
-    'BASKETBALL': '/img/events/basketball-bg.jpg',
-    'VOLLEYBALL': '/img/events/volleyball-bg.jpg',
-  };
-  
-  return sportTypeMap[sportType] || '/img/events/default-bg.jpg';
+  // Always return the placeholder image
+  return '/assets/placeholder.png';
 }
 
 export default EventDetail;

@@ -132,166 +132,184 @@ const Register = () => {
 
   return (
     <Layout>
-      <div className="container mt-4">
-        <div className="row">
-          <div className="col-md-8 offset-md-2"> {/* Adjusted column for better centering */}
-            <div className="card shadow-sm">
-              <div className="card-header bg-primary text-white">
-                <h1 className="mb-0">Create an Account</h1>
+      {/* Use flexbox for centering, allow more width for register form */}
+      <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]"> 
+        <div className="w-full max-w-xl"> {/* Increased max-width */}
+            <div className="card"> {/* Use theme card style */}
+              <div className="card-header"> {/* Use theme card-header style */}
+                <h1 className="text-2xl font-bold text-center mb-0">Create an Account</h1>
               </div>
               <div className="card-body">
                 {error && (
-                  <div className="alert alert-danger" role="alert">
-                    {error}
+                  // Use Tailwind for alert
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span className="block sm:inline">{error}</span>
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} noValidate> {/* Added noValidate to rely on custom validation */}
-                  <h3 className="mb-3">Personal Information</h3>
+                <form onSubmit={handleSubmit} noValidate>
+                  {/* Use theme heading style */}
+                  <h3 className="text-lg font-semibold mb-4 text-primary">Personal Information</h3> 
 
-                  <div className="row mb-3">
-                    <div className="col-md-6">
-                      <div className="form-group">
+                  {/* Use flexbox for row layout, gap for spacing */}
+                  <div className="flex flex-wrap -mx-2 mb-3"> 
+                    <div className="w-full md:w-1/2 px-2 mb-3 md:mb-0"> {/* Responsive width */}
+                      <div className="form-group"> {/* Use theme form-group */}
                         <label htmlFor="firstName">First Name*</label>
                         <input
                           type="text"
                           id="firstName"
                           name="firstName"
-                          className={`form-control ${formErrors.firstName ? 'is-invalid' : ''}`}
+                          // Use theme form-control
+                          className={`form-control ${formErrors.firstName ? 'border-red-500' : ''}`} 
                           value={formData.firstName}
                           onChange={handleChange}
                           required
                         />
                         {formErrors.firstName && (
-                          <div className="invalid-feedback">{formErrors.firstName}</div>
+                          <p className="text-red-500 text-xs italic mt-1">{formErrors.firstName}</p>
                         )}
                       </div>
                     </div>
 
-                    <div className="col-md-6">
-                      <div className="form-group">
+                    <div className="w-full md:w-1/2 px-2"> {/* Responsive width */}
+                      <div className="form-group"> {/* Use theme form-group */}
                         <label htmlFor="lastName">Last Name*</label>
                         <input
                           type="text"
                           id="lastName"
                           name="lastName"
-                          className={`form-control ${formErrors.lastName ? 'is-invalid' : ''}`}
+                          // Use theme form-control
+                          className={`form-control ${formErrors.lastName ? 'border-red-500' : ''}`} 
                           value={formData.lastName}
                           onChange={handleChange}
                           required
                         />
                         {formErrors.lastName && (
-                          <div className="invalid-feedback">{formErrors.lastName}</div>
+                          <p className="text-red-500 text-xs italic mt-1">{formErrors.lastName}</p>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="form-group mb-3">
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="email">Email*</label>
                     <input
                       type="email"
                       id="email"
                       name="email"
-                      className={`form-control ${formErrors.email ? 'is-invalid' : ''}`}
+                      // Use theme form-control
+                      className={`form-control ${formErrors.email ? 'border-red-500' : ''}`} 
                       value={formData.email}
                       onChange={handleChange}
                       required
                     />
                     {formErrors.email && (
-                      <div className="invalid-feedback">{formErrors.email}</div>
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p>
                     )}
                   </div>
 
-                  <div className="form-group mb-3">
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="phoneNumber">Phone Number*</label>
                     <input
                       type="tel"
                       id="phoneNumber"
                       name="phoneNumber"
-                      className={`form-control ${formErrors.phoneNumber ? 'is-invalid' : ''}`}
+                      // Use theme form-control
+                      className={`form-control ${formErrors.phoneNumber ? 'border-red-500' : ''}`} 
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       placeholder="XXX-XXX-XXXX"
                       required
                     />
                     {formErrors.phoneNumber && (
-                      <div className="invalid-feedback">{formErrors.phoneNumber}</div>
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.phoneNumber}</p>
                     )}
                   </div>
 
-                  <div className="form-group mb-3">
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="role">I am registering as a:</label>
-                    <select
+                    {/* Style select like form-control */}
+                    <select 
                       id="role"
                       name="role"
-                      className="form-select" // Use form-select for Bootstrap 5
+                      className="form-control" 
                       value={formData.role}
                       onChange={handleChange}
                     >
                       <option value="PARENT">Parent/Guardian</option>
                       <option value="VOLUNTEER">Volunteer</option>
-                      {/* Add other roles if necessary */}
                     </select>
                   </div>
 
-                  <h3 className="mt-4 mb-3">Account Security</h3>
+                  {/* Use theme heading style */}
+                  <h3 className="text-lg font-semibold mt-6 mb-4 text-primary">Account Security</h3> 
 
-                  <div className="form-group mb-3">
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="password">Password*</label>
                     <input
                       type="password"
                       id="password"
                       name="password"
-                      className={`form-control ${formErrors.password ? 'is-invalid' : ''}`}
+                      // Use theme form-control
+                      className={`form-control ${formErrors.password ? 'border-red-500' : ''}`} 
                       value={formData.password}
                       onChange={handleChange}
                       required
                     />
                     {formErrors.password && (
-                      <div className="invalid-feedback">{formErrors.password}</div>
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.password}</p>
                     )}
-                    <small className="form-text text-muted">Password must be at least 6 characters long.</small>
+                    {/* Use Tailwind for muted text */}
+                    <small className="text-gray-500 text-xs">Password must be at least 6 characters long.</small> 
                   </div>
 
-                  <div className="form-group mb-3">
+                  {/* Use theme form-group */}
+                  <div className="form-group"> 
                     <label htmlFor="confirmPassword">Confirm Password*</label>
                     <input
                       type="password"
                       id="confirmPassword"
                       name="confirmPassword"
-                      className={`form-control ${formErrors.confirmPassword ? 'is-invalid' : ''}`}
+                      // Use theme form-control
+                      className={`form-control ${formErrors.confirmPassword ? 'border-red-500' : ''}`} 
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       required
                     />
                     {formErrors.confirmPassword && (
-                      <div className="invalid-feedback">{formErrors.confirmPassword}</div>
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.confirmPassword}</p>
                     )}
                   </div>
 
-                  <div className="form-check mb-3"> {/* Use form-check for Bootstrap 5 */}
-                    <input className="form-check-input" type="checkbox" value="" id="termsCheck" required />
-                    <label className="form-check-label" htmlFor="termsCheck">
-                      I agree to the <Link to="/terms" target="_blank">Terms and Conditions</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link>.
+                  {/* Basic checkbox styling with Tailwind */}
+                  <div className="flex items-center mt-4 mb-4"> 
+                    <input className="mr-2 leading-tight" type="checkbox" id="termsCheck" required />
+                    <label className="text-sm text-gray-600" htmlFor="termsCheck">
+                      I agree to the <Link to="/terms" target="_blank" className="font-medium hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium hover:underline">Privacy Policy</Link>.
                     </label>
                   </div>
 
-                  <div className="d-grid gap-2">
-                    <button type="submit" className="btn btn-primary" disabled={isLoading}>
+                  {/* Use theme button styles, add w-full */}
+                  <div className="mt-6"> 
+                    <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
                       {isLoading ? 'Creating Account...' : 'Create Account'}
                     </button>
                   </div>
                 </form>
 
-                <div className="mt-3 text-center">
-                  <p>Already have an account? <Link to="/login">Login</Link></p>
+                <div className="mt-4 text-center"> {/* Adjusted margin */}
+                  <p className="text-sm text-gray-600">Already have an account? <Link to="/login" className="font-medium hover:underline">Login</Link></p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </div> {/* Closing tag for w-full max-w-xl */}
+        </div> 
+      {/* Removed the extra closing div here */}
     </Layout>
   );
 };

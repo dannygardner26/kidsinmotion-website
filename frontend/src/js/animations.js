@@ -1,12 +1,6 @@
 // animations.js - Centralized animation and interactive functionality
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Intersection Observer for scroll animations
-  initScrollAnimations();
-  
-  // Navbar scroll effects
-  initNavbarScrollEffects();
-  
   // Accordion functionality
   initAccordions();
   
@@ -16,58 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Parallax effects
   initParallax();
 });
-
-// Initialize scroll-based animations
-function initScrollAnimations() {
-  const observerOptions = {
-    root: null,
-    rootMargin: '0px',
-    threshold: 0.15
-  };
-
-  const handleIntersect = (entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        
-        // For elements that should stay visible after animation
-        if (!entry.target.classList.contains('keep-observing')) {
-          observer.unobserve(entry.target);
-        }
-      } else {
-        // Only toggle visibility for elements that need to be re-animated
-        if (entry.target.classList.contains('keep-observing')) {
-          entry.target.classList.remove('visible');
-        }
-      }
-    });
-  };
-
-  const observer = new IntersectionObserver(handleIntersect, observerOptions);
-  
-  // Observe elements with animation classes
-  const animatedElements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right');
-  animatedElements.forEach(el => observer.observe(el));
-}
-
-// Handle navbar scroll effects
-function initNavbarScrollEffects() {
-  const navbar = document.querySelector('.navbar');
-  if (!navbar) return;
-  
-  const handleScroll = () => {
-    if (window.scrollY > 50) {
-      navbar.classList.add('scrolled');
-    } else {
-      navbar.classList.remove('scrolled');
-    }
-  };
-  
-  window.addEventListener('scroll', handleScroll);
-  
-  // Initial check in case page is loaded scrolled down
-  handleScroll();
-}
 
 // Initialize accordion functionality
 function initAccordions() {
