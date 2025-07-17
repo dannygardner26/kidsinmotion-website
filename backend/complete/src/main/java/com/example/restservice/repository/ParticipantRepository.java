@@ -19,4 +19,7 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     // Find participants registered by a specific parent for a specific event
     List<Participant> findByParentUserAndEvent(User parentUser, Event event);
+
+    // Count participants for a specific event
+    long countByEvent(Event event);
 }

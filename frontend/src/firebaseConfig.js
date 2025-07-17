@@ -6,13 +6,13 @@ import { getStorage } from "firebase/storage";
 import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBxIdOtPIZdvXjZPTY7gSL7dQeG6yJSPjc",
-  authDomain: "kimwebsite-cd33a.firebaseapp.com",
-  projectId: "kimwebsite-cd33a",
-  storageBucket: "kimwebsite-cd33a.firebasestorage.app",
-  messagingSenderId: "644454554071",
-  appId: "1:644454554071:web:7e9751b1ddea843dd95392",
-  measurementId: "G-QWJY0T2PWZ"
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase

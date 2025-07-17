@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Layout = ({ children }) => {
-  const { currentUser, logout, loading } = useAuth();
+  const { currentUser, userProfile, logout, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -137,6 +137,13 @@ const Layout = ({ children }) => {
               <li className="navbar-item">
                 <Link to="/dashboard" className={`navbar-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
                   Dashboard
+                </Link>
+              </li>
+            )}
+            {currentUser && userProfile?.roles?.includes('ROLE_ADMIN') && (
+              <li className="navbar-item">
+                <Link to="/admin" className={`navbar-link ${location.pathname === '/admin' ? 'active' : ''}`}>
+                  Admin
                 </Link>
               </li>
             )}

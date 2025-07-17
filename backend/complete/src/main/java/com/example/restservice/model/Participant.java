@@ -35,7 +35,13 @@ public class Participant {
     @Column(length = 20)
     private RegistrationStatus status = RegistrationStatus.REGISTERED; // Default status
 
-    // Add other relevant fields: age, allergies, emergency contact, etc.
+    private Integer childAge;
+
+    @Lob
+    private String allergies;
+
+    @Size(max = 100)
+    private String emergencyContact;
 
     public Participant() {
     }
@@ -94,6 +100,30 @@ public class Participant {
 
     public void setStatus(RegistrationStatus status) {
         this.status = status;
+    }
+
+    public Integer getChildAge() {
+        return childAge;
+    }
+
+    public void setChildAge(Integer childAge) {
+        this.childAge = childAge;
+    }
+
+    public String getAllergies() {
+        return allergies;
+    }
+
+    public void setAllergies(String allergies) {
+        this.allergies = allergies;
+    }
+
+    public String getEmergencyContact() {
+        return emergencyContact;
+    }
+
+    public void setEmergencyContact(String emergencyContact) {
+        this.emergencyContact = emergencyContact;
     }
 
     // Enum for registration status

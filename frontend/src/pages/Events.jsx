@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { apiService } from '../services/api';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -16,30 +17,30 @@ const Events = () => {
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      let url = '/api/events';
+      let data;
       
       if (filter === 'upcoming') {
-        url = '/api/events/upcoming';
-      } else if (filter === 'past') {
-        url = '/api/events/past';
+        data = await apiService.getUpcomingEvents();
+      } else {
+        data = await apiService.getEvents();
+        
+        // Filter past events if needed
+        if (filter === 'past') {
+          data = data.filter(event => new Date(event.date) < new Date());
+        }
       }
       
-      const response = await fetch(url);
-      if (response.ok) {
-        let data = await response.json();
-        
-        // Apply sport type filter if needed
-        if (sportFilter !== 'all') {
-          data = data.filter(event => event.sportType === sportFilter);
-        }
-        
-        setEvents(data);
-        
-        // Extract unique sport types for filter
-        if (filter !== 'past') {
-          const types = [...new Set(data.map(event => event.sportType))];
-          setSportTypes(types);
-        }
+      // Apply sport type filter if needed
+      if (sportFilter !== 'all') {
+        data = data.filter(event => event.ageGroup === sportFilter);
+      }
+      
+      setEvents(data);
+      
+      // Extract unique age groups for filter
+      if (filter !== 'past') {
+        const types = [...new Set(data.map(event => event.ageGroup).filter(Boolean))];
+        setSportTypes(types);
       }
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -101,18 +102,18 @@ const Events = () => {
                     </div>
                     
                     <div className="col-half">
-                      <h3>Sport Type</h3>
+                      <h3>Age Group</h3>
                       <div className="form-group">
-                        <label htmlFor="sportFilter">Sport</label>
+                        <label htmlFor="sportFilter">Age Group</label>
                         <select 
                           id="sportFilter" 
                           className="form-control"
                           value={sportFilter}
                           onChange={(e) => setSportFilter(e.target.value)}
                         >
-                          <option value="all">All Sports</option>
-                          {sportTypes.map(sport => (
-                            <option key={sport} value={sport}>{sport}</option>
+                          <option value="all">All Age Groups</option>
+                          {sportTypes.map(ageGroup => (
+                            <option key={ageGroup} value={ageGroup}>{ageGroup}</option>
                           ))}
                         </select>
                       </div>
@@ -138,16 +139,20 @@ const Events = () => {
                 >
                   <div className="card event-card">
                     <div className="card-header">
-                      <h3>{event.title}</h3>
+                      <h3>{event.name}</h3>
                     </div>
                     <div className="card-body">
                       <div className="event-meta">
-                        <p><i className="far fa-calendar"></i> {formatDate(event.startDate)}</p>
-                        <p><i className="fas fa-map-marker-alt"></i> {event.location}</p>
-                        <p><i className="fas fa-running"></i> {event.sportType}</p>
-                        <p><i className="fas fa-users"></i> Available Spots: {event.maxParticipants - (event.participantCount || 0)}</p>
-                        {event.needsVolunteers && (
-                          <p><i className="fas fa-hand-helping"></i> Volunteers Needed: {event.volunteerCountNeeded}</p>
+                        <p><i className="far fa-calendar"></i> {formatDate(event.date)}</p>
+                        <p><i className="fas fa-map-marker-alt"></i> {event.location || 'TBD'}</p>
+                        {event.ageGroup && (
+                          <p><i className="fas fa-child"></i> {event.ageGroup}</p>
+                        )}
+                        {event.capacity && (
+                          <p><i className="fas fa-users"></i> Capacity: {event.capacity}</p>
+                        )}
+                        {event.price && event.price > 0 && (
+                          <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
                         )}
                       </div>
                       <p>{event.description}</p>

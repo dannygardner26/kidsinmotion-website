@@ -24,7 +24,15 @@ public class Event {
     @Lob // For potentially long descriptions
     private String description;
 
-    // Consider adding other relevant fields like location, capacity, etc.
+    @Size(max = 200)
+    private String location;
+
+    private Integer capacity;
+
+    @Size(max = 50)
+    private String ageGroup;
+
+    private Double price;
 
     public Event() {
     }
@@ -66,5 +74,37 @@ public class Event {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public Integer getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(Integer capacity) {
+        this.capacity = capacity;
+    }
+
+    public String getAgeGroup() {
+        return ageGroup;
+    }
+
+    public void setAgeGroup(String ageGroup) {
+        this.ageGroup = ageGroup;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
     }
 }
