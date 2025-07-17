@@ -4,13 +4,14 @@ import java.util.List;
 
 public class UserProfileResponse {
     private Long id;
-    // private String username; // Remove username
     private String email;
     private List<String> roles;
+    private String firstName;
+    private String lastName;
+    private String phoneNumber;
 
-    public UserProfileResponse(Long id, String email, List<String> roles) { // Remove username from constructor
+    public UserProfileResponse(Long id, String email, List<String> roles) {
         this.id = id;
-        // this.username = username;
         this.email = email;
         this.roles = roles;
     }
@@ -47,5 +48,29 @@ public class UserProfileResponse {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 }

@@ -10,7 +10,7 @@ import java.util.Set;
 @Entity
 @Table(name = "users",
        uniqueConstraints = {
-           // @UniqueConstraint(columnNames = "username"), // Removing username constraint
+           @UniqueConstraint(columnNames = "firebaseUid"),
            @UniqueConstraint(columnNames = "email")
        })
 public class User {
@@ -19,13 +19,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // @NotBlank // Removing username field
-    // @Size(max = 50)
-    // private String username;
-
     @NotBlank
-    @Size(max = 120)
-    private String password; // Store hashed password
+    @Size(max = 128)
+    @Column(name = "firebase_uid", nullable = false, unique = true)
+    private String firebaseUid; // Firebase UID for authentication
 
     @NotBlank
     @Size(max = 100)
@@ -53,12 +50,12 @@ public class User {
     public User() {
     }
 
-    // Updated constructor
-    public User(String firstName, String lastName, String email, String password, String phoneNumber) {
+    // Updated constructor for Firebase
+    public User(String firebaseUid, String firstName, String lastName, String email, String phoneNumber) {
+        this.firebaseUid = firebaseUid;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
-        this.password = password;
         this.phoneNumber = phoneNumber;
     }
 
@@ -71,20 +68,12 @@ public class User {
         this.id = id;
     }
 
-    // public String getUsername() { // Removing username getter/setter
-    //     return username;
-    // }
-    //
-    // public void setUsername(String username) {
-    //     this.username = username;
-    // }
-
-     public String getPassword() {
-        return password;
+    public String getFirebaseUid() {
+        return firebaseUid;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setFirebaseUid(String firebaseUid) {
+        this.firebaseUid = firebaseUid;
     }
 
     public String getEmail() {

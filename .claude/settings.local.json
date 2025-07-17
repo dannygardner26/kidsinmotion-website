@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(npm run build:*)",
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(dos2unix:*)",
+      "Bash(sed:*)",
+      "Bash(rm:*)"
+    ],
+    "deny": []
+  }
+}

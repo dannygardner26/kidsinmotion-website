@@ -1,31 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
 
 const EventDetail = () => {
   const { id } = useParams();
+  const { currentUser } = useAuth();
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   useEffect(() => {
-    // Check authentication status
-    const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-    
-    // Fetch event details
     fetchEventDetails();
   }, [id]);
   
   const fetchEventDetails = async () => {
     try {
-      const response = await fetch(`/api/events/${id}`);
-      if (!response.ok) {
-        throw new Error('Event not found');
-      }
-      const data = await response.json();
-      setEvent(data.event);
+      const eventData = await apiService.getEvent(id);
+      setEvent(eventData);
     } catch (error) {
       console.error('Error fetching event details:', error);
       setError(error.message);
@@ -82,8 +75,8 @@ const EventDetail = () => {
     );
   }
   
-  const isPastEvent = new Date(event.endDate) < new Date();
-  const sportBackground = getSportBackground(event.sportType);
+  const isPastEvent = new Date(event.date) < new Date();
+  const sportBackground = getSportBackground(event.ageGroup);
   
   return (
     <Layout>
@@ -92,21 +85,23 @@ const EventDetail = () => {
         <div className="hero-bg" style={{ backgroundImage: `url("${sportBackground}")` }}></div>
         
         <div className="container hero-content">
-          <span className="event-badge">{event.eventType}</span>
-          <h1>{event.title}</h1>
+          {event.ageGroup && <span className="event-badge">{event.ageGroup}</span>}
+          <h1>{event.name}</h1>
           <div className="event-meta-highlights">
             <div className="event-meta-item">
               <i className="far fa-calendar"></i>
-              <span>{formatDate(event.startDate)}</span>
+              <span>{formatDate(event.date)}</span>
             </div>
             <div className="event-meta-item">
               <i className="fas fa-map-marker-alt"></i>
-              <span>{event.location}</span>
+              <span>{event.location || 'TBD'}</span>
             </div>
-            <div className="event-meta-item">
-              <i className="fas fa-running"></i>
-              <span>{event.sportType}</span>
-            </div>
+            {event.price && event.price > 0 && (
+              <div className="event-meta-item">
+                <i className="fas fa-dollar-sign"></i>
+                <span>${event.price}</span>
+              </div>
+            )}
           </div>
         </div>
         
@@ -134,24 +129,25 @@ const EventDetail = () => {
                   
                   <h3>Event Details</h3>
                   <div className="event-meta mb-3">
-                    <p><i className="far fa-calendar"></i> <strong>Date:</strong> {formatDate(event.startDate)}</p>
-                    <p><i className="far fa-clock"></i> <strong>Duration:</strong> {formatDuration(event.startDate, event.endDate)}</p>
-                    <p><i className="fas fa-map-marker-alt"></i> <strong>Location:</strong> {event.location}</p>
-                    <p><i className="fas fa-running"></i> <strong>Sport:</strong> {event.sportType}</p>
-                    <p><i className="fas fa-tag"></i> <strong>Event Type:</strong> {event.eventType}</p>
+                    <p><i className="far fa-calendar"></i> <strong>Date:</strong> {formatDate(event.date)}</p>
+                    <p><i className="fas fa-map-marker-alt"></i> <strong>Location:</strong> {event.location || 'TBD'}</p>
+                    {event.ageGroup && (
+                      <p><i className="fas fa-child"></i> <strong>Age Group:</strong> {event.ageGroup}</p>
+                    )}
+                    {event.capacity && (
+                      <p><i className="fas fa-users"></i> <strong>Capacity:</strong> {event.capacity}</p>
+                    )}
+                    {event.price && event.price > 0 && (
+                      <p><i className="fas fa-dollar-sign"></i> <strong>Price:</strong> ${event.price}</p>
+                    )}
                   </div>
                   
                   <h3>What to Bring</h3>
                   <ul className="what-to-bring-list">
                     <li><i className="fas fa-tint"></i> Water bottle</li>
                     <li><i className="fas fa-tshirt"></i> Comfortable athletic clothes</li>
-                    <li><i className="fas fa-shoe-prints"></i> Appropriate footwear for {event.sportType.toLowerCase()}</li>
-                    {event.sportType === 'BASEBALL' && (
-                      <li><i className="fas fa-baseball-ball"></i> Baseball glove (if you have one, we'll provide if needed)</li>
-                    )}
-                    {event.sportType === 'SOCCER' && (
-                      <li><i className="fas fa-shield-alt"></i> Shin guards (if you have them, we'll provide if needed)</li>
-                    )}
+                    <li><i className="fas fa-shoe-prints"></i> Appropriate athletic footwear</li>
+                    <li><i className="fas fa-smile"></i> Positive attitude and ready to have fun!</li>
                   </ul>
                 </div>
               </div>
@@ -225,20 +221,22 @@ const EventDetail = () => {
                   ) : (
                     <>
                       <div className="spots-indicator">
-                        <div className="spots-label">Available Spots</div>
-                        <div className="spots-count">{event.availableSpots || 0}</div>
-                        <div className="spots-progress">
-                          <div 
-                            className="spots-progress-bar" 
-                            style={{ 
-                              width: `${Math.max(0, Math.min(100, 100 * (event.availableSpots / event.maxParticipants)))}%` 
-                            }}
-                          ></div>
-                        </div>
+                        <div className="spots-label">Capacity</div>
+                        <div className="spots-count">{event.capacity || 'Unlimited'}</div>
+                        {event.capacity && (
+                          <div className="spots-progress">
+                            <div 
+                              className="spots-progress-bar" 
+                              style={{ 
+                                width: '20%'
+                              }}
+                            ></div>
+                          </div>
+                        )}
                       </div>
                       
-                      {event.availableSpots > 0 ? (
-                        isLoggedIn ? (
+                      {!isPastEvent ? (
+                        currentUser ? (
                           <Link 
                             to={`/events/${event.id}/register`} 
                             className="btn btn-primary btn-block mt-3 register-btn"
@@ -263,12 +261,8 @@ const EventDetail = () => {
                           </div>
                         )
                       ) : (
-                        <div className="full-event">
-                          <div className="status-icon full">
-                            <i className="fas fa-users-slash"></i>
-                          </div>
-                          <p className="text-danger text-center">This event is currently full.</p>
-                          <button className="btn btn-outline btn-block mt-2">Join Waitlist</button>
+                        <div className="text-center">
+                          <p>This event has ended.</p>
                         </div>
                       )}
                     </>
@@ -276,42 +270,33 @@ const EventDetail = () => {
                 </div>
               </div>
               
-              {event.needsVolunteers && !isPastEvent && (
+              {!isPastEvent && (
                 <div className="card mt-4 slide-in-right" style={{ animationDelay: '0.2s' }}>
                   <div className="card-header volunteers-header">
                     <h3>Volunteer</h3>
                   </div>
                   <div className="card-body">
                     <div className="spots-indicator">
-                      <div className="spots-label">Volunteers Needed</div>
-                      <div className="spots-count">{event.volunteersNeeded || 0}</div>
+                      <div className="spots-label">Help Make This Event Great!</div>
+                      <div className="spots-count"><i className="fas fa-hands-helping"></i></div>
                     </div>
                     
-                    {event.volunteersNeeded > 0 ? (
-                      isLoggedIn ? (
-                        <Link 
-                          to={`/events/${event.id}/volunteer`} 
-                          className="btn btn-secondary btn-block mt-3"
-                        >
-                          Sign Up to Volunteer
-                        </Link>
-                      ) : (
-                        <div className="login-prompt">
-                          <p>Please login to sign up as a volunteer.</p>
-                          <Link 
-                            to={`/login?redirect=/events/${event.id}`} 
-                            className="btn btn-secondary btn-block mt-2"
-                          >
-                            Login to Volunteer
-                          </Link>
-                        </div>
-                      )
+                    {currentUser ? (
+                      <Link 
+                        to={`/events/${event.id}/volunteer`} 
+                        className="btn btn-secondary btn-block mt-3"
+                      >
+                        Sign Up to Volunteer
+                      </Link>
                     ) : (
-                      <div className="text-center">
-                        <div className="status-icon full">
-                          <i className="fas fa-check-circle"></i>
-                        </div>
-                        <p>We have all the volunteers we need for this event!</p>
+                      <div className="login-prompt">
+                        <p>Please login to sign up as a volunteer.</p>
+                        <Link 
+                          to={`/login?redirect=/events/${event.id}`} 
+                          className="btn btn-secondary btn-block mt-2"
+                        >
+                          Login to Volunteer
+                        </Link>
                       </div>
                     )}
                   </div>

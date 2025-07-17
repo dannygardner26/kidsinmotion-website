@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth } from '../firebaseConfig'; // Adjust path as necessary
+import { auth } from '../firebaseConfig';
+import { apiService } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -10,14 +11,42 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true); // Start loading until auth state is determined
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const syncUserWithBackend = async (user) => {
+    if (user) {
+      try {
+        // Sync user with backend
+        await apiService.syncUser();
+        
+        // Fetch user profile from backend
+        const profile = await apiService.getUserProfile();
+        setUserProfile(profile);
+        
+        console.log("User synced with backend:", profile);
+      } catch (error) {
+        console.error("Failed to sync user with backend:", error);
+        // Don't prevent login if backend sync fails
+      }
+    } else {
+      setUserProfile(null);
+    }
+  };
 
   useEffect(() => {
     // Listen for authentication state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
       setCurrentUser(user);
-      setLoading(false); // Auth state determined, stop loading
+      
+      if (user) {
+        await syncUserWithBackend(user);
+      } else {
+        setUserProfile(null);
+      }
+      
+      setLoading(false);
     });
 
     // Cleanup subscription on unmount
@@ -57,11 +86,26 @@ export const AuthProvider = ({ children }) => {
   };
 
 
+  const updateProfile = async (profileData) => {
+    try {
+      await apiService.updateUserProfile(profileData);
+      const updatedProfile = await apiService.getUserProfile();
+      setUserProfile(updatedProfile);
+      return updatedProfile;
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
+    userProfile,
     loading,
     logout,
-    getIdToken // Provide function to get token
+    updateProfile,
+    getIdToken, // Provide function to get token
+    syncUserWithBackend // For manual sync if needed
   };
 
   // Don't render children until loading is false to prevent rendering protected routes prematurely

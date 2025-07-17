@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const [registeredEvents, setRegisteredEvents] = useState([]);
   const [volunteerEvents, setVolunteerEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,67 +17,33 @@ const Dashboard = () => {
   const [cancelItemType, setCancelItemType] = useState(null);
   
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    if (!token) {
+    // Redirect if not logged in
+    if (!authLoading && !currentUser) {
       navigate('/login');
       return;
     }
     
-    // Fetch user data and registrations
-    fetchUserData(token);
-  }, [navigate]);
+    // Fetch user data and registrations when user is available
+    if (currentUser && userProfile) {
+      fetchUserData();
+    }
+  }, [currentUser, userProfile, authLoading, navigate]);
   
-  const fetchUserData = async (token) => {
+  const fetchUserData = async () => {
     try {
-      // Fetch user profile
-      const profileResponse = await fetch('/api/auth/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!profileResponse.ok) {
-        const errorText = await profileResponse.text();
-        throw new Error(`Failed to fetch user profile: ${profileResponse.status} ${profileResponse.statusText}. ${errorText}`);
-      }
-      
-      const userData = await profileResponse.json();
-      setUser(userData);
+      setIsLoading(true);
       
       // Fetch child registrations
-      const registrationsResponse = await fetch('/api/participants/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (registrationsResponse.ok) {
-        const registrationsData = await registrationsResponse.json();
-        setRegisteredEvents(registrationsData);
-      }
+      const registrationsData = await apiService.getMyRegistrations();
+      setRegisteredEvents(registrationsData);
       
       // Fetch volunteer sign-ups
-      const volunteersResponse = await fetch('/api/volunteers/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (volunteersResponse.ok) {
-        const volunteersData = await volunteersResponse.json();
-        setVolunteerEvents(volunteersData);
-      }
+      const volunteersData = await apiService.getMyVolunteerSignups();
+      setVolunteerEvents(volunteersData);
       
     } catch (error) {
       console.error('Error fetching user data:', error);
       setError(error.message);
-      
-      // If unauthorized, redirect to login
-      if (error.message.includes('unauthorized') || error.message.includes('401')) {
-        localStorage.removeItem('token');
-        navigate('/login');
-      }
     } finally {
       setIsLoading(false);
     }
@@ -97,17 +65,7 @@ const Dashboard = () => {
     if (!cancelItemId || cancelItemType !== 'registration') return;
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/participants/${cancelItemId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to cancel registration');
-      }
+      await apiService.cancelRegistration(cancelItemId);
       
       // Update registrations list
       setRegisteredEvents(registeredEvents.filter(reg => reg.id !== cancelItemId));
@@ -123,17 +81,7 @@ const Dashboard = () => {
     if (!cancelItemId || cancelItemType !== 'volunteer') return;
     
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/volunteers/${cancelItemId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to cancel volunteer sign-up');
-      }
+      await apiService.cancelVolunteerSignup(cancelItemId);
       
       // Update volunteer list
       setVolunteerEvents(volunteerEvents.filter(vol => vol.id !== cancelItemId));
@@ -160,7 +108,7 @@ const Dashboard = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
   
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <Layout>
         <div className="container mt-4">
@@ -200,7 +148,7 @@ const Dashboard = () => {
         <div className="hero-bg" style={{ backgroundImage: 'url("/assets/placeholder.png")' }}></div>
         
         <div className="container hero-content">
-          <h1>Welcome, {user?.firstName}!</h1>
+          <h1>Welcome, {userProfile?.firstName || currentUser?.displayName || 'User'}!</h1>
           <p>Manage your events, registrations, and volunteer activities.</p>
         </div>
         
@@ -224,12 +172,12 @@ const Dashboard = () => {
               </div>
               <div className="card-body">
                 <div className="profile-avatar">
-                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                  {userProfile?.firstName?.charAt(0) || currentUser?.displayName?.charAt(0) || 'U'}{userProfile?.lastName?.charAt(0) || ''}
                 </div>
                 <div className="profile-info">
-                  <p><strong>Name:</strong> {user?.firstName} {user?.lastName}</p>
-                  <p><strong>Email:</strong> {user?.email}</p>
-                  <p><strong>Phone:</strong> {user?.phoneNumber || 'Not provided'}</p>
+                  <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
+                  <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
+                  <p><strong>Phone:</strong> {userProfile?.phoneNumber || 'Not provided'}</p>
                 </div>
                 <Link to="/profile/edit" className="btn btn-outline btn-block mt-3">
                   <i className="fas fa-user-edit mr-2"></i> Edit Profile

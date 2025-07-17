@@ -35,7 +35,14 @@ public class Volunteer {
     @Column(length = 20)
     private SignupStatus status = SignupStatus.CONFIRMED; // Default status
 
-    // Add other relevant fields: availability, skills, notes, etc.
+    @Size(max = 200)
+    private String availability;
+
+    @Lob
+    private String skills;
+
+    @Lob
+    private String notes;
 
     public Volunteer() {
     }
@@ -94,6 +101,30 @@ public class Volunteer {
 
     public void setStatus(SignupStatus status) {
         this.status = status;
+    }
+
+    public String getAvailability() {
+        return availability;
+    }
+
+    public void setAvailability(String availability) {
+        this.availability = availability;
+    }
+
+    public String getSkills() {
+        return skills;
+    }
+
+    public void setSkills(String skills) {
+        this.skills = skills;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     // Enum for signup status
