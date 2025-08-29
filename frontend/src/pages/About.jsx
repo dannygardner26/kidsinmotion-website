@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import DynamicImage from '../components/DynamicImage';
 import { ArrowRight, Users, Award, Gift, Heart } from 'lucide-react';
 
 const About = () => {
@@ -71,7 +72,7 @@ const About = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <div className="relative bg-indigo-800 overflow-hidden">
+      <div className="relative bg-indigo-800 overflow-hidden" style={{ marginTop: '-5rem', paddingTop: '5rem' }}>
         <div className="max-w-7xl mx-auto">
           <div className="relative z-10 pb-8 bg-indigo-800 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
             <svg
@@ -98,16 +99,17 @@ const About = () => {
           </div>
         </div>
         <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-          <img
+          <DynamicImage
             className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
-            src="/assets/placeholder.png"
+            category="sportsClinics"
+            mode="random"
             alt="Kids playing sports"
           />
         </div>
       </div>
 
       {/* Our Purpose Section */}
-      <div className="py-16 bg-white overflow-hidden">
+      <div className="py-12 bg-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -120,8 +122,8 @@ const About = () => {
             </div>
           </div>
 
-          <div className="mt-16">
-            <div className="lg:grid lg:grid-cols-2 lg:gap-12">
+          <div className="mt-10">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-8">
               <div className="mt-10 lg:mt-0">
                 <p className="text-lg text-gray-500 mb-4">
                   Our organization provides free sports clinics across a variety of games, including baseball, soccer, and more. We also collect and distribute gently used sports equipment, ensuring kids who may not have access to the gear they need can still participate.
@@ -132,9 +134,10 @@ const About = () => {
               </div>
               <div className="relative mt-10 lg:mt-0">
                 <div className="aspect-w-16 aspect-h-9 lg:aspect-none">
-                  <img 
+                  <DynamicImage 
                     className="rounded-xl shadow-xl object-cover object-center transform transition-transform duration-300 hover:scale-105" 
-                    src="/assets/placeholder.png" 
+                    category="events"
+                    mode="random"
                     alt="Kids playing sports" 
                   />
                 </div>
@@ -145,7 +148,7 @@ const About = () => {
       </div>
 
       {/* What We Do Section */}
-      <div className="py-16 bg-gray-50">
+      <div className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -153,7 +156,7 @@ const About = () => {
             </h2>
           </div>
 
-          <div className="mt-16">
+          <div className="mt-10">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
               {services.map((service, index) => (
                 <div key={index} className="flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
@@ -176,7 +179,7 @@ const About = () => {
       </div>
 
       {/* Meet Our Team Section */}
-      <div className="py-16 bg-white">
+      <div className="py-12 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -187,7 +190,7 @@ const About = () => {
             </p>
           </div>
 
-          <div className="mt-16 space-y-12 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-12">
+          <div className="mt-10 space-y-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-8">
             {teamMembers.map((member, index) => (
               <div key={index} className="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg">
                 <div className="flex items-center space-x-6">
@@ -214,7 +217,7 @@ const About = () => {
       </div>
 
       {/* Our Structure Section */}
-      <div className="py-16 bg-gray-50">
+      <div className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
@@ -230,7 +233,7 @@ const About = () => {
               </p>
             </div>
 
-            <h3 className="mt-12 text-2xl font-medium text-gray-900 text-center">Branches</h3>
+            <h3 className="mt-8 text-2xl font-medium text-gray-900 text-center">Branches</h3>
             <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
               {branches.map((branch, index) => (
                 <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -240,7 +243,7 @@ const About = () => {
               ))}
             </div>
 
-            <div className="mt-12 bg-white rounded-xl shadow-md overflow-hidden p-6">
+            <div className="mt-8 bg-white rounded-xl shadow-md overflow-hidden p-6">
               <h3 className="text-2xl font-medium text-gray-900">Supporting Roles</h3>
               <p className="mt-4 text-base text-gray-500">
                 We also have dedicated volunteers who manage our social media presence, document our events through photography and video, maintain our website, and handle administrative tasks to keep the organization running smoothly.
