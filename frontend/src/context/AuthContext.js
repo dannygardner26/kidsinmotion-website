@@ -35,22 +35,38 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Listen for authentication state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
-      setCurrentUser(user);
-      
-      if (user) {
-        await syncUserWithBackend(user);
-      } else {
-        setUserProfile(null);
-      }
-      
+    // Add a timeout to ensure loading state doesn't last forever
+    const loadingTimeout = setTimeout(() => {
+      console.warn("Firebase auth loading timeout - setting loading to false");
       setLoading(false);
-    });
+    }, 5000);
 
-    // Cleanup subscription on unmount
-    return unsubscribe;
+    try {
+      // Listen for authentication state changes
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
+        setCurrentUser(user);
+        
+        if (user) {
+          await syncUserWithBackend(user);
+        } else {
+          setUserProfile(null);
+        }
+        
+        clearTimeout(loadingTimeout);
+        setLoading(false);
+      });
+
+      // Cleanup subscription on unmount
+      return () => {
+        clearTimeout(loadingTimeout);
+        unsubscribe();
+      };
+    } catch (error) {
+      console.error("Firebase auth initialization failed:", error);
+      clearTimeout(loadingTimeout);
+      setLoading(false);
+    }
   }, []);
 
   const logout = async () => {
