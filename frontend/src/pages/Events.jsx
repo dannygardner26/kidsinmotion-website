@@ -183,7 +183,7 @@ const Events = () => {
       </section>
       
       {/* Custom CSS for this page */}
-      <style jsx>{`
+      <style>{`
         .loading-spinner {
           display: inline-block;
           width: 50px;

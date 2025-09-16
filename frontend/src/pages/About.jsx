@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import DynamicImage from '../components/DynamicImage';
 import { ArrowRight, Users, Award, Gift, Heart } from 'lucide-react';
 
 const About = () => {
@@ -9,25 +10,25 @@ const About = () => {
       name: 'Danny Gardner',
       role: 'Co-Founder & Director',
       bio: 'Danny is a student-athlete dedicated to making sports accessible for every child. With a passion for giving back, he leads the organization\'s clinics and outreach programs.',
-      image: '/assets/placeholder.png'
+      image: '/assets/danny-profile.jpg'
     },
     {
       name: 'Ryan Spiess',
       role: 'Co-Founder & Operations Lead',
       bio: 'Ryan manages the logistics behind our clinics and donation drives, ensuring every event runs smoothly and every piece of equipment finds a home.',
-      image: '/assets/placeholder.png'
-    },
-    {
-      name: 'Ty Callahan',
-      role: 'Co-Founder & Community Coordinator',
-      bio: 'Ty connects with local communities to expand our reach, helping bring Kids in Motion\'s mission to more kids across the state.',
-      image: '/assets/placeholder.png'
+      image: '/assets/ryan-profile-new.jpg'
     },
     {
       name: 'Nate Wilner',
       role: 'Co-Founder & Marketing Lead',
       bio: 'Nate handles the creative side, promoting our events and spreading the word to ensure as many kids as possible can benefit from our programs.',
-      image: '/assets/placeholder.png'
+      image: '/assets/nate-profile-new.jpg'
+    },
+    {
+      name: 'Ty Callahan',
+      role: 'Community Coordinator',
+      bio: 'Ty connects with local communities to expand our reach, helping bring Kids in Motion\'s mission to more kids across the state.',
+      image: '/assets/ty-profile.jpg'
     }
   ];
 
@@ -65,241 +66,441 @@ const About = () => {
     {
       title: "Event Coordination",
       description: "This team secures locations for clinics, develops curriculum for players, coordinates equipment, and ensures everyone has a positive experience."
+    },
+    {
+      title: "Social Media Team",
+      description: "Manages our social media presence, documents events through photography and video, and handles creative content to spread our mission."
+    },
+    {
+      title: "Website Team",
+      description: "Maintains our website, handles online content updates, manages digital communications, and ensures our web presence effectively represents our organization."
     }
   ];
 
   return (
     <Layout>
       {/* Hero Section */}
-      <div className="relative bg-indigo-800 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="relative z-10 pb-8 bg-indigo-800 sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
-            <svg
-              className="hidden lg:block absolute right-0 inset-y-0 h-full w-48 text-indigo-800 transform translate-x-1/2"
-              fill="currentColor"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <polygon points="50,0 100,0 50,100 0,100" />
-            </svg>
-
-            <div className="pt-10 sm:pt-16 lg:pt-8 lg:pb-14 lg:mr-4 xl:mr-16">
-              <div className="sm:text-center lg:text-left px-4 sm:px-8 xl:pl-12">
-                <h1 className="text-4xl tracking-tight font-extrabold text-white sm:text-5xl md:text-6xl">
-                  <span className="block">About</span>
-                  <span className="block text-indigo-300">Kids in Motion</span>
-                </h1>
-                <p className="mt-3 text-base text-gray-200 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                  Kids in Motion was founded by student-athletes to make sports accessible to all children. Through free clinics and donated equipment, we empower kids to play, grow, and build lifelong skills.
-                </p>
-              </div>
+      <section style={{ 
+        background: 'linear-gradient(135deg, #4a7ca3 0%, #2f506a 100%)',
+        color: 'white', 
+        marginTop: '-5rem', 
+        paddingTop: '7rem', 
+        paddingBottom: '4rem',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Background decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: '-50px',
+          right: '-50px',
+          width: '200px',
+          height: '200px',
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '50%'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          bottom: '-100px',
+          left: '-100px',
+          width: '300px',
+          height: '300px',
+          background: 'rgba(255,255,255,0.05)',
+          borderRadius: '50%'
+        }}></div>
+        
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', position: 'relative', zIndex: 2 }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div style={{
+              display: 'inline-block',
+              backgroundColor: 'rgba(255,255,255,0.2)',
+              padding: '0.5rem 1.5rem',
+              borderRadius: '25px',
+              marginBottom: '1.5rem',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '1px'
+            }}>
+              Our Story
+            </div>
+            
+            <h1 style={{ 
+              fontSize: '3.5rem', 
+              fontWeight: '800', 
+              marginBottom: '1.5rem', 
+              margin: '0 0 1.5rem 0',
+              color: 'white'
+            }}>
+              About Kids in Motion
+            </h1>
+            
+            <p style={{ 
+              fontSize: '1.3rem', 
+              lineHeight: '1.7', 
+              opacity: '0.95', 
+              maxWidth: '750px', 
+              margin: '0 auto',
+              fontWeight: '300'
+            }}>
+              Kids in Motion was founded by passionate student-athletes to make sports accessible to all children. Through free clinics and donated equipment, we empower kids to play, grow, and build lifelong skills.
+            </p>
+          </div>
+          
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              display: 'inline-block',
+              background: 'rgba(255,255,255,0.15)',
+              padding: '1.5rem',
+              borderRadius: '20px',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}>
+              <img
+                src="/assets/team-huddle.jpg"
+                alt="Kids in Motion team building community"
+                style={{ 
+                  width: '100%', 
+                  maxWidth: '700px',
+                  height: 'auto', 
+                  borderRadius: '16px', 
+                  boxShadow: '0 25px 50px rgba(0,0,0,0.3)'
+                }}
+              />
             </div>
           </div>
         </div>
-        <div className="lg:absolute lg:inset-y-0 lg:right-0 lg:w-1/2">
-          <img
-            className="h-56 w-full object-cover sm:h-72 md:h-96 lg:w-full lg:h-full"
-            src="/assets/placeholder.png"
-            alt="Kids playing sports"
-          />
-        </div>
-      </div>
+      </section>
 
-      {/* Our Purpose Section */}
-      <div className="py-16 bg-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Our Purpose
-            </h2>
-            <div className="mt-4 max-w-3xl mx-auto text-xl text-gray-500">
-              <p>
-                At Kids in Motion, we believe that every child deserves the opportunity to play sports, regardless of their background. Sports teach teamwork, discipline, and resilience—values that extend far beyond the game.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-16">
-            <div className="lg:grid lg:grid-cols-2 lg:gap-12">
-              <div className="mt-10 lg:mt-0">
-                <p className="text-lg text-gray-500 mb-4">
-                  Our organization provides free sports clinics across a variety of games, including baseball, soccer, and more. We also collect and distribute gently used sports equipment, ensuring kids who may not have access to the gear they need can still participate.
-                </p>
-                <p className="text-lg text-gray-500">
-                  By connecting passionate athletes with communities in need, we aim to create a supportive environment where every child can discover their potential. Our goal is to remove barriers, foster a love for sports, and make sure no kid is left on the sidelines.
-                </p>
-              </div>
-              <div className="relative mt-10 lg:mt-0">
-                <div className="aspect-w-16 aspect-h-9 lg:aspect-none">
-                  <img 
-                    className="rounded-xl shadow-xl object-cover object-center transform transition-transform duration-300 hover:scale-105" 
-                    src="/assets/placeholder.png" 
-                    alt="Kids playing sports" 
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* What We Do Section */}
-      <div className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              What We Do
-            </h2>
+      <section className="section" style={{ backgroundColor: '#f0f9ff' }}>
+        <div className="container">
+          <div className="section-head text-center">
+            <h2 style={{ color: '#1e40af' }}>What We Do</h2>
+            <p style={{ color: '#1e40af', opacity: '0.8' }}>Three core pillars that drive our mission</p>
           </div>
 
-          <div className="mt-16">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-              {services.map((service, index) => (
-                <div key={index} className="flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                  <div className="px-6 py-8">
-                    <div className="flex items-center justify-center h-16">
-                      {service.icon}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
+            gap: '1.5rem',
+            marginTop: '2rem'
+          }}>
+            {services.map((service, index) => {
+              const colors = [
+                { bg: '#e1f5fe', border: '#2f506a', text: '#1a365d', icon: '#2f506a' }, // Light blue
+                { bg: '#f0f9ff', border: '#4a7ca3', text: '#2d3748', icon: '#4a7ca3' }, // Lighter blue  
+                { bg: '#e6f3ff', border: '#1e40af', text: '#1e3a8a', icon: '#1e40af' }  // Medium blue
+              ];
+              const colorScheme = colors[index % colors.length];
+              
+              return (
+                <div 
+                  key={index} 
+                  style={{
+                    backgroundColor: colorScheme.bg,
+                    border: `3px solid ${colorScheme.border}`,
+                    borderRadius: '20px',
+                    padding: '2.5rem 2rem',
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-10px) scale(1.02)';
+                    e.currentTarget.style.boxShadow = `0 25px 50px ${colorScheme.border}30`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {/* Background Pattern */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    right: '-50%',
+                    width: '200%',
+                    height: '200%',
+                    background: `radial-gradient(circle, ${colorScheme.border}15 0%, transparent 70%)`,
+                    zIndex: 0
+                  }}></div>
+                  
+                  {/* Content */}
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{
+                      width: '80px',
+                      height: '80px',
+                      backgroundColor: 'white',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 1.5rem',
+                      boxShadow: `0 10px 30px ${colorScheme.border}40`,
+                      border: `2px solid ${colorScheme.border}`
+                    }}>
+                      <div style={{ color: colorScheme.icon, fontSize: '2rem' }}>
+                        {React.cloneElement(service.icon, { 
+                          style: { width: '40px', height: '40px', color: colorScheme.icon }
+                        })}
+                      </div>
                     </div>
-                    <h3 className="mt-6 text-xl font-medium text-gray-900 text-center">
+                    
+                    <h3 style={{ 
+                      fontSize: '1.5rem', 
+                      fontWeight: 'bold', 
+                      color: colorScheme.text,
+                      marginBottom: '1rem'
+                    }}>
                       {service.title}
                     </h3>
-                    <p className="mt-4 text-base text-gray-500 text-center">
+                    
+                    <p style={{ 
+                      color: colorScheme.text, 
+                      lineHeight: '1.6',
+                      fontSize: '1rem',
+                      opacity: '0.9'
+                    }}>
                       {service.description}
                     </p>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Meet Our Team Section */}
-      <div className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Meet Our Team
-            </h2>
-            <p className="max-w-2xl mt-4 text-xl text-gray-500 mx-auto">
-              The passionate individuals behind Kids in Motion
-            </p>
+      <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
+        <div className="container">
+          <div className="section-head text-center">
+            <h2>Meet Our Team</h2>
+            <p>The passionate individuals behind Kids in Motion</p>
           </div>
 
-          <div className="mt-16 space-y-12 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-x-6 lg:gap-y-12">
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gap: '1.5rem',
+            marginTop: '2rem'
+          }}>
             {teamMembers.map((member, index) => (
-              <div key={index} className="group relative bg-white p-6 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-500 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg">
-                <div className="flex items-center space-x-6">
-                  <div className="flex-shrink-0">
-                    <img 
-                      className="h-24 w-24 rounded-full object-cover ring-4 ring-indigo-50 transition-all duration-300 group-hover:ring-indigo-200" 
-                      src={member.image} 
-                      alt={member.name}
-                      onError={(e) => {
-                        e.target.src = '/assets/placeholder.png';
-                      }} 
-                    />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-medium text-gray-900">{member.name}</h3>
-                    <p className="text-indigo-600 text-sm font-medium">{member.role}</p>
-                    <p className="mt-2 text-base text-gray-500">{member.bio}</p>
-                  </div>
-                </div>
+              <div 
+                key={index} 
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '12px',
+                  padding: '2rem',
+                  textAlign: 'center',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-5px)';
+                  e.currentTarget.style.boxShadow = '0 15px 30px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 5px 15px rgba(0,0,0,0.1)';
+                }}
+              >
+                <img 
+                  src={member.image} 
+                  alt={member.name}
+                  style={{ 
+                    width: '100px', 
+                    height: '100px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                    margin: '0 auto 1.5rem',
+                    border: '4px solid #e5e7eb'
+                  }}
+                  onError={(e) => {
+                    e.target.src = '/assets/placeholder.png';
+                  }} 
+                />
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#2f506a' }}>
+                  {member.name}
+                </h3>
+                <p style={{ color: '#e53e3e', fontWeight: '600', marginBottom: '1rem', fontSize: '0.9rem' }}>
+                  {member.role}
+                </p>
+                <p style={{ color: '#6b7280', lineHeight: '1.6', fontSize: '0.95rem' }}>
+                  {member.bio}
+                </p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Our Structure Section */}
-      <div className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-              Our Structure
-            </h2>
+      {/* How Our Team Operates Section */}
+      <section className="section" style={{ backgroundColor: 'white' }}>
+        <div className="container">
+          <div className="section-head text-center">
+            <h2>How Our Team Operates</h2>
+            <p>Our organizational structure built for maximum impact</p>
           </div>
 
-          <div className="mt-12 max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl shadow-md overflow-hidden p-6">
-              <h3 className="text-2xl font-medium text-gray-900">Board of Directors</h3>
-              <p className="mt-4 text-base text-gray-500">
-                Kids in Motion is led by our board of directors, consisting of the four co-founders and advisors from the community. The board meets regularly to plan events, coordinate fundraisers, and ensure the organization stays true to its mission.
-              </p>
-            </div>
+          {/* Board of Directors */}
+          <div style={{ 
+            textAlign: 'center', 
+            marginBottom: '4rem',
+            backgroundColor: '#2f506a',
+            color: 'white',
+            padding: '3rem 2rem',
+            borderRadius: '16px',
+            boxShadow: '0 10px 30px rgba(47, 80, 106, 0.3)'
+          }}>
+            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+              Board of Directors
+            </h3>
+            <p style={{ fontSize: '1.1rem', opacity: '0.9', maxWidth: '600px', margin: '0 auto' }}>
+              Kids in Motion is led by our board of directors, consisting of the three co-founders and advisors from the community. 
+              The board meets regularly to plan events, coordinate fundraisers, and ensure the organization stays true to its mission.
+            </p>
+          </div>
 
-            <h3 className="mt-12 text-2xl font-medium text-gray-900 text-center">Branches</h3>
-            <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* Organizational Flow */}
+          <div style={{ position: 'relative', marginBottom: '3rem' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '2rem',
+              position: 'relative'
+            }}>
               {branches.map((branch, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
-                  <h4 className="text-xl font-medium text-indigo-600">{branch.title}</h4>
-                  <p className="mt-2 text-gray-500">{branch.description}</p>
+                <div 
+                  key={index}
+                  style={{
+                    position: 'relative',
+                    backgroundColor: 'white',
+                    border: '3px solid #e5e7eb',
+                    borderRadius: '20px',
+                    padding: '2.5rem 2rem',
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#2f506a';
+                    e.currentTarget.style.transform = 'translateY(-8px)';
+                    e.currentTarget.style.boxShadow = '0 20px 40px rgba(47, 80, 106, 0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#e5e7eb';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  {/* Branch Number */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: '#e53e3e',
+                    color: 'white',
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 'bold',
+                    fontSize: '1.2rem'
+                  }}>
+                    {index + 1}
+                  </div>
+                  
+                  <h4 style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: 'bold', 
+                    color: '#2f506a',
+                    marginBottom: '1rem',
+                    marginTop: '0.5rem'
+                  }}>
+                    {branch.title}
+                  </h4>
+                  <p style={{ 
+                    color: '#6b7280', 
+                    lineHeight: '1.6',
+                    fontSize: '1rem'
+                  }}>
+                    {branch.description}
+                  </p>
                 </div>
               ))}
             </div>
-
-            <div className="mt-12 bg-white rounded-xl shadow-md overflow-hidden p-6">
-              <h3 className="text-2xl font-medium text-gray-900">Supporting Roles</h3>
-              <p className="mt-4 text-base text-gray-500">
-                We also have dedicated volunteers who manage our social media presence, document our events through photography and video, maintain our website, and handle administrative tasks to keep the organization running smoothly.
-              </p>
-            </div>
           </div>
+
         </div>
-      </div>
+      </section>
 
       {/* Get Involved CTA */}
-      <div className="py-12 bg-indigo-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
-            <div>
-              <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
+      <section className="section" style={{ backgroundColor: '#2f506a', color: 'white' }}>
+        <div className="container">
+          <div className="section-head text-center" style={{ marginBottom: '3rem' }}>
+            <h2 style={{ color: 'white', marginBottom: '1rem' }}>Get Involved</h2>
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem' }}>Ready to make a difference in your community?</p>
+          </div>
+          
+          <div className="row items-center">
+            <div className="col-half">
+              <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
                 Join Our Community
-              </h2>
-              <p className="mt-3 max-w-md mx-auto text-lg text-indigo-200 sm:text-xl md:mt-5 md:max-w-3xl">
+              </h3>
+              <p style={{ fontSize: '1.2rem', lineHeight: '1.6', opacity: '0.9' }}>
                 Whether you're a parent, athlete, coach, or community member, there's a place for you in our organization. Together, we can make a difference in the lives of children through the power of sports.
               </p>
             </div>
-            <div className="mt-10 lg:mt-0 flex flex-col sm:flex-row sm:justify-center lg:justify-start gap-4">
-              <Link 
-                to="/volunteer" 
-                className="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 md:py-4 md:text-lg md:px-10 transition-all duration-300"
-              >
-                Become a Volunteer
-              </Link>
-              <Link 
-                to="/donate" 
-                className="flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-500 hover:bg-indigo-600 md:py-4 md:text-lg md:px-10 transition-all duration-300"
-              >
-                Make a Donation
-              </Link>
+            <div className="col-half" style={{ textAlign: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: '0 auto' }}>
+                <Link 
+                  to="/volunteer" 
+                  className="btn"
+                  style={{
+                    backgroundColor: 'white',
+                    color: '#2f506a',
+                    padding: '1rem 2rem',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f8f8'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                >
+                  Become a Volunteer
+                </Link>
+                <Link 
+                  to="/donate" 
+                  className="btn"
+                  style={{
+                    backgroundColor: '#e53e3e',
+                    color: 'white',
+                    padding: '1rem 2rem',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    fontWeight: 'bold',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#c53030'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#e53e3e'}
+                >
+                  Make a Donation
+                </Link>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Contact CTA */}
-      <div className="bg-white">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-            <span className="block">Ready to get started?</span>
-            <span className="block text-indigo-600">Contact us today.</span>
-          </h2>
-          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-            <div className="inline-flex rounded-md shadow">
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-all duration-300"
-              >
-                Contact Us
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
     </Layout>
   );
 };

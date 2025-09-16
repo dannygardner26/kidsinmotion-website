@@ -1,7 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext'; // Import AuthProvider and useAuth
-import Layout from './components/Layout'; // Import Layout for consistent structure
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Layout from './components/Layout';
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -26,20 +26,14 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    // Optional: Show a loading spinner or skeleton screen while checking auth state
-    // Ensure Layout is used here if you want consistent header/footer during load
     return <Layout><div className="container mt-4 text-center"><p>Loading authentication...</p></div></Layout>;
   }
 
   if (!currentUser) {
-    // Redirect them to the /login page, but save the current location they were
-    // trying to go to when they were redirected. This allows us to send them
-    // along to that page after they login, which is a nicer user experience
-    // than dropping them off on the home page.
     return <Navigate to={`/login?redirect=${location.pathname}`} replace />;
   }
 
-  return children; // Render the children (the protected page) if authenticated
+  return children;
 };
 
 // Component to prevent logged-in users from accessing login/register
@@ -51,17 +45,15 @@ const PublicRoute = ({ children }) => {
     }
 
     if (currentUser) {
-        // Redirect logged-in users away from login/register to the dashboard
         return <Navigate to="/dashboard" replace />;
     }
 
-    return children; // Render login/register if not logged in
+    return children;
 }
-
 
 const App = () => {
   return (
-    <AuthProvider> {/* Wrap the entire app with AuthProvider */}
+    <AuthProvider>
       <Router>
         <Suspense fallback={
           <Layout>
@@ -83,7 +75,6 @@ const App = () => {
           {/* Routes only accessible when logged OUT */}
            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-
 
           {/* Protected Routes - Require Login */}
           <Route
@@ -126,8 +117,6 @@ const App = () => {
               </ProtectedRoute>
             }
           />
-          {/* Add other protected routes here */}
-
 
           {/* Catch-all Not Found Route */}
           <Route path="*" element={<NotFound />} />

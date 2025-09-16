@@ -238,7 +238,7 @@ const CreateEvent = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .form-group {
           margin-bottom: 1.5rem;
         }
