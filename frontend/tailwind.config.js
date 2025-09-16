@@ -5,7 +5,17 @@ module.exports = {
     "./public/index.html"        // Scan the main HTML file
   ],
   theme: {
-    extend: {}, // You can add custom theme settings here later
+    extend: {
+      colors: {
+        'imperial-red': '#e64f50',
+        'indigo-dye': '#2f506a',
+        'isabelline': '#ede9e7',
+        'primary': '#2f506a',
+        'primary-light': '#3a6587',
+        'secondary': '#e64f50',
+        'secondary-light': '#eb7172',
+      },
+    },
   },
   plugins: [], // You can add Tailwind plugins here later
 }

@@ -97,13 +97,7 @@ const Layout = ({ children }) => {
       <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${isTransparentHeaderPage && !isScrolled ? 'navbar-transparent' : ''}`}>
         <div className="container navbar-container">
           <Link to="/" className="navbar-logo">
-            <svg width="40" height="40" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-              <path fill="#2f506a" d="M256 48c-79.5 0-144 64.5-144 144s64.5 144 144 144 144-64.5 144-144-64.5-144-144-144zm0 96c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48z"/>
-              <path fill="#e64f50" d="M256 0c-70.7 0-128 57.3-128 128 0 70.7 57.3 128 128 128 70.7 0 128-57.3 128-128C384 57.3 326.7 0 256 0zm0 224c-52.9 0-96-43.1-96-96s43.1-96 96-96 96 43.1 96 96-43.1 96-96 96z"/>
-              <path fill="#2f506a" d="M240 256v160c0 26.5 21.5 48 48 48s48-21.5 48-48V256h-96z"/>
-              <path fill="#e64f50" d="M176 256v160c0 26.5 21.5 48 48 48s48-21.5 48-48V256h-96z"/>
-            </svg>
-            Kids in Motion
+            <img src="/realKIMlogo-transparent.png" alt="Kids in Motion" width="60" height="60" />
           </Link>
           
           <button 
@@ -199,13 +193,7 @@ const Layout = ({ children }) => {
             <div className="col-third">
               <div className="footer-logo">
                 <Link to="/" className="navbar-logo" style={{ color: 'white' }}>
-                  <svg width="40" height="40" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="white" d="M256 48c-79.5 0-144 64.5-144 144s64.5 144 144 144 144-64.5 144-144-64.5-144-144-144zm0 96c26.5 0 48 21.5 48 48s-21.5 48-48 48-48-21.5-48-48 21.5-48 48-48z"/>
-                    <path fill="#eb7172" d="M256 0c-70.7 0-128 57.3-128 128 0 70.7 57.3 128 128 128 70.7 0 128-57.3 128-128C384 57.3 326.7 0 256 0zm0 224c-52.9 0-96-43.1-96-96s43.1-96 96-96 96 43.1 96 96-43.1 96-96 96z"/>
-                    <path fill="white" d="M240 256v160c0 26.5 21.5 48 48 48s48-21.5 48-48V256h-96z"/>
-                    <path fill="#eb7172" d="M176 256v160c0 26.5 21.5 48 48 48s48-21.5 48-48V256h-96z"/>
-                  </svg>
-                  Kids in Motion
+                  <img src="/realKIMlogo-transparent.png" alt="Kids in Motion" width="60" height="60" />
                 </Link>
               </div>
               <p className="mb-2">Empowering every kid to play and learn through sports.</p>
@@ -237,9 +225,8 @@ const Layout = ({ children }) => {
             <div className="col-third">
               <h4 style={{ color: 'white' }}>Contact Us</h4>
               <ul className="footer-links">
-                <li><i className="fas fa-envelope mr-2"></i> info@kidsinmotion.org</li>
-                <li><i className="fas fa-phone mr-2"></i> (555) 123-4567</li>
-                <li><i className="fas fa-map-marker-alt mr-2"></i> 123 Sports Ave, Anytown USA</li>
+                <li><i className="fas fa-envelope mr-2"></i> kidsinmotion0@gmail.com</li>
+                <li><i className="fas fa-phone mr-2"></i> (484) 885-6284</li>
               </ul>
             </div>
           </div>

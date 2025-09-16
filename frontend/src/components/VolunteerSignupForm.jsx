@@ -167,7 +167,7 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .volunteer-form {
           max-width: 600px;
           margin: 0 auto;
