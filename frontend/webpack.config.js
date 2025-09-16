@@ -31,18 +31,20 @@ module.exports = {
         changeOrigin: true, // Recommended for avoiding CORS issues with backend
       },
     },
-    historyApiFallback: {
-      disableDotRule: true,
-      rewrites: [
-        { from: /\.css$/, to: function(context) {
-          return context.parsedUrl.pathname;
-        }}
-      ]
-    }, // Important for single-page applications using React Router
+    historyApiFallback: true, // Important for single-page applications using React Router
     devMiddleware: {
       index: false, // Disable serve-index middleware to prevent URI malformed errors
     },
+    headers: {
+      'X-Content-Type-Options': 'nosniff',
+    },
     setupMiddlewares: (middlewares, devServer) => {
+      devServer.app.use((req, res, next) => {
+        if (req.url.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+        }
+        next();
+      });
       devServer.app.use((err, req, res, next) => {
         if (err instanceof URIError) {
           console.warn('URI malformed error caught and ignored:', err.message);
@@ -69,7 +71,7 @@ module.exports = {
       {
         test: /\.css$/, // Target CSS files
         use: [
-          MiniCssExtractPlugin.loader, // Extracts CSS into separate files
+          'style-loader', // Inject CSS into the DOM
           'css-loader', // Translates CSS into CommonJS
           'postcss-loader' // Process CSS with PostCSS (includes Tailwind)
         ],
@@ -95,9 +97,6 @@ module.exports = {
       cache: false, // Disable caching to ensure fresh builds
       hash: false, // Let contenthash handle versioning
       minify: false // Disable minification in dev mode
-    }),
-    new MiniCssExtractPlugin({
-      filename: 'static/css/[name].css', // Output CSS filename pattern without hash for dev
     }),
     // Add other plugins if needed
   ],
