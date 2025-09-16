@@ -109,3 +109,8 @@ temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Gradle cache and wrapper
+.gradle/
+gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
