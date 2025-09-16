@@ -216,7 +216,7 @@ const AdminDashboard = () => {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .admin-header {
           text-align: center;
           padding: 2rem 0;

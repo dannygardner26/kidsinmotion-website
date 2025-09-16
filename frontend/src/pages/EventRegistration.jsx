@@ -124,7 +124,7 @@ const EventRegistration = () => {
         />
       </div>
       
-      <style jsx>{`
+      <style>{`
         .loading-container {
           display: flex;
           flex-direction: column;

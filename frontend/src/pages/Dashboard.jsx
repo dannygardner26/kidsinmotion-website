@@ -417,7 +417,7 @@ const Dashboard = () => {
       )}
       
       {/* Custom CSS for this page */}
-      <style jsx>{`
+      <style>{`
         .profile-card {
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
         }

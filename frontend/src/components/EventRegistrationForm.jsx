@@ -142,7 +142,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .registration-form {
           max-width: 600px;
           margin: 0 auto;

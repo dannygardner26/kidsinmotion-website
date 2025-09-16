@@ -325,7 +325,7 @@ const EventDetail = () => {
       </section>
       
       {/* Custom CSS for this page */}
-      <style jsx>{`
+      <style>{`
         .event-badge {
           display: inline-block;
           background-color: var(--secondary);
