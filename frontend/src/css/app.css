@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Kids in Motion - Main CSS with animations and parallax support */
+/* Kids in Motion - Main CSS with animations and parallax support - Updated v2 */
 
 :root {
   --imperial-red: #e64f50;
@@ -405,6 +405,11 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
   border-radius: 8px;
   object-fit: contain;
+}
+
+/* Enhanced logo visibility when scrolled */
+.navbar.scrolled .navbar-logo img {
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)) brightness(1.1) contrast(1.1);
 }
 
 .navbar-logo:hover img {
