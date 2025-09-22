@@ -382,6 +382,7 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .navbar-logo {
@@ -402,9 +403,11 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   margin-right: 10px;
   vertical-align: middle;
   transition: all 0.3s ease;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
   border-radius: 8px;
   object-fit: contain;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 4px;
 }
 
 /* Enhanced logo visibility when scrolled */
@@ -427,10 +430,14 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   list-style: none;
   margin: 0;
   padding: 0;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .navbar-item {
-  margin-left: 1.5rem;
+  /* Remove margin-left since we're using gap now */
 }
 
 .navbar-link {
@@ -828,6 +835,10 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   
   .navbar-item {
     margin: 1rem 0;
+  }
+
+  .navbar-menu {
+    gap: 0; /* Reset gap for mobile menu */
   }
   
   .hero h1 {
