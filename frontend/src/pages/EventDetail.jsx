@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import { assetUrls } from '../utils/firebaseAssets';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -581,7 +582,7 @@ const EventDetail = () => {
 // Helper function to get background image based on sport type
 function getSportBackground(sportType) {
   // Always return the placeholder image
-  return '/assets/placeholder.png';
+  return assetUrls['placeholder.png'];
 }
 
 export default EventDetail;

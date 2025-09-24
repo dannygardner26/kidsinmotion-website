@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { apiService } from '../services/api';
+import { assetUrls } from '../utils/firebaseAssets';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -59,7 +60,7 @@ const Events = () => {
     <Layout>
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/assets/placeholder.png")' }}></div>
+        <div className="hero-bg" style={{ backgroundImage: `url("${assetUrls['placeholder.png']}")` }}></div>
         
         <div className="container hero-content">
           <h1>Events & Clinics</h1>
@@ -169,7 +170,7 @@ const Events = () => {
             </div>
           ) : (
             <div className="text-center fade-in">
-              <img src="/assets/placeholder.png" alt="No events found" style={{ maxWidth: '200px', margin: '2rem auto' }} />
+              <img src={assetUrls['placeholder.png']} alt="No events found" style={{ maxWidth: '200px', margin: '2rem auto' }} />
               <p>No events found matching your criteria.</p>
               <button onClick={() => {
                 setFilter('upcoming');

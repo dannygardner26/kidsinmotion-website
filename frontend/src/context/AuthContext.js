@@ -35,6 +35,38 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Check for test admin user in localStorage first
+    const checkTestUser = () => {
+      const testUser = localStorage.getItem('testUser');
+      const isTestAdmin = localStorage.getItem('isTestAdmin');
+
+      if (testUser && isTestAdmin === 'true') {
+        const userData = JSON.parse(testUser);
+        console.log("Found test admin user in localStorage:", userData);
+
+        // Create a mock Firebase user object
+        const mockUser = {
+          uid: 'test-admin-uid',
+          email: userData.email,
+          displayName: `${userData.firstName} ${userData.lastName}`
+        };
+
+        setCurrentUser(mockUser);
+        setUserProfile({
+          ...userData,
+          roles: userData.roles || ['ROLE_USER', 'ROLE_ADMIN']
+        });
+        setLoading(false);
+        return true;
+      }
+      return false;
+    };
+
+    // If test user found, don't proceed with Firebase auth
+    if (checkTestUser()) {
+      return;
+    }
+
     // Add a timeout to ensure loading state doesn't last forever
     const loadingTimeout = setTimeout(() => {
       console.warn("Firebase auth loading timeout - setting loading to false");
@@ -46,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
         console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
         setCurrentUser(user);
-        
+
         if (user) {
           await syncUserWithBackend(user);
         } else {
@@ -72,6 +104,21 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     setLoading(true); // Optional: show loading state during logout
     try {
+      // Check if this is a test admin user
+      const isTestAdmin = localStorage.getItem('isTestAdmin');
+
+      if (isTestAdmin === 'true') {
+        // Test admin logout
+        localStorage.removeItem('testUser');
+        localStorage.removeItem('isTestAdmin');
+        setCurrentUser(null);
+        setUserProfile(null);
+        setLoading(false);
+        console.log("Test admin signed out successfully.");
+        return;
+      }
+
+      // Regular Firebase logout
       await signOut(auth);
       console.log("User signed out successfully.");
       // currentUser will be set to null by onAuthStateChanged listener
@@ -127,7 +174,7 @@ export const AuthProvider = ({ children }) => {
   // Don't render children until loading is false to prevent rendering protected routes prematurely
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

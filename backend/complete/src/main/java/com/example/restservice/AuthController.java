@@ -12,6 +12,7 @@ import com.example.restservice.security.FirebaseAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,6 +34,9 @@ public class AuthController {
 
     @Autowired
     FirebaseAuthService firebaseAuthService;
+
+    @Value("${app.admin.emails:}")
+    private String adminEmails;
 
     @PostMapping("/sync-user")
     public ResponseEntity<?> syncUser(HttpServletRequest request) {
@@ -66,11 +70,19 @@ public class AuthController {
                 
                 user = new User(firebaseUid, firstName, lastName, email, ""); // Phone will be empty initially
                 
-                // Assign default role
+                // Assign roles based on email
                 Set<Role> roles = new HashSet<>();
                 Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                         .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                 roles.add(userRole);
+
+                // Check if this email should have admin privileges
+                if (isAdminEmail(email)) {
+                    Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                            .orElseThrow(() -> new RuntimeException("Error: Admin role is not found."));
+                    roles.add(adminRole);
+                }
+
                 user.setRoles(roles);
                 
                 userRepository.save(user);
@@ -188,6 +200,71 @@ public class AuthController {
         
         public String getPhoneNumber() { return phoneNumber; }
         public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    }
+
+    // Test login endpoint for development (when Firebase is disabled)
+    @PostMapping("/test-login")
+    public ResponseEntity<?> testLogin(@Valid @RequestBody TestLoginRequest loginRequest) {
+        try {
+            // Simple test login for development - only works for test admin
+            if ("kidsinmotion0@gmail.com".equals(loginRequest.getEmail()) &&
+                "admin123".equals(loginRequest.getPassword())) {
+
+                User user = userRepository.findByEmail(loginRequest.getEmail())
+                        .orElse(null);
+
+                if (user != null) {
+                    List<String> roles = user.getRoles().stream()
+                            .map(role -> role.getName().name())
+                            .collect(Collectors.toList());
+
+                    UserProfileResponse profile = new UserProfileResponse(
+                            user.getId(),
+                            user.getEmail(),
+                            roles
+                    );
+                    profile.setFirstName(user.getFirstName());
+                    profile.setLastName(user.getLastName());
+                    profile.setPhoneNumber(user.getPhoneNumber());
+
+                    return ResponseEntity.ok(profile);
+                }
+            }
+
+            return ResponseEntity.status(401)
+                .body(new MessageResponse("Error: Invalid credentials"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Login failed - " + e.getMessage()));
+        }
+    }
+
+    // Test login request class
+    public static class TestLoginRequest {
+        private String email;
+        private String password;
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+
+        public String getPassword() { return password; }
+        public void setPassword(String password) { this.password = password; }
+    }
+
+    // Helper method to check if an email should have admin privileges
+    private boolean isAdminEmail(String email) {
+        if (adminEmails == null || adminEmails.trim().isEmpty()) {
+            return false;
+        }
+
+        String[] adminEmailList = adminEmails.split(",");
+        for (String adminEmail : adminEmailList) {
+            if (adminEmail.trim().equalsIgnoreCase(email.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 

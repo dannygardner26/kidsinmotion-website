@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import DynamicImage from '../components/DynamicImage';
 import { ArrowRight, Users, Award, Gift, Heart } from 'lucide-react';
+import { assetUrls } from '../utils/firebaseAssets';
 
 const About = () => {
   const teamMembers = [
@@ -10,25 +11,25 @@ const About = () => {
       name: 'Danny Gardner',
       role: 'Co-Founder & Director',
       bio: 'Danny is a student-athlete dedicated to making sports accessible for every child. With a passion for giving back, he leads the organization\'s clinics and outreach programs.',
-      image: '/assets/danny-profile.jpg'
+      image: assetUrls['danny-profile.jpg']
     },
     {
       name: 'Ryan Spiess',
       role: 'Co-Founder & Operations Lead',
       bio: 'Ryan manages the logistics behind our clinics and donation drives, ensuring every event runs smoothly and every piece of equipment finds a home.',
-      image: '/assets/ryan-profile-new.jpg'
+      image: assetUrls['ryan-profile-new.jpg']
     },
     {
       name: 'Nate Wilner',
       role: 'Co-Founder & Marketing Lead',
       bio: 'Nate handles the creative side, promoting our events and spreading the word to ensure as many kids as possible can benefit from our programs.',
-      image: '/assets/nate-profile-new.jpg'
+      image: assetUrls['nate-profile-new.jpg']
     },
     {
       name: 'Ty Callahan',
       role: 'Community Coordinator',
       bio: 'Ty connects with local communities to expand our reach, helping bring Kids in Motion\'s mission to more kids across the state.',
-      image: '/assets/ty-profile.jpg'
+      image: assetUrls['ty-profile.jpg']
     }
   ];
 
@@ -80,11 +81,11 @@ const About = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section style={{ 
+      <section style={{
         background: 'linear-gradient(135deg, #4a7ca3 0%, #2f506a 100%)',
-        color: 'white', 
-        marginTop: '-5rem', 
-        paddingTop: '7rem', 
+        color: 'white',
+        marginTop: '-5rem',
+        paddingTop: '8rem',
         paddingBottom: '4rem',
         position: 'relative',
         overflow: 'hidden'
@@ -157,7 +158,7 @@ const About = () => {
               border: '1px solid rgba(255,255,255,0.2)'
             }}>
               <img
-                src="/assets/team-huddle.jpg"
+                src={assetUrls['team-huddle.jpg']}
                 alt="Kids in Motion team building community"
                 style={{ 
                   width: '100%', 
@@ -322,7 +323,7 @@ const About = () => {
                     border: '4px solid #e5e7eb'
                   }}
                   onError={(e) => {
-                    e.target.src = '/assets/placeholder.png';
+                    e.target.src = assetUrls['placeholder.png'];
                   }} 
                 />
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#2f506a' }}>
@@ -479,8 +480,10 @@ const About = () => {
                 >
                   Become a Volunteer
                 </Link>
-                <Link 
-                  to="/donate" 
+                <a
+                  href="https://venmo.com/ryanspiess22"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn"
                   style={{
                     backgroundColor: '#e53e3e',
@@ -495,7 +498,7 @@ const About = () => {
                   onMouseLeave={(e) => e.target.style.backgroundColor = '#e53e3e'}
                 >
                   Make a Donation
-                </Link>
+                </a>
               </div>
             </div>
           </div>

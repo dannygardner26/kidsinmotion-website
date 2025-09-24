@@ -55,6 +55,39 @@ const Login = () => {
     setError(null);
 
     try {
+      // Check if this is the test admin login
+      if (email === 'kidsinmotion0@gmail.com' && password === 'admin123') {
+        console.log('Using test admin login...');
+
+        // Use test login endpoint
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/test-login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password
+          })
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          console.log('Test admin login successful:', userData);
+
+          // Store user data in localStorage (temporary for development)
+          localStorage.setItem('testUser', JSON.stringify(userData));
+          localStorage.setItem('isTestAdmin', 'true');
+
+          // Navigate to dashboard
+          navigate('/dashboard');
+          return;
+        } else {
+          throw new Error('Test admin login failed');
+        }
+      }
+
+      // Fall back to Firebase authentication for other users
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Email/Password Sign in successful:", userCredential.user);
       // Navigation is handled by onAuthStateChanged effect

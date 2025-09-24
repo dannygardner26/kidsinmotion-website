@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { assetUrls } from '../utils/firebaseAssets';
 
 const Home = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -9,17 +10,17 @@ const Home = () => {
   
   const photoSlides = [
     {
-      src: '/assets/team-huddle.jpg',
+      src: assetUrls['team-huddle.jpg'],
       alt: 'Kids and mentors coming together in team huddle',
       caption: 'Building community and teamwork through sports'
     },
     {
-      src: '/assets/kids-with-mentors.jpg', 
+      src: assetUrls['kids-with-mentors.jpg'], 
       alt: 'Young kids learning from teen mentors',
       caption: 'Experienced athletes teaching the next generation'
     },
     {
-      src: '/assets/volunteers-group.jpg',
+      src: assetUrls['volunteers-group.jpg'],
       alt: 'Group of volunteer coaches and mentors',
       caption: 'Our dedicated team of volunteer coaches'
     }
@@ -71,7 +72,7 @@ const Home = () => {
     <Layout>
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ height: '100vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/assets/team-huddle.jpg")' }}></div>
+        <div className="hero-bg" style={{ backgroundImage: `url("${assetUrls['team-huddle.jpg']}")` }}></div>
         
         <div className="hero-shapes">
           <div className="hero-shape shape-1"></div>
@@ -123,7 +124,7 @@ const Home = () => {
             {/* Image Column */}
             <div className="slide-in-right" style={{ flexBasis: '40%', flexShrink: 0 }}> 
               <img
-                src="/assets/kids-with-mentors.jpg" 
+                src={assetUrls['kids-with-mentors.jpg']} 
                 alt="Kids learning from teen mentors at Kids in Motion clinic"
                 style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 15px 30px rgba(0,0,0,0.1)', border: '5px solid #fff', outline: '1px solid #ccc' }}
               />
@@ -345,7 +346,7 @@ const Home = () => {
         <div 
           className="parallax-bg" 
           style={{ 
-            backgroundImage: 'url("/assets/volunteers-group.jpg")',
+            backgroundImage: `url("${assetUrls['volunteers-group.jpg']}")`,
             position: 'absolute',
             top: 0,
             left: 0,
@@ -394,7 +395,7 @@ const Home = () => {
             the next generation of athletes.
           </p>
           <div className="flex justify-center">
-            <Link to="/donate" className="btn btn-secondary mt-2">Support Our Mission</Link>
+            <a href="https://venmo.com/ryanspiess22" target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-2">Support Our Mission</a>
           </div>
         </div>
       </section>

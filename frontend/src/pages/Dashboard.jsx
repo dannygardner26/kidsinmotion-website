@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import { assetUrls } from '../utils/firebaseAssets';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -145,7 +146,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <section className="hero" style={{ minHeight: '30vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: 'url("/assets/placeholder.png")' }}></div>
+        <div className="hero-bg" style={{ backgroundImage: `url("${assetUrls['placeholder.png']}")` }}></div>
         
         <div className="container hero-content">
           <h1>Welcome, {userProfile?.firstName || currentUser?.displayName || 'User'}!</h1>
@@ -205,11 +206,11 @@ const Dashboard = () => {
                     <div className="quick-link-text">Volunteer</div>
                   </Link>
                   
-                  <Link to="/donate" className="quick-link-item">
+                  <a href="https://venmo.com/ryanspiess22" target="_blank" rel="noopener noreferrer" className="quick-link-item">
                     <div className="quick-link-icon" style={{ backgroundColor: '#28a745' }}><i className="fas fa-donate"></i>
                     </div>
                     <div className="quick-link-text">Donate</div>
-                  </Link>
+                  </a>
                   
                   <Link to="/contact" className="quick-link-item">
                     <div className="quick-link-icon" style={{ backgroundColor: '#6c757d' }}>
