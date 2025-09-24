@@ -81,10 +81,9 @@ const About = () => {
   return (
     <Layout>
       {/* Hero Section */}
-      <section style={{
+      <section className="hero" style={{
         background: 'linear-gradient(135deg, #4a7ca3 0%, #2f506a 100%)',
         color: 'white',
-        marginTop: '-5rem',
         paddingTop: '8rem',
         paddingBottom: '4rem',
         position: 'relative',
@@ -359,7 +358,7 @@ const About = () => {
             borderRadius: '16px',
             boxShadow: '0 10px 30px rgba(47, 80, 106, 0.3)'
           }}>
-            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem', color: 'white' }}>
               Board of Directors
             </h3>
             <p style={{ fontSize: '1.1rem', opacity: '0.9', maxWidth: '600px', margin: '0 auto' }}>
@@ -447,8 +446,8 @@ const About = () => {
       {/* Get Involved CTA */}
       <section className="section" style={{ backgroundColor: '#2f506a', color: 'white' }}>
         <div className="container">
-          <div className="section-head text-center" style={{ marginBottom: '3rem' }}>
-            <h2 style={{ color: 'white', marginBottom: '1rem' }}>Get Involved</h2>
+          <div className="section-head text-center" style={{ marginBottom: '2rem' }}>
+            <h2 style={{ color: 'white', marginBottom: '0.5rem' }}>Get Involved</h2>
             <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '1.1rem' }}>Ready to make a difference in your community?</p>
           </div>
           

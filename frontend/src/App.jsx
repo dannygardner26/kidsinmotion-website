@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout';
 
 // Lazy load pages for code splitting
@@ -27,7 +28,7 @@ const ProtectedRoute = ({ children }) => {
   const location = useLocation();
 
   if (loading) {
-    return <Layout><div className="container mt-4 text-center"><p>Loading authentication...</p></div></Layout>;
+    return <div className="container mt-4 text-center"><p>Loading authentication...</p></div>;
   }
 
   if (!currentUser) {
@@ -40,13 +41,17 @@ const ProtectedRoute = ({ children }) => {
 // Component to prevent logged-in users from accessing login/register
 const PublicRoute = ({ children }) => {
     const { currentUser, loading } = useAuth();
+    const location = useLocation();
 
     if (loading) {
-        return <Layout><div className="container mt-4 text-center"><p>Loading authentication...</p></div></Layout>;
+        return <div className="container mt-4 text-center"><p>Loading authentication...</p></div>;
     }
 
     if (currentUser) {
-        return <Navigate to="/dashboard" replace />;
+        // Check for redirect parameter in URL
+        const urlParams = new URLSearchParams(location.search);
+        const redirectTo = urlParams.get('redirect') || '/dashboard';
+        return <Navigate to={redirectTo} replace />;
     }
 
     return children;
@@ -55,76 +60,78 @@ const PublicRoute = ({ children }) => {
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Suspense fallback={
+      <NotificationProvider>
+        <Router>
           <Layout>
-            <div className="container mt-4">
-              <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p>Loading...</p>
+            <Suspense fallback={
+              <div className="container mt-4">
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <p>Loading...</p>
+                </div>
               </div>
-            </div>
+            }>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Home />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/events/:id" element={<EventDetail />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/volunteer" element={<VolunteerApplication />} />
+
+                {/* Routes only accessible when logged OUT */}
+                <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+                <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+
+                {/* Protected Routes - Require Login */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/events/:id/register"
+                  element={
+                    <ProtectedRoute>
+                      <EventRegistration />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/events/:id/volunteer"
+                  element={
+                    <ProtectedRoute>
+                      <VolunteerSignup />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/events/new"
+                  element={
+                    <ProtectedRoute>
+                      <CreateEvent />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Catch-all Not Found Route */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </Layout>
-        }>
-          <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/events/:id" element={<EventDetail />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/volunteer" element={<VolunteerApplication />} />
-
-          {/* Routes only accessible when logged OUT */}
-           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-
-          {/* Protected Routes - Require Login */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/:id/register"
-            element={
-              <ProtectedRoute>
-                <EventRegistration />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/:id/volunteer"
-            element={
-              <ProtectedRoute>
-                <VolunteerSignup />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/events/new"
-            element={
-              <ProtectedRoute>
-                <CreateEvent />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Catch-all Not Found Route */}
-          <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </Router>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 };
