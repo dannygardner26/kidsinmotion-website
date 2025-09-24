@@ -52,11 +52,26 @@ export const AuthProvider = ({ children }) => {
         };
 
         setCurrentUser(mockUser);
-        setUserProfile({
-          ...userData,
-          roles: userData.roles || ['ROLE_USER', 'ROLE_ADMIN']
-        });
-        setLoading(false);
+
+        // Sync test admin user with backend
+        const syncTestUser = async () => {
+          try {
+            await apiService.syncUser();
+            const profile = await apiService.getUserProfile();
+            setUserProfile(profile);
+            console.log("Test admin user synced with backend:", profile);
+          } catch (error) {
+            console.error("Failed to sync test admin user with backend:", error);
+            // Use cached user data as fallback
+            setUserProfile({
+              ...userData,
+              roles: userData.roles || ['ROLE_USER', 'ROLE_ADMIN']
+            });
+          }
+          setLoading(false);
+        };
+
+        syncTestUser();
         return true;
       }
       return false;

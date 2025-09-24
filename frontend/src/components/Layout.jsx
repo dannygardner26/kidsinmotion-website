@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { assetUrls } from '../utils/firebaseAssets';
+import { useNotifications } from '../context/NotificationContext';
+import InboxModal from './InboxModal';
 
 const Layout = ({ children }) => {
   const { currentUser, userProfile, logout, loading } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [inboxOpen, setInboxOpen] = useState(false);
 
   // Handle scroll event
   useEffect(() => {
@@ -28,47 +33,67 @@ const Layout = ({ children }) => {
     };
   }, []);
 
-  // Animate elements on scroll
+  // Animate elements on scroll - Temporarily disabled to fix React DOM errors
   useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1
-    };
-
-    const handleIntersect = (entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(handleIntersect, observerOptions);
-
-    // Observe all elements with animation classes
-    const animatedElements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right');
-    animatedElements.forEach(el => observer.observe(el));
+    // Simple fallback: just add visible class to all animation elements immediately
+    const timeoutId = setTimeout(() => {
+      try {
+        const animatedElements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right');
+        animatedElements.forEach(el => {
+          if (el) {
+            el.classList.add('visible');
+          }
+        });
+      } catch (error) {
+        console.warn('Animation setup error:', error);
+      }
+    }, 100);
 
     return () => {
-      // Safely cleanup observer
-      observer.disconnect();
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
-  }, [location.pathname]); // Re-run when route changes
+  }, [location.pathname]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && event.target && !event.target.closest('.dropdown')) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('click', handleClickOutside);
+      return () => {
+        try {
+          document.removeEventListener('click', handleClickOutside);
+        } catch (error) {
+          console.warn('Error removing click listener:', error);
+        }
+      };
+    }
+  }, [dropdownOpen]);
 
   // Add/remove body class based on transparent header pages
   useEffect(() => {
     const transparentPages = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about';
 
-    if (transparentPages) {
-      document.body.classList.add('transparent-header-page-body');
-    } else {
-      document.body.classList.remove('transparent-header-page-body');
+    // Simple body class management without timeouts
+    if (document.body) {
+      if (transparentPages) {
+        document.body.classList.add('transparent-header-page-body');
+      } else {
+        document.body.classList.remove('transparent-header-page-body');
+      }
     }
-    // Cleanup on component unmount or path change
+
+    // Cleanup - remove on unmount only
     return () => {
-      document.body.classList.remove('transparent-header-page-body');
+      if (document.body) {
+        document.body.classList.remove('transparent-header-page-body');
+      }
     };
   }, [location.pathname]);
 
@@ -84,6 +109,10 @@ const Layout = ({ children }) => {
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
+  };
+
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
   };
 
   const isHomePage = location.pathname === '/';
@@ -144,18 +173,94 @@ const Layout = ({ children }) => {
                 </Link>
               </li>
             )}
-            
+
+            {/* Inbox Button */}
+            <li className="navbar-item">
+              <button
+                onClick={() => setInboxOpen(true)}
+                className="navbar-link"
+                style={{
+                  position: 'relative'
+                }}
+              >
+                Inbox
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-8px',
+                    right: '-8px',
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '18px',
+                    height: '18px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold'
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            </li>
+
             {!loading && (
               currentUser ? (
                 <li className="navbar-item">
-                  <div className="dropdown">
-                    <button className="navbar-link dropdown-toggle">
+                  <div className={`dropdown ${dropdownOpen ? 'show' : ''}`}>
+                    <button
+                      className="navbar-link dropdown-toggle"
+                      onClick={toggleDropdown}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}
+                    >
                       {currentUser.displayName || currentUser.email}
+                      <span style={{ fontSize: '0.8rem' }}>{dropdownOpen ? '▲' : '▼'}</span>
                     </button>
-                    <div className="dropdown-menu">
-                      <Link className="dropdown-item" to="/profile">My Profile</Link>
-                      <div className="dropdown-divider"></div>
-                      <button onClick={handleLogout} className="dropdown-item">Logout</button>
+                    <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`} style={{
+                      display: dropdownOpen ? 'block' : 'none',
+                      position: 'absolute',
+                      top: '100%',
+                      right: '0',
+                      backgroundColor: 'white',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      borderRadius: '8px',
+                      minWidth: '160px',
+                      zIndex: '1000',
+                      marginTop: '0.5rem'
+                    }}>
+                      <Link className="dropdown-item" to="/dashboard" style={{
+                        display: 'block',
+                        padding: '0.75rem 1rem',
+                        color: '#333',
+                        textDecoration: 'none',
+                        borderBottom: '1px solid #eee'
+                      }}>
+                        <i className="fas fa-user mr-2"></i>
+                        My Profile
+                      </Link>
+                      <button onClick={handleLogout} className="dropdown-item" style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '0.75rem 1rem',
+                        color: '#333',
+                        textDecoration: 'none',
+                        background: 'none',
+                        border: 'none',
+                        textAlign: 'left',
+                        cursor: 'pointer'
+                      }}>
+                        <i className="fas fa-sign-out-alt mr-2"></i>
+                        Logout
+                      </button>
                     </div>
                   </div>
                 </li>
@@ -180,7 +285,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
 
-      <footer className="footer">
+      <footer className="footer" id="main-footer">
         <div className="footer-wave">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
             <path
@@ -234,12 +339,12 @@ const Layout = ({ children }) => {
         </div>
       </footer>
 
-      {/* Intersection Observer Script */}
-      <script>
-        {`
-          // Animation scroll functions will run from useEffect
-        `}
-      </script>
+
+      {/* Inbox Modal */}
+      <InboxModal
+        isOpen={inboxOpen}
+        onClose={() => setInboxOpen(false)}
+      />
     </div>
   );
 };

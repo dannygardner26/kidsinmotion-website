@@ -8,6 +8,13 @@ class ApiService {
   }
 
   async getAuthToken() {
+    // Check for test admin user first
+    const isTestAdmin = localStorage.getItem('isTestAdmin');
+    if (isTestAdmin === 'true') {
+      // For test admin, return a mock token or skip token validation
+      return 'test-admin-token';
+    }
+
     const user = auth.currentUser;
     if (user) {
       return await user.getIdToken();
@@ -155,6 +162,69 @@ class ApiService {
     return this.makeRequest(`/volunteers/${volunteerId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
+    });
+  }
+
+  // Announcement endpoints
+  async getActiveAnnouncements() {
+    // Public endpoint - no auth required
+    const response = await fetch(`${this.baseURL}/announcements/active`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  }
+
+  async getRecentAnnouncements() {
+    // Public endpoint - no auth required
+    const response = await fetch(`${this.baseURL}/announcements/recent`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  }
+
+  async getAnnouncementsByAudience(audience) {
+    return this.makeRequest(`/announcements/by-audience/${audience}`);
+  }
+
+  async createAnnouncement(announcementData) {
+    return this.makeRequest('/announcements', {
+      method: 'POST',
+      body: JSON.stringify(announcementData),
+    });
+  }
+
+  async getAllAnnouncements() {
+    return this.makeRequest('/announcements/admin/all');
+  }
+
+  async getAnnouncementById(id) {
+    return this.makeRequest(`/announcements/${id}`);
+  }
+
+  async updateAnnouncement(id, announcementData) {
+    return this.makeRequest(`/announcements/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(announcementData),
+    });
+  }
+
+  async deleteAnnouncement(id) {
+    return this.makeRequest(`/announcements/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async permanentlyDeleteAnnouncement(id) {
+    return this.makeRequest(`/announcements/${id}/permanent`, {
+      method: 'DELETE',
+    });
+  }
+
+  async createSampleAnnouncement() {
+    return this.makeRequest('/announcements/test/sample', {
+      method: 'POST',
     });
   }
 }
