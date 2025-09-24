@@ -15,6 +15,14 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
+// Debug: Check if Firebase config is loaded
+console.log("Firebase Config Debug:", {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY ? "✅ Loaded" : "❌ Missing",
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN ? "✅ Loaded" : "❌ Missing",
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID ? "✅ Loaded" : "❌ Missing",
+  config: firebaseConfig
+});
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);

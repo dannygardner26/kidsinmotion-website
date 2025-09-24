@@ -7,6 +7,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
@@ -24,12 +25,21 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
     @Autowired
     private FirebaseAuthService firebaseAuthService;
 
+    @Value("${firebase.enabled:true}")
+    private boolean firebaseEnabled;
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                   FilterChain filterChain) throws ServletException, IOException {
-        
+
+        // Skip Firebase authentication if disabled
+        if (!firebaseEnabled) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader("Authorization");
-        
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String idToken = authHeader.substring(7);
             

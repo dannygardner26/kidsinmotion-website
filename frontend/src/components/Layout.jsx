@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { assetUrls } from '../utils/firebaseAssets';
 
 const Layout = ({ children }) => {
   const { currentUser, userProfile, logout, loading } = useAuth();
@@ -45,24 +46,23 @@ const Layout = ({ children }) => {
     };
 
     const observer = new IntersectionObserver(handleIntersect, observerOptions);
-    
+
     // Observe all elements with animation classes
     const animatedElements = document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right');
     animatedElements.forEach(el => observer.observe(el));
 
     return () => {
-      if (animatedElements) {
-        animatedElements.forEach(el => observer.unobserve(el));
-      }
+      // Safely cleanup observer
+      observer.disconnect();
     };
   }, [location.pathname]); // Re-run when route changes
 
-  const isTransparentHeaderPage = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about';
-
   // Add/remove body class based on transparent header pages
   useEffect(() => {
-    if (isTransparentHeaderPage) {
-      document.body.classList.add('transparent-header-page-body'); // Use a more generic class name
+    const transparentPages = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about';
+
+    if (transparentPages) {
+      document.body.classList.add('transparent-header-page-body');
     } else {
       document.body.classList.remove('transparent-header-page-body');
     }
@@ -70,7 +70,7 @@ const Layout = ({ children }) => {
     return () => {
       document.body.classList.remove('transparent-header-page-body');
     };
-  }, [location.pathname, isTransparentHeaderPage]); // Add isTransparentHeaderPage dependency
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -87,17 +87,15 @@ const Layout = ({ children }) => {
   };
 
   const isHomePage = location.pathname === '/';
-
-  // const isHomePage = location.pathname === '/'; // No longer needed directly here
+  const hasTransparentHeader = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about';
 
   return (
     <div>
       {/* Header with scroll animation */}
-      {/* Use isTransparentHeaderPage for the conditional class */}
-      <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${isTransparentHeaderPage && !isScrolled ? 'navbar-transparent' : ''}`}>
+      <nav className={`navbar ${isScrolled ? 'scrolled' : ''} ${hasTransparentHeader && !isScrolled ? 'navbar-transparent' : ''}`}>
         <div className="container navbar-container">
           <Link to="/" className="navbar-logo">
-            <img src="/realKIMlogo-transparent.png" alt="Kids in Motion" width="60" height="60" />
+            <img src={assetUrls['realKIMlogo-transparent.png']} alt="Kids in Motion" width="60" height="60" />
           </Link>
           
           <button 
@@ -125,6 +123,11 @@ const Layout = ({ children }) => {
             <li className="navbar-item">
               <Link to="/about" className={`navbar-link ${location.pathname === '/about' ? 'active' : ''}`}>
                 About Us
+              </Link>
+            </li>
+            <li className="navbar-item">
+              <Link to="/volunteer" className={`navbar-link ${location.pathname === '/volunteer' ? 'active' : ''}`}>
+                Volunteer
               </Link>
             </li>
             {currentUser && (
@@ -193,21 +196,16 @@ const Layout = ({ children }) => {
             <div className="col-third">
               <div className="footer-logo">
                 <Link to="/" className="navbar-logo" style={{ color: 'white' }}>
-                  <img src="/realKIMlogo-transparent.png" alt="Kids in Motion" width="60" height="60" />
+                  <img src={assetUrls['realKIMlogo-transparent.png']} alt="Kids in Motion" width="60" height="60" />
                 </Link>
               </div>
               <p className="mb-2">Empowering every kid to play and learn through sports.</p>
               <div className="footer-social">
-                <a href="#" className="social-icon">
+                <a href="https://www.facebook.com/profile.php?id=61568245202675" target="_blank" rel="noopener noreferrer" className="social-icon">
                   <i className="fab fa-facebook-f"></i>
-                </a><a href="#" className="social-icon">
-                  <i className="fab fa-twitter"></i>
                 </a>
-                <a href="#" className="social-icon">
+                <a href="https://www.instagram.com/kids_in_motion0/" target="_blank" rel="noopener noreferrer" className="social-icon">
                   <i className="fab fa-instagram"></i>
-                </a>
-                <a href="#" className="social-icon">
-                  <i className="fab fa-youtube"></i>
                 </a>
               </div>
             </div>
@@ -216,9 +214,8 @@ const Layout = ({ children }) => {
               <h4 style={{ color: 'white' }}>Quick Links</h4>
               <ul className="footer-links">
                 <li><Link to="/events">Upcoming Events</Link></li>
-                <li><Link to="/donate">Support Our Mission</Link></li>
+                <li><a href="https://venmo.com/ryanspiess22" target="_blank" rel="noopener noreferrer">Support Our Mission</a></li>
                 <li><Link to="/about">About Us</Link></li>
-                <li><Link to="/contact">Contact Us</Link></li>
               </ul>
             </div>
             
