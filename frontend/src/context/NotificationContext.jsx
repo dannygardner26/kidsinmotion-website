@@ -19,8 +19,8 @@ export const NotificationProvider = ({ children }) => {
   // Default message for unauthenticated users
   const defaultSignInMessage = {
     id: 'signin-prompt',
-    title: 'Sign In to Access All Features',
-    message: 'Create an account or sign in to register for events, volunteer, and receive personalized updates from Kids in Motion.',
+    title: 'Create an Account to Get Started',
+    message: 'Sign up today to register for events, apply for volunteer teams, and stay connected with Kids in Motion updates!',
     type: 'info',
     createdAt: new Date().toISOString(),
     isRead: false,

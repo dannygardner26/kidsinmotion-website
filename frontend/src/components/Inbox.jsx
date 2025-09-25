@@ -33,10 +33,15 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
         setMessages(response.messages);
         setUnreadCount(response.unreadCount || 0);
       } else {
-        throw new Error('Invalid response format');
+        // API returned null (403 handled gracefully) or invalid format - use localStorage fallback
+        const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
+        setMessages(savedMessages);
+        const unread = savedMessages.filter(msg => !msg.read).length;
+        setUnreadCount(unread);
       }
     } catch (error) {
-      // Silently fail and use localStorage fallback
+      // Handle any other errors
+      console.warn('Inbox API error, using localStorage fallback:', error.message);
       const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
       setMessages(savedMessages);
       const unread = savedMessages.filter(msg => !msg.read).length;
@@ -49,23 +54,49 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
     const existingMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
     let newMessages = [...existingMessages];
 
-    // Only show volunteer message for verified users (don't show registration message if already signed in)
+    // Only show welcome message for verified users
     const isVerified = currentUser && userProfile && userProfile.firstName && userProfile.lastName;
-    const hasVolunteerMessage = existingMessages.some(msg => msg.type === 'volunteer');
+    const hasWelcomeMessage = existingMessages.some(msg => msg.type === 'welcome');
 
-    if (isVerified && !hasVolunteerMessage) {
-      newMessages.unshift({
-        id: `vol_${Date.now()}`,
-        type: 'volunteer',
-        title: 'Interested in Volunteering?',
-        message: 'Thank you for being part of our community! Consider joining our volunteer team to help make sports accessible to every child.',
-        actionLink: '/volunteer-application',
-        actionText: 'Apply to Volunteer',
-        from: 'Kids in Motion Team',
-        timestamp: new Date().toISOString(),
-        read: false,
-        isSystem: true
-      });
+    // Determine user type - volunteers typically have 'volunteer' in email or specific roles
+    const email = userProfile?.email || currentUser?.email || '';
+    const isVolunteer = email.toLowerCase().includes('volunteer') ||
+                       userProfile?.roles?.includes('ROLE_VOLUNTEER') ||
+                       userProfile?.accountType === 'volunteer';
+
+    // Remove old messages to update with role-appropriate content
+    newMessages = newMessages.filter(msg => !(msg.type === 'welcome' || (msg.type === 'volunteer' && msg.title !== 'Apply for a Team!')));
+
+    if (isVerified && !hasWelcomeMessage) {
+      if (isVolunteer) {
+        // Message for volunteers
+        newMessages.unshift({
+          id: `vol_team_${Date.now()}`,
+          type: 'welcome',
+          title: 'Apply for a Team!',
+          message: 'Choose from our available volunteer teams: Coaching, Event Coordination, Social Media, Website Development, Community Outreach, and more! Submit your application to get started.',
+          actionLink: '/volunteer-application',
+          actionText: 'Apply Now',
+          from: 'Kids in Motion Team',
+          timestamp: new Date().toISOString(),
+          read: false,
+          isSystem: true
+        });
+      } else {
+        // Message for parents
+        newMessages.unshift({
+          id: `parent_welcome_${Date.now()}`,
+          type: 'welcome',
+          title: 'Discover Our Programs!',
+          message: 'Explore our free sports clinics and programs designed to help kids build skills, make friends, and have fun! Check out our upcoming events and register your children today.',
+          actionLink: '/events',
+          actionText: 'View Events',
+          from: 'Kids in Motion Team',
+          timestamp: new Date().toISOString(),
+          read: false,
+          isSystem: true
+        });
+      }
     }
 
     // Save to localStorage and update state

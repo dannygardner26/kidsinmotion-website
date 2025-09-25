@@ -86,7 +86,10 @@ const Home = () => {
             Kids in Motion provides free sports clinics and equipment to kids who may not have access, 
             helping them learn new games, build skills, and develop confidence.
           </p>
-          <Link to="/events" className="btn btn-secondary">Get Involved</Link>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginTop: '2rem' }}>
+            <Link to="/events" className="btn btn-secondary">View Events</Link>
+            <Link to="/volunteer" className="btn btn-primary">Join Our Team</Link>
+          </div>
         </div>
         
         <div className="hero-wave">
@@ -394,8 +397,9 @@ const Home = () => {
             have the chance to play. Every contribution helps us reach more communities and inspire
             the next generation of athletes.
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <a href="https://account.venmo.com/u/ryanspiess22" target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-2">Support Our Mission</a>
+            <Link to="/volunteer" className="btn btn-primary mt-2">Join Our Team!</Link>
           </div>
         </div>
       </section>

@@ -1169,6 +1169,15 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   color: white !important;
 }
 
+/* Fix inbox text color when navbar is scrolled */
+.navbar.scrolled .inbox-trigger {
+  color: var(--text) !important;
+}
+
+.navbar.scrolled .inbox-trigger:hover {
+  color: var(--primary) !important;
+}
+
 .inbox-trigger .unread-badge {
   position: absolute;
   top: -8px;
