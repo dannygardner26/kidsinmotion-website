@@ -14,7 +14,7 @@ const CreateEvent = () => {
     description: '',
     date: '',
     location: '',
-    ageGroup: '',
+    ageGroup: [],
     capacity: '',
     price: ''
   });
@@ -48,6 +48,23 @@ const CreateEvent = () => {
     }));
   };
 
+  const handleAgeGroupChange = (ageGroup) => {
+    setFormData(prev => {
+      const currentAgeGroups = prev.ageGroup || [];
+      if (currentAgeGroups.includes(ageGroup)) {
+        return {
+          ...prev,
+          ageGroup: currentAgeGroups.filter(ag => ag !== ageGroup)
+        };
+      } else {
+        return {
+          ...prev,
+          ageGroup: [...currentAgeGroups, ageGroup]
+        };
+      }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -57,6 +74,7 @@ const CreateEvent = () => {
       // Prepare event data
       const eventData = {
         ...formData,
+        ageGroup: formData.ageGroup.length > 0 ? formData.ageGroup.join(', ') : '',
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         price: formData.price ? parseFloat(formData.price) : 0.0
       };
@@ -79,13 +97,12 @@ const CreateEvent = () => {
 
   return (
     <>
-      <div className="container mt-4">
+      <div className="container mt-4" style={{ marginBottom: '4rem' }}>
         <div className="row justify-content-center">
           <div className="col-md-8">
             <div className="card">
               <div className="card-header">
-                <h2>Create New Event</h2>
-                <p>Add a new sports event or clinic for kids</p>
+                <p className="subtitle-fancy" style={{ color: 'white' }}>🏃‍♂️ Add a New Sports Event or Clinic for Kids! 🌟</p>
               </div>
               <div className="card-body">
                 {error && (
@@ -157,21 +174,20 @@ const CreateEvent = () => {
                   <div className="row">
                     <div className="col-md-4">
                       <div className="form-group">
-                        <label htmlFor="ageGroup">Age Group</label>
-                        <select
-                          id="ageGroup"
-                          name="ageGroup"
-                          className="form-control"
-                          value={formData.ageGroup}
-                          onChange={handleInputChange}
-                        >
-                          <option value="">Select Age Group</option>
-                          <option value="5-7 years">5-7 years</option>
-                          <option value="8-10 years">8-10 years</option>
-                          <option value="11-13 years">11-13 years</option>
-                          <option value="14-16 years">14-16 years</option>
-                          <option value="All Ages">All Ages</option>
-                        </select>
+                        <label>Age Groups</label>
+                        <div className="age-group-multiselect">
+                          {['5-7 years', '8-10 years', '11-13 years', '14-16 years', 'All Ages'].map(ageGroup => (
+                            <label key={ageGroup} className="checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={formData.ageGroup.includes(ageGroup)}
+                                onChange={() => handleAgeGroupChange(ageGroup)}
+                              />
+                              <span className="checkmark"></span>
+                              {ageGroup}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <div className="col-md-4">
@@ -239,6 +255,83 @@ const CreateEvent = () => {
       </div>
 
       <style>{`
+        .subtitle-fancy {
+          font-size: 1.4rem;
+          font-weight: 600;
+          color: #2f7b8a;
+          background: linear-gradient(135deg, #2f7b8a 0%, #4a90a4 100%);
+          background-clip: text;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+          margin: 1rem 0;
+          text-align: center;
+          letter-spacing: 0.5px;
+        }
+
+        .age-group-multiselect {
+          border: 2px solid #e1e5e9;
+          border-radius: 4px;
+          padding: 0.75rem;
+          background: white;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          margin-bottom: 0.5rem;
+          cursor: pointer;
+          font-size: 0.95rem;
+          position: relative;
+          padding-left: 2rem;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+        }
+
+        .checkmark {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 1.2rem;
+          width: 1.2rem;
+          background-color: #eee;
+          border: 2px solid #ddd;
+          border-radius: 3px;
+          transition: all 0.3s ease;
+        }
+
+        .checkbox-label:hover input ~ .checkmark {
+          background-color: #ccc;
+        }
+
+        .checkbox-label input:checked ~ .checkmark {
+          background-color: var(--primary);
+          border-color: var(--primary);
+        }
+
+        .checkmark:after {
+          content: "";
+          position: absolute;
+          display: none;
+          left: 4px;
+          top: 1px;
+          width: 6px;
+          height: 10px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+
+        .checkbox-label input:checked ~ .checkmark:after {
+          display: block;
+        }
+
         .form-group {
           margin-bottom: 1.5rem;
         }

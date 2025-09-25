@@ -14,6 +14,22 @@ const Events = () => {
   useEffect(() => {
     fetchEvents();
   }, [filter, sportFilter]);
+
+  // Trigger intersection observer after content loads
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        const animatedElements = document.querySelectorAll('.fade-in');
+        animatedElements.forEach(el => {
+          if (el.getBoundingClientRect().top < window.innerHeight) {
+            el.classList.add('visible');
+          }
+        });
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, events]);
   
   const fetchEvents = async () => {
     setIsLoading(true);
@@ -170,7 +186,9 @@ const Events = () => {
             </div>
           ) : (
             <div className="text-center fade-in">
-              <img src={assetUrls['placeholder.png']} alt="No events found" style={{ maxWidth: '200px', margin: '2rem auto' }} />
+              <div style={{ fontSize: '72px', color: 'var(--primary)', marginBottom: '1rem' }}>
+                No Events
+              </div>
               <p>No events found matching your criteria.</p>
               <button onClick={() => {
                 setFilter('upcoming');

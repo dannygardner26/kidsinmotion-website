@@ -9,6 +9,7 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Handle scroll event
   useEffect(() => {
@@ -27,6 +28,20 @@ const Layout = ({ children }) => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && !event.target.closest('.dropdown')) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   // Animate elements on scroll
   useEffect(() => {
@@ -75,12 +90,14 @@ const Layout = ({ children }) => {
 
   const handleManageProfile = () => {
     setMenuOpen(false);
+    setDropdownOpen(false);
     navigate('/dashboard');
   };
 
   const handleLogout = async () => {
     try {
       setMenuOpen(false);
+      setDropdownOpen(false);
       await logout();
       navigate('/');
       console.log('Logout successful, navigating to home.');
@@ -91,6 +108,10 @@ const Layout = ({ children }) => {
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
+  };
+
+  const toggleDropdown = () => {
+    setDropdownOpen(!dropdownOpen);
   };
 
   const isHomePage = location.pathname === '/';
@@ -152,14 +173,19 @@ const Layout = ({ children }) => {
             {!loading && (
               currentUser ? (
                 <li className="navbar-item">
-                  <div className="dropdown">
-                    <button className="navbar-link dropdown-toggle">
+                  <div className={`dropdown ${dropdownOpen ? 'open' : ''}`}>
+                    <button className="navbar-link dropdown-toggle" onClick={toggleDropdown}>
                       {currentUser.displayName || currentUser.email}
+                      <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`}></i>
                     </button>
-                    <div className="dropdown-menu">
-                      <button type="button" onClick={handleManageProfile} className="dropdown-item">Manage Profile</button>
+                    <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
+                      <button type="button" onClick={handleManageProfile} className="dropdown-item">
+                        <i className="fas fa-user mr-2"></i>Manage Profile
+                      </button>
                       <div className="dropdown-divider"></div>
-                      <button type="button" onClick={handleLogout} className="dropdown-item">Logout</button>
+                      <button type="button" onClick={handleLogout} className="dropdown-item">
+                        <i className="fas fa-sign-out-alt mr-2"></i>Logout
+                      </button>
                     </div>
                   </div>
                 </li>
@@ -218,12 +244,19 @@ const Layout = ({ children }) => {
               <h4 style={{ color: 'white' }}>Quick Links</h4>
               <ul className="footer-links">
                 <li><Link to="/events">Upcoming Events</Link></li>
-                <li><Link to="/donate">Support Our Mission</Link></li>
+                <li><a href="https://account.venmo.com/u/ryanspiess22" target="_blank" rel="noopener noreferrer">Support Our Mission</a></li>
                 <li><Link to="/about">About Us</Link></li>
-                <li><Link to="/contact">Contact Us</Link></li>
               </ul>
             </div>
-            
+
+            <div className="col-third">
+              <h4 style={{ color: 'white' }}>Contact Us</h4>
+              <ul className="footer-links" style={{ listStyle: 'none' }}>
+                <li><strong>Email:</strong> kidsinmotion0@gmail.com</li>
+                <li><strong>Phone:</strong> (484) 885-6284</li>
+              </ul>
+            </div>
+
             </div>
           
           <div className="footer-bottom">

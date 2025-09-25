@@ -1,11 +1,25 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import DynamicImage from '../components/DynamicImage';
-import { ArrowRight, Users, Award, Gift, Heart } from 'lucide-react';
+import { ArrowRight, Users, Award, Gift, Heart, DollarSign, UserX, MapPin } from 'lucide-react';
 import { assetUrls } from '../utils/firebaseAssets';
+import { useAuth } from '../context/AuthContext';
 
 const About = () => {
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+
+  const handleVolunteerClick = () => {
+    if (currentUser) {
+      // User is logged in - take them to volunteer application
+      navigate('/volunteer');
+    } else {
+      // User is not logged in - take them to registration
+      navigate('/register');
+    }
+  };
+
   const teamMembers = [
     {
       name: 'Danny Gardner',
@@ -75,6 +89,24 @@ const About = () => {
     {
       title: "Website Team",
       description: "Maintains our website, handles online content updates, manages digital communications, and ensures our web presence effectively represents our organization."
+    }
+  ];
+
+  const problems = [
+    {
+      icon: <DollarSign className="h-12 w-12" />,
+      title: 'Sports Programs Are Too Expensive',
+      description: 'Many families struggle to afford the high costs of youth sports programs, equipment, and club fees, leaving talented kids on the sidelines.'
+    },
+    {
+      icon: <UserX className="h-12 w-12" />,
+      title: 'Lack of Mentorship & Role Models',
+      description: 'Young athletes need positive mentors and role models to guide them both on and off the field, but many communities lack these crucial relationships.'
+    },
+    {
+      icon: <MapPin className="h-12 w-12" />,
+      title: 'Limited Access to Quality Programs',
+      description: 'Underserved communities often lack access to well-organized, consistent sports programs that can provide structure and skill development.'
     }
   ];
 
@@ -172,6 +204,100 @@ const About = () => {
         </div>
       </section>
 
+      {/* Problems We Solve Section */}
+      <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
+        <div className="container">
+          <div className="section-head text-center">
+            <h2>The Problems We Solve</h2>
+            <p>Understanding the challenges facing young athletes in our communities</p>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1.5rem',
+            marginTop: '2rem'
+          }}>
+            {problems.map((problem, index) => {
+              const colors = [
+                { bg: '#e3f2fd', border: '#2f506a', text: '#1a365d' }, // Light blue
+                { bg: '#f0f9ff', border: '#4a7ca3', text: '#2d3748' }, // Lighter blue
+                { bg: '#e6f3ff', border: '#1e40af', text: '#1e3a8a' }  // Medium blue
+              ];
+              const colorScheme = colors[index % colors.length];
+
+              return (
+                <div
+                  key={index}
+                  style={{
+                    background: `linear-gradient(135deg, ${colorScheme.bg} 0%, #ffffff 100%)`,
+                    border: `3px solid ${colorScheme.border}`,
+                    borderRadius: '20px',
+                    padding: '2.5rem 2rem',
+                    textAlign: 'center',
+                    transition: 'all 0.3s ease',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (e.target === e.currentTarget) {
+                      e.target.style.transform = 'translateY(-5px)';
+                      e.target.style.boxShadow = `0 10px 25px rgba(0,0,0,0.15)`;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (e.target === e.currentTarget) {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+                    }
+                  }}
+                >
+                  <div style={{
+                    marginBottom: '1.5rem',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    pointerEvents: 'none'
+                  }}>
+                    <div style={{
+                      color: colorScheme.border,
+                      background: 'transparent !important',
+                      border: 'none',
+                      padding: '0',
+                      margin: '0',
+                      outline: 'none',
+                      boxShadow: 'none',
+                      pointerEvents: 'none'
+                    }}>
+                      {problem.icon}
+                    </div>
+                  </div>
+                  <h3 style={{
+                    fontSize: '1.5rem',
+                    fontWeight: 'bold',
+                    color: colorScheme.text,
+                    marginBottom: '1rem',
+                    background: 'transparent',
+                    pointerEvents: 'none'
+                  }}>
+                    {problem.title}
+                  </h3>
+                  <p style={{
+                    color: colorScheme.text,
+                    lineHeight: '1.6',
+                    fontSize: '1rem',
+                    margin: '0',
+                    background: 'transparent',
+                    pointerEvents: 'none'
+                  }}>
+                    {problem.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
       {/* What We Do Section */}
       <section className="section" style={{ backgroundColor: '#f0f9ff' }}>
@@ -443,6 +569,56 @@ const About = () => {
         </div>
       </section>
 
+      {/* Other Sports Section */}
+      <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
+        <div className="container">
+          <div className="section-head text-center">
+            <h2>Expanding Beyond Baseball</h2>
+            <p>Our mission extends beyond just baseball - we believe every sport has the power to transform lives.</p>
+          </div>
+
+          <div className="row items-center">
+            <div className="col-half">
+              <h3 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+                Open to All Sports
+              </h3>
+              <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+                While we started with baseball, Kids in Motion welcomes directors and coaches from all sports backgrounds.
+                Whether it's basketball, soccer, football, tennis, or any other sport, we're excited to help you bring
+                your expertise to underserved communities.
+              </p>
+              <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+                If you're passionate about your sport and want to make a difference in children's lives, we want to hear from you.
+                Together, we can expand our impact and give even more kids the chance to discover their potential through athletics.
+              </p>
+              <div style={{
+                padding: '1rem',
+                backgroundColor: 'rgba(47, 80, 106, 0.1)',
+                borderRadius: '8px',
+                borderLeft: '4px solid var(--primary)'
+              }}>
+                <p style={{ margin: '0', fontWeight: '500' }}>
+                  <strong>Have a sport you'd like to teach?</strong> Contact us at kidsinmotion0@gmail.com or call (484) 885-6284
+                  to discuss bringing your sport to Kids in Motion.
+                </p>
+              </div>
+            </div>
+            <div className="col-half" style={{ textAlign: 'center' }}>
+              <DynamicImage
+                src={assetUrls['team-huddle.jpg']}
+                alt="Various sports activities"
+                style={{
+                  width: '100%',
+                  maxWidth: '400px',
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Get Involved CTA */}
       <section className="section" style={{ backgroundColor: '#2f506a', color: 'white' }}>
         <div className="container">
@@ -462,23 +638,25 @@ const About = () => {
             </div>
             <div className="col-half" style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '300px', margin: '0 auto' }}>
-                <Link 
-                  to="/volunteer" 
+                <button
+                  onClick={handleVolunteerClick}
                   className="btn"
                   style={{
                     backgroundColor: 'white',
                     color: '#2f506a',
                     padding: '1rem 2rem',
+                    border: 'none',
                     borderRadius: '8px',
                     textDecoration: 'none',
                     fontWeight: 'bold',
-                    transition: 'all 0.3s ease'
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
                   }}
                   onMouseEnter={(e) => e.target.style.backgroundColor = '#f8f8f8'}
                   onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
                 >
-                  Become a Volunteer
-                </Link>
+                  {currentUser ? 'Apply to Volunteer' : 'Become a Volunteer'}
+                </button>
                 <a
                   href="https://venmo.com/ryanspiess22"
                   target="_blank"
