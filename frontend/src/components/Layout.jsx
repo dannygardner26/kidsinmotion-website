@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FirebaseImage from './FirebaseImage';
+import Inbox, { useInboxCount } from './Inbox';
 
 const Layout = ({ children }) => {
   const { currentUser, userProfile, logout, loading } = useAuth();
@@ -10,6 +11,8 @@ const Layout = ({ children }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [inboxOpen, setInboxOpen] = useState(false);
+  const unreadCount = useInboxCount();
 
   // Handle scroll event
   useEffect(() => {
@@ -35,13 +38,16 @@ const Layout = ({ children }) => {
       if (dropdownOpen && !event.target.closest('.dropdown')) {
         setDropdownOpen(false);
       }
+      if (inboxOpen && !event.target.closest('.inbox-dropdown')) {
+        setInboxOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [dropdownOpen]);
+  }, [dropdownOpen, inboxOpen]);
 
   // Animate elements on scroll
   useEffect(() => {
@@ -172,23 +178,37 @@ const Layout = ({ children }) => {
             
             {!loading && (
               currentUser ? (
-                <li className="navbar-item">
-                  <div className={`dropdown ${dropdownOpen ? 'open' : ''}`}>
-                    <button className="navbar-link dropdown-toggle" onClick={toggleDropdown}>
-                      {currentUser.displayName || currentUser.email}
-                      <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`}></i>
-                    </button>
-                    <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
-                      <button type="button" onClick={handleManageProfile} className="dropdown-item">
-                        <i className="fas fa-user mr-2"></i>Manage Profile
+                <>
+                  <li className="navbar-item">
+                    <div className={`dropdown inbox-dropdown ${inboxOpen ? 'open' : ''}`}>
+                      <button className="navbar-link inbox-trigger" onClick={() => setInboxOpen(!inboxOpen)}>
+                        <i className="fas fa-inbox mr-2"></i>
+                        Inbox
+                        {unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
                       </button>
-                      <div className="dropdown-divider"></div>
-                      <button type="button" onClick={handleLogout} className="dropdown-item">
-                        <i className="fas fa-sign-out-alt mr-2"></i>Logout
-                      </button>
+                      <div className={`dropdown-menu inbox-dropdown-menu ${inboxOpen ? 'show' : ''}`}>
+                        <Inbox isOpen={inboxOpen} onClose={() => setInboxOpen(false)} isDropdown={true} />
+                      </div>
                     </div>
-                  </div>
-                </li>
+                  </li>
+                  <li className="navbar-item">
+                    <div className={`dropdown ${dropdownOpen ? 'open' : ''}`}>
+                      <button className="navbar-link dropdown-toggle" onClick={toggleDropdown}>
+                        {currentUser.displayName || currentUser.email}
+                        <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`}></i>
+                      </button>
+                      <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
+                        <button type="button" onClick={handleManageProfile} className="dropdown-item">
+                          <i className="fas fa-user mr-2"></i>Manage Profile
+                        </button>
+                        <div className="dropdown-divider"></div>
+                        <button type="button" onClick={handleLogout} className="dropdown-item">
+                          <i className="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                </>
               ) : (
                 <>
                   <li className="navbar-item">
@@ -271,6 +291,7 @@ const Layout = ({ children }) => {
           // Animation scroll functions will run from useEffect
         `}
       </script>
+
     </div>
   );
 };

@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { auth } from '../firebaseConfig';
+import { apiService } from '../services/api';
+import { onAuthStateChanged } from 'firebase/auth';
 
 
 const VolunteerApplication = () => {
@@ -14,6 +17,9 @@ const VolunteerApplication = () => {
     motivation: '',
     dynamicAnswers: {}
   });
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const categories = [
     'Logistics',
@@ -68,6 +74,57 @@ const VolunteerApplication = () => {
       }
     }));
   };
+
+  // Auto-fill form data for logged-in users
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+        try {
+          // Get user profile data from backend
+          await apiService.syncUser();
+          const userProfile = await apiService.getCurrentUser();
+
+          if (userProfile) {
+            setFormData(prev => ({
+              ...prev,
+              firstName: userProfile.firstName || '',
+              lastName: userProfile.lastName || '',
+              email: user.email || '',
+              phone: userProfile.phoneNumber || '',
+              grade: userProfile.grade || '',
+              school: userProfile.school || ''
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+          // For demo purposes, if backend is down, simulate auto-fill with user's basic info
+          if (user.displayName) {
+            const nameParts = user.displayName.split(' ');
+            setFormData(prev => ({
+              ...prev,
+              firstName: nameParts[0] || '',
+              lastName: nameParts.slice(1).join(' ') || '',
+              email: user.email || '',
+              // Phone will be empty since it's not available from Firebase Auth alone
+              phone: ''
+            }));
+          } else {
+            // Even without displayName, we can still auto-fill email
+            setFormData(prev => ({
+              ...prev,
+              email: user.email || ''
+            }));
+          }
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -143,198 +200,238 @@ const VolunteerApplication = () => {
               Volunteer Application
             </h2>
 
-            <form onSubmit={handleSubmit}>
-              {/* Name Fields Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                {/* First Name */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontWeight: 'bold',
-                    marginBottom: '0.5rem',
-                    color: '#2f506a'
-                  }}>
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '1rem',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
-                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-
-                {/* Last Name */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontWeight: 'bold',
-                    marginBottom: '0.5rem',
-                    color: '#2f506a'
-                  }}>
-                    Last Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '1rem',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
-                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
+            {isLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ fontSize: '1.2rem', color: '#2f506a' }}>Loading...</div>
               </div>
-
-              {/* Email */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontWeight: 'bold',
-                  marginBottom: '0.5rem',
-                  color: '#2f506a'
-                }}>
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e5e7eb',
+            ) : (
+              <>
+                {/* Info message for users */}
+                {isLoggedIn ? (
+                  <div style={{
+                    marginBottom: '2rem',
+                    padding: '1rem',
+                    backgroundColor: '#d1ecf1',
+                    border: '1px solid #bee5eb',
                     borderRadius: '8px',
-                    fontSize: '1rem',
-                    outline: 'none'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              {/* Phone */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontWeight: 'bold',
-                  marginBottom: '0.5rem',
-                  color: '#2f506a'
-                }}>
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e5e7eb',
+                    fontSize: '0.95rem',
+                    color: '#0c5460'
+                  }}>
+                    <i className="fas fa-check-circle" style={{ marginRight: '0.5rem' }}></i>
+                    Your personal information has been automatically filled from your account. You can edit any fields if needed.
+                  </div>
+                ) : (
+                  <div style={{
+                    marginBottom: '2rem',
+                    padding: '1rem',
+                    backgroundColor: '#fff3cd',
+                    border: '1px solid #ffeaa7',
                     borderRadius: '8px',
-                    fontSize: '1rem',
-                    outline: 'none'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              {/* Grade and School Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                {/* Grade */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontWeight: 'bold',
-                    marginBottom: '0.5rem',
-                    color: '#2f506a'
+                    fontSize: '0.95rem',
+                    color: '#856404'
                   }}>
-                    Grade *
-                  </label>
-                  <select
-                    name="grade"
-                    value={formData.grade}
-                    onChange={handleInputChange}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '1rem',
-                      outline: 'none',
-                      backgroundColor: 'white'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
-                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                  >
-                    <option value="">Select grade...</option>
-                    <option value="middleschool">Middle School</option>
-                    <option value="9">9th Grade</option>
-                    <option value="10">10th Grade</option>
-                    <option value="11">11th Grade</option>
-                    <option value="12">12th Grade</option>
-                    <option value="college">College</option>
-                    <option value="adult">Adult</option>
-                  </select>
-                </div>
+                    <i className="fas fa-info-circle" style={{ marginRight: '0.5rem' }}></i>
+                    You can fill out this form without an account, or <a href="/register" style={{ color: '#0056b3', textDecoration: 'underline' }}>register first</a> to auto-fill your information.
+                  </div>
+                )}
 
-                {/* School */}
-                <div>
-                  <label style={{
-                    display: 'block',
-                    fontWeight: 'bold',
-                    marginBottom: '0.5rem',
-                    color: '#2f506a'
-                  }}>
-                    School/Organization *
-                  </label>
-                  <input
-                    type="text"
-                    name="school"
-                    value={formData.school}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="e.g., Great Valley High School, Penn State, etc."
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e5e7eb',
-                      borderRadius: '8px',
-                      fontSize: '1rem',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
-                    onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                  />
-                </div>
-              </div>
+                <form onSubmit={handleSubmit}>
+                  {/* Name Fields Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    {/* First Name */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        color: '#2f506a'
+                      }}>
+                        First Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleInputChange}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          backgroundColor: isLoggedIn && formData.firstName ? '#f8f9fa' : 'white'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
+                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                      />
+                    </div>
 
-              {/* Preferred Contact Method */}
+                    {/* Last Name */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        color: '#2f506a'
+                      }}>
+                        Last Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleInputChange}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          backgroundColor: isLoggedIn && formData.lastName ? '#f8f9fa' : 'white'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
+                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{
+                      display: 'block',
+                      fontWeight: 'bold',
+                      marginBottom: '0.5rem',
+                      color: '#2f506a'
+                    }}>
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        outline: 'none',
+                        backgroundColor: isLoggedIn && formData.email ? '#f8f9fa' : 'white'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
+                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{
+                      display: 'block',
+                      fontWeight: 'bold',
+                      marginBottom: '0.5rem',
+                      color: '#2f506a'
+                    }}>
+                      Phone Number *
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        outline: 'none',
+                        backgroundColor: isLoggedIn && formData.phone ? '#f8f9fa' : 'white'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
+                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                  </div>
+
+                  {/* Grade and School Row */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                    {/* Grade */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        color: '#2f506a'
+                      }}>
+                        Grade *
+                      </label>
+                      <select
+                        name="grade"
+                        value={formData.grade}
+                        onChange={handleInputChange}
+                        required
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          backgroundColor: isLoggedIn && formData.grade ? '#f8f9fa' : 'white'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
+                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                      >
+                        <option value="">Select grade...</option>
+                        <option value="middleschool">Middle School</option>
+                        <option value="9">9th Grade</option>
+                        <option value="10">10th Grade</option>
+                        <option value="11">11th Grade</option>
+                        <option value="12">12th Grade</option>
+                        <option value="college">College</option>
+                        <option value="adult">Adult</option>
+                      </select>
+                    </div>
+
+                    {/* School */}
+                    <div>
+                      <label style={{
+                        display: 'block',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        color: '#2f506a'
+                      }}>
+                        School/Organization *
+                      </label>
+                      <input
+                        type="text"
+                        name="school"
+                        value={formData.school}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="e.g., Great Valley High School, Penn State, etc."
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          border: '2px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          outline: 'none',
+                          backgroundColor: isLoggedIn && formData.school ? '#f8f9fa' : 'white'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#4a7ca3'}
+                        onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preferred Contact Method */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{
                   display: 'block',
@@ -572,7 +669,9 @@ const VolunteerApplication = () => {
               >
                 Submit Application
               </button>
-            </form>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -976,3 +976,374 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Inbox Styles */
+.inbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.inbox-container {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inbox-header {
+  background: var(--primary);
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inbox-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.unread-badge {
+  background: var(--secondary);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 0.5rem;
+}
+
+.inbox-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.inbox-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.inbox-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.inbox-loading, .inbox-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-light);
+}
+
+.inbox-empty i {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.inbox-messages {
+  display: flex;
+  flex-direction: column;
+}
+
+.inbox-message {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inbox-message:hover {
+  background: #f8f9fa;
+}
+
+.inbox-message.unread {
+  background: #f0f9ff;
+  border-left: 4px solid var(--primary);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.message-from {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.message-time {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.message-delete {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: color 0.2s;
+}
+
+.message-delete:hover {
+  color: var(--secondary);
+}
+
+.message-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.message-body {
+  color: var(--text-light);
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+}
+
+.message-action {
+  margin-top: 0.75rem;
+}
+
+.message-action .btn {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+}
+
+/* Inbox dropdown in navbar */
+.inbox-dropdown {
+  position: relative;
+}
+
+.inbox-trigger {
+  display: flex;
+  align-items: center;
+  color: white !important;
+  text-decoration: none;
+  position: relative;
+}
+
+.inbox-trigger:hover {
+  color: white !important;
+}
+
+.inbox-trigger .unread-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 0.6rem;
+  min-width: 16px;
+  height: 16px;
+}
+
+.inbox-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  min-width: 350px;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  z-index: 1000;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.inbox-dropdown-content {
+  width: 100%;
+}
+
+.inbox-dropdown-header {
+  background: var(--primary);
+  color: white;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inbox-title {
+  display: flex;
+  align-items: center;
+}
+
+.inbox-dropdown-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.inbox-message-compact {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.85rem;
+}
+
+.inbox-message-compact:hover {
+  background: #f8fafc;
+}
+
+.inbox-message-compact.unread {
+  background: #f0f9ff;
+  border-left: 3px solid var(--primary);
+}
+
+.message-header-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.message-from-compact {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.message-delete-compact {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  transition: color 0.2s;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.inbox-message-compact:hover .message-delete-compact {
+  opacity: 1;
+}
+
+.message-delete-compact:hover {
+  color: var(--secondary);
+}
+
+.message-title-compact {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.message-body-compact {
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.message-time-compact {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.message-action-compact {
+  margin-top: 0.5rem;
+}
+
+.btn-xs {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.message-action-compact .btn-xs {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.inbox-view-all {
+  padding: 0.75rem;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inbox-view-all:hover {
+  background: #f1f5f9;
+}
+
+/* Inbox icon in navbar (legacy support) */
+.inbox-icon {
+  position: relative;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.inbox-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.inbox-icon .unread-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(25%, -25%);
+  font-size: 0.6rem;
+  min-width: 16px;
+  height: 16px;
+}
