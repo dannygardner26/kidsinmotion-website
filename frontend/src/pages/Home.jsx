@@ -106,12 +106,12 @@ const Home = () => {
           {/* Use Tailwind flexbox for layout: text left, image right - Using inline flex-basis for diagnosis */}
           <div className="flex flex-row gap-8" style={{ display: 'flex', flexDirection: 'row' }}> 
             {/* Text Column */}
-            <div className="fade-in" style={{ flexBasis: '60%', flexShrink: 0 }}> 
+            <div style={{ flexBasis: '60%', flexShrink: 0 }}> 
               <h2>Our Mission</h2>
               <p>
                 Kids in Motion is on a mission to make sports accessible to every child. Through free 
-                sports clinics and donated equipment, we give kidsÃ¢â‚¬â€especially those facing financial or 
-                opportunity barriersÃ¢â‚¬â€the chance to explore new sports, develop skills, and build lasting friendships.
+                sports clinics and donated equipment, we give kids—especially those facing financial or 
+                opportunity barriers—the chance to explore new sports, develop skills, and build lasting friendships.
               </p>
               <p>
                 Founded by high school athletes who believe in the power of sports, we aim to break down 
@@ -122,7 +122,7 @@ const Home = () => {
               <Link to="/about" className="btn btn-outline mt-2">Learn More</Link>
             </div>
             {/* Image Column */}
-            <div className="slide-in-right" style={{ flexBasis: '40%', flexShrink: 0 }}> 
+            <div style={{ flexBasis: '40%', flexShrink: 0 }}> 
               <img
                 src={assetUrls['kids-with-mentors.jpg']} 
                 alt="Kids learning from teen mentors at Kids in Motion clinic"
@@ -136,7 +136,7 @@ const Home = () => {
       {/* Photo Slideshow Section */}
       <section className="section" style={{ backgroundColor: '#fff' }}>
         <div className="container">
-          <div className="section-head fade-in">
+          <div className="section-head ">
             <h2>See Us in Action</h2>
             <p>Moments from our sports clinics and community events</p>
           </div>
@@ -199,7 +199,7 @@ const Home = () => {
               onMouseEnter={(e) => e.target.style.background = 'white'}
               onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.9)'}
             >
-              Ã¢â‚¬Â¹
+              ‹
             </button>
             <button 
               className="slide-nav next" 
@@ -223,7 +223,7 @@ const Home = () => {
               onMouseEnter={(e) => e.target.style.background = 'white'}
               onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.9)'}
             >
-              Ã¢â‚¬Âº
+              ›
             </button>
             
             {/* Slide indicators */}
@@ -259,7 +259,7 @@ const Home = () => {
       {/* Upcoming Events Section */}
       <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
         <div className="container">
-          <div className="section-head fade-in">
+          <div className="section-head ">
             <h2>Upcoming Events</h2>
           </div>
           
@@ -271,7 +271,7 @@ const Home = () => {
           ) : upcomingEvents.length > 0 ? (
             <div className="row">
               {upcomingEvents.map((event, index) => (
-                <div className={`col-third fade-in`} key={event.id} style={{ animationDelay: `${0.2 * index}s` }}>
+                <div className={`col-third `} key={event.id} style={{ animationDelay: `${0.2 * index}s` }}>
                   <div className="card event-card">
                     <div className="card-header">
                       <h3>{event.title}</h3>
@@ -292,12 +292,12 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center fade-in">
+            <div className="text-center ">
               <p>No upcoming events at the moment. Check back soon!</p>
             </div>
           )}
           
-          <div className="text-center mt-3 fade-in">
+          <div className="text-center mt-3 ">
             <Link to="/events" className="btn btn-outline">View All Events</Link>
           </div>
         </div>
@@ -306,30 +306,30 @@ const Home = () => {
       {/* Impact Section - Temporarily commented out
       <section className="section">
         <div className="container">
-          <div className="section-head fade-in">
+          <div className="section-head ">
             <h2>Our Impact</h2>
           </div>
           
           <div className="row">
-            <div className="col-fourth fade-in">
+            <div className="col-fourth ">
               <div className="impact-stat text-center">
                 <div className="impact-number">500+</div>
                 <p>Children Served</p>
               </div>
             </div>
-            <div className="col-fourth fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="col-fourth " style={{ animationDelay: '0.2s' }}>
               <div className="impact-stat text-center">
                 <div className="impact-number">25</div>
                 <p>Free Clinics</p>
               </div>
             </div>
-            <div className="col-fourth fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="col-fourth " style={{ animationDelay: '0.4s' }}>
               <div className="impact-stat text-center">
                 <div className="impact-number">10</div>
                 <p>Communities</p>
               </div>
             </div>
-            <div className="col-fourth fade-in" style={{ animationDelay: '0.6s' }}>
+            <div className="col-fourth " style={{ animationDelay: '0.6s' }}>
               <div className="impact-stat text-center">
                 <div className="impact-number">300+</div>
                 <p>Equipment Donations</p>
@@ -369,7 +369,7 @@ const Home = () => {
         }}></div>
         
         <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="testimonial-slider fade-in">
+          <div className="testimonial-slider ">
             <div className="testimonial text-center">
               <div className="testimonial-quote">
                 <i className="fas fa-quote-left" style={{ fontSize: '2rem', color: 'var(--secondary)' }}></i>
@@ -387,7 +387,7 @@ const Home = () => {
       
       {/* Support Section */}
       <section className="section">
-        <div className="container text-center"> {/* Removed fade-in class */}
+        <div className="container text-center"> {/* Removed  class */}
           <h2>Help Every Kid Get in the Game</h2>
           <p className="mt-1 mb-2"> {/* Added margin top/bottom for spacing */}
             Your donations provide free sports clinics and equipment to kids who might not otherwise
@@ -395,7 +395,7 @@ const Home = () => {
             the next generation of athletes.
           </p>
           <div className="flex justify-center">
-            <a href="https://venmo.com/ryanspiess22" target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-2">Support Our Mission</a>
+            <a href="https://account.venmo.com/u/ryanspiess22" target="_blank" rel="noopener noreferrer" className="btn btn-secondary mt-2">Support Our Mission</a>
           </div>
         </div>
       </section>

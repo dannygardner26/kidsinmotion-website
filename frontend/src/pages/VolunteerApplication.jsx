@@ -22,7 +22,8 @@ const VolunteerApplication = () => {
     'Event Coordination',
     'Social Media Team',
     'Website Team',
-    'Coach'
+    'Coach',
+    'New Sport'
   ];
 
   // Dynamic questions for each category
@@ -33,7 +34,8 @@ const VolunteerApplication = () => {
     'website-team': 'Tell us about your web development, design, or technical experience.',
     'event-coordination': 'Do you have experience organizing events, managing logistics, or coordinating groups?',
     'member-outreach': 'How would you help recruit and engage new members for Kids in Motion?',
-    'logistics': 'Do you have experience with financial management, equipment handling, or organizational operations?'
+    'logistics': 'Do you have experience with financial management, equipment handling, or organizational operations?',
+    'new-sport': 'What sport would you like to introduce to Kids in Motion? Describe your experience with this sport and explain how you would organize events - specifically address: 1) How you would recruit volunteers to help, 2) What locations you could secure for practices/events, and 3) How you would attract kids and families to participate.'
   };
 
   const handleInputChange = (e) => {

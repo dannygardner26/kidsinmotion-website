@@ -15,6 +15,8 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const About = lazy(() => import('./pages/About'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const CreateEvent = lazy(() => import('./pages/CreateEvent'));
@@ -77,6 +79,8 @@ const App = () => {
                 <Route path="/events" element={<Events />} />
                 <Route path="/events/:id" element={<EventDetail />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/volunteer" element={<VolunteerApplication />} />
 
                 {/* Routes only accessible when logged OUT */}

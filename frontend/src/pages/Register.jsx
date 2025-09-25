@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
+import { apiService } from '../services/api';
 
 
 const Register = () => {
@@ -13,7 +14,8 @@ const Register = () => {
     password: '',
     confirmPassword: '',
     phoneNumber: '',
-    role: 'PARENT' // Default role
+    role: 'PARENT', // Default role
+    agreeToTerms: false
   });
 
   const [isLoading, setIsLoading] = useState(false); // Renamed for clarity
@@ -23,16 +25,16 @@ const Register = () => {
   // No need for useEffect to check token, Firebase handles auth state persistence
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
   const validateForm = () => {
     const errors = {};
-    const { firstName, lastName, email, password, confirmPassword, phoneNumber } = formData;
+    const { firstName, lastName, email, password, confirmPassword, phoneNumber, agreeToTerms } = formData;
 
     if (!firstName.trim()) errors.firstName = 'First name is required';
     if (!lastName.trim()) errors.lastName = 'Last name is required';
@@ -51,6 +53,9 @@ const Register = () => {
     }
     if (!phoneNumber.trim()) { // Basic check, consider more robust validation
         errors.phoneNumber = 'Phone number is required';
+    }
+    if (!agreeToTerms) {
+      errors.agreeToTerms = 'You must agree to the Terms and Conditions and Privacy Policy';
     }
 
     setFormErrors(errors);
@@ -81,32 +86,13 @@ const Register = () => {
       // 3. Send additional data to your backend to create the user profile
       //    You'll need an endpoint that accepts the Firebase UID and other form data.
       const profileData = {
-          firebaseUid: user.uid, // Send Firebase UID to link accounts
           firstName: formData.firstName,
           lastName: formData.lastName,
-          email: formData.email, // Email might be redundant if UID is primary key
-          phoneNumber: formData.phoneNumber,
-          role: formData.role
+          phoneNumber: formData.phoneNumber
       };
 
-      const backendResponse = await fetch('/api/users/register-profile', { // TODO: Replace with your actual backend endpoint
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              // Include Authorization header if needed, e.g., sending the Firebase ID token
-              // 'Authorization': `Bearer ${await user.getIdToken()}`
-          },
-          body: JSON.stringify(profileData)
-      });
-
-      if (!backendResponse.ok) {
-          // Handle backend error - maybe delete the Firebase user or prompt user
-          const backendErrorData = await backendResponse.json();
-          console.error("Backend profile creation failed:", backendErrorData);
-          // Consider deleting the Firebase user if backend registration fails critically
-          // await user.delete(); // Requires recent sign-in, might need re-authentication
-          throw new Error(backendErrorData.message || 'Failed to save user profile information.');
-      }
+      await apiService.syncUser();
+      await apiService.updateUserProfile(profileData);
 
       console.log("Backend profile created successfully.");
 
@@ -230,19 +216,36 @@ const Register = () => {
                   </div>
 
                   {/* Use theme form-group */}
-                  <div className="form-group"> 
+                  <div className="form-group">
                     <label htmlFor="role">I am registering as a:</label>
                     {/* Style select like form-control */}
-                    <select 
+                    <select
                       id="role"
                       name="role"
-                      className="form-control" 
+                      className="form-control"
                       value={formData.role}
                       onChange={handleChange}
                     >
                       <option value="PARENT">Parent/Guardian</option>
                       <option value="VOLUNTEER">Volunteer</option>
                     </select>
+
+                    {/* Show note when Volunteer is selected */}
+                    {formData.role === 'VOLUNTEER' && (
+                      <div style={{
+                        marginTop: '0.75rem',
+                        padding: '0.75rem',
+                        backgroundColor: '#e8f4f8',
+                        border: '1px solid #bee5eb',
+                        borderRadius: '6px',
+                        fontSize: '0.9rem',
+                        color: '#0c5460',
+                        lineHeight: '1.4'
+                      }}>
+                        <i className="fas fa-info-circle" style={{ marginRight: '0.5rem' }}></i>
+                        <strong>Note:</strong> After creating your account, you can apply for specific volunteer roles (like Coach, Social Media Team, Event Coordination, etc.) through a separate application form.
+                      </div>
+                    )}
                   </div>
 
                   {/* Use theme heading style */}
@@ -286,12 +289,25 @@ const Register = () => {
                     )}
                   </div>
 
-                  {/* Basic checkbox styling with Tailwind */}
-                  <div className="flex items-center mt-4 mb-4"> 
-                    <input className="mr-2 leading-tight" type="checkbox" id="termsCheck" required />
-                    <label className="text-sm text-gray-600" htmlFor="termsCheck">
-                      I agree to the <Link to="/terms" target="_blank" className="font-medium hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium hover:underline">Privacy Policy</Link>.
-                    </label>
+                  {/* Agreement checkbox with validation */}
+                  <div className="mt-4 mb-4">
+                    <div className="flex items-start">
+                      <input
+                        className={`mr-2 mt-1 leading-tight ${formErrors.agreeToTerms ? 'border-red-500' : ''}`}
+                        type="checkbox"
+                        id="agreeToTerms"
+                        name="agreeToTerms"
+                        checked={formData.agreeToTerms}
+                        onChange={handleChange}
+                        required
+                      />
+                      <label className="text-sm text-gray-600" htmlFor="agreeToTerms">
+                        I agree to the <Link to="/terms" target="_blank" className="font-medium hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium hover:underline">Privacy Policy</Link>.
+                      </label>
+                    </div>
+                    {formErrors.agreeToTerms && (
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.agreeToTerms}</p>
+                    )}
                   </div>
 
                   {/* Use theme button styles, add w-full */}
@@ -315,3 +331,6 @@ const Register = () => {
 };
 
 export default Register;
+
+
+

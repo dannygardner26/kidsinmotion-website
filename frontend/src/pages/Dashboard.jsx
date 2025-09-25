@@ -16,6 +16,13 @@ const Dashboard = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [cancelItemId, setCancelItemId] = useState(null);
   const [cancelItemType, setCancelItemType] = useState(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    phoneNumber: ''
+  });
+  const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   
   useEffect(() => {
     // Redirect if not logged in
@@ -60,6 +67,48 @@ const Dashboard = () => {
     setShowConfirmModal(false);
     setCancelItemId(null);
     setCancelItemType(null);
+  };
+
+  const startEditingProfile = () => {
+    setEditProfileData({
+      firstName: userProfile?.firstName || '',
+      lastName: userProfile?.lastName || '',
+      phoneNumber: userProfile?.phoneNumber || ''
+    });
+    setIsEditingProfile(true);
+  };
+
+  const cancelEditingProfile = () => {
+    setIsEditingProfile(false);
+    setEditProfileData({
+      firstName: '',
+      lastName: '',
+      phoneNumber: ''
+    });
+  };
+
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const saveProfileChanges = async () => {
+    try {
+      setProfileUpdateLoading(true);
+      await apiService.updateUserProfile(editProfileData);
+
+      // Refresh user profile data
+      window.location.reload(); // Simple reload to refresh all user data
+
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setError('Failed to update profile: ' + error.message);
+    } finally {
+      setProfileUpdateLoading(false);
+    }
   };
   
   const handleCancelRegistration = async () => {
@@ -167,7 +216,7 @@ const Dashboard = () => {
       <div className="container mt-4">
         <div className="row">
           <div className="col-third">
-            <div className="card profile-card mb-4 fade-in">
+            <div className="card profile-card mb-4 ">
               <div className="card-header">
                 <h3>Your Profile</h3>
               </div>
@@ -176,17 +225,86 @@ const Dashboard = () => {
                   {userProfile?.firstName?.charAt(0) || currentUser?.displayName?.charAt(0) || 'U'}{userProfile?.lastName?.charAt(0) || ''}
                 </div>
                 <div className="profile-info">
-                  <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
-                  <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
-                  <p><strong>Phone:</strong> {userProfile?.phoneNumber || 'Not provided'}</p>
+                  {!isEditingProfile ? (
+                    <>
+                      <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
+                      <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
+                      <p><strong>Phone:</strong> {userProfile?.phoneNumber || 'Not provided'}</p>
+                    </>
+                  ) : (
+                    <div className="edit-profile-form">
+                      <div className="form-group">
+                        <label><strong>First Name:</strong></label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={editProfileData.firstName}
+                          onChange={handleProfileInputChange}
+                          className="form-control"
+                          placeholder="First Name"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label><strong>Last Name:</strong></label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={editProfileData.lastName}
+                          onChange={handleProfileInputChange}
+                          className="form-control"
+                          placeholder="Last Name"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label><strong>Phone:</strong></label>
+                        <input
+                          type="tel"
+                          name="phoneNumber"
+                          value={editProfileData.phoneNumber}
+                          onChange={handleProfileInputChange}
+                          className="form-control"
+                          placeholder="Phone Number"
+                        />
+                      </div>
+                      <p><strong>Email:</strong> {userProfile?.email || currentUser?.email} <small>(cannot be changed)</small></p>
+                    </div>
+                  )}
                 </div>
-                <Link to="/profile/edit" className="btn btn-outline btn-block mt-3">
-                  <i className="fas fa-user-edit mr-2"></i> Edit Profile
-                </Link>
+                {!isEditingProfile ? (
+                  <button onClick={startEditingProfile} className="btn btn-outline btn-block mt-3">
+                    <i className="fas fa-user-edit mr-2"></i> Edit Profile
+                  </button>
+                ) : (
+                  <div className="edit-profile-actions">
+                    <button
+                      onClick={saveProfileChanges}
+                      className="btn btn-primary btn-block mt-3"
+                      disabled={profileUpdateLoading}
+                    >
+                      {profileUpdateLoading ? (
+                        <>
+                          <div className="loading-spinner-small"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-save mr-2"></i> Save Changes
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={cancelEditingProfile}
+                      className="btn btn-outline btn-block mt-2"
+                      disabled={profileUpdateLoading}
+                    >
+                      <i className="fas fa-times mr-2"></i> Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="card mb-4 fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="card mb-4 ">
               <div className="card-header">
                 <h3>Quick Links</h3>
               </div>
@@ -206,25 +324,19 @@ const Dashboard = () => {
                     <div className="quick-link-text">Volunteer</div>
                   </Link>
                   
-                  <a href="https://venmo.com/ryanspiess22" target="_blank" rel="noopener noreferrer" className="quick-link-item">
+                  <a href="https://account.venmo.com/u/ryanspiess22" target="_blank" rel="noopener noreferrer" className="quick-link-item">
                     <div className="quick-link-icon" style={{ backgroundColor: '#28a745' }}><i className="fas fa-donate"></i>
                     </div>
                     <div className="quick-link-text">Donate</div>
                   </a>
                   
-                  <Link to="/contact" className="quick-link-item">
-                    <div className="quick-link-icon" style={{ backgroundColor: '#6c757d' }}>
-                      <i className="fas fa-envelope"></i>
-                    </div>
-                    <div className="quick-link-text">Contact Us</div>
-                  </Link>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="col-two-thirds">
-            <div className="card activities-card fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="card activities-card ">
               <div className="card-header tab-header">
                 <ul className="nav-tabs">
                   <li 
@@ -245,7 +357,7 @@ const Dashboard = () => {
               </div>
               <div className="card-body">
                 {activeTab === 'registrations' && (
-                  <div className="tab-content fade-in">
+                  <div className="tab-content ">
                     <h2>Your Child's Registered Events</h2>
                     
                     {registeredEvents.length === 0 ? (
@@ -316,7 +428,7 @@ const Dashboard = () => {
                 )}
                 
                 {activeTab === 'volunteer' && (
-                  <div className="tab-content fade-in">
+                  <div className="tab-content ">
                     <h2>Your Volunteer Activities</h2>
                     
                     {volunteerEvents.length === 0 ? (
@@ -773,6 +885,45 @@ const Dashboard = () => {
         
         .error-card {
           text-align: center;
+        }
+
+        .edit-profile-form .form-group {
+          margin-bottom: 1rem;
+        }
+
+        .edit-profile-form label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+        }
+
+        .edit-profile-form .form-control {
+          width: 100%;
+          padding: 0.5rem;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 1rem;
+        }
+
+        .edit-profile-form .form-control:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 2px rgba(47, 80, 106, 0.2);
+        }
+
+        .edit-profile-actions .btn {
+          margin-top: 0.5rem;
+        }
+
+        .loading-spinner-small {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top-color: white;
+          animation: spin 1s ease-in-out infinite;
+          margin-right: 0.5rem;
         }
         
         .error-icon {
