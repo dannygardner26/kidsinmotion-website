@@ -3,6 +3,7 @@ package com.example.restservice.security;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.UserRecord;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -38,4 +39,9 @@ public class FirebaseAuthService {
             throw new RuntimeException("Invalid Firebase token", e);
         }
     }
+
+    public UserRecord getUserRecord(String uid) throws FirebaseAuthException {
+        return FirebaseAuth.getInstance().getUser(uid);
+    }
 }
+
