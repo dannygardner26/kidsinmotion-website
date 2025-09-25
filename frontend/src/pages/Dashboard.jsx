@@ -73,7 +73,7 @@ const Dashboard = () => {
     setEditProfileData({
       firstName: userProfile?.firstName || '',
       lastName: userProfile?.lastName || '',
-      phoneNumber: userProfile?.phoneNumber || ''
+      phoneNumber: (userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : ''
     });
     setIsEditingProfile(true);
   };
@@ -229,7 +229,7 @@ const Dashboard = () => {
                     <>
                       <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
                       <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
-                      <p><strong>Phone:</strong> {userProfile?.phoneNumber || 'Not provided'}</p>
+                      <p><strong>Phone:</strong> {(userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : 'Not provided'}</p>
                     </>
                   ) : (
                     <div className="edit-profile-form">

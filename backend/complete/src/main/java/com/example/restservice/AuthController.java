@@ -8,7 +8,9 @@ import com.example.restservice.payload.response.UserProfileResponse;
 import com.example.restservice.repository.RoleRepository;
 import com.example.restservice.repository.UserRepository;
 import com.example.restservice.security.FirebaseAuthService;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.UserRecord;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,6 +19,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +31,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     UserRepository userRepository;
@@ -70,55 +76,74 @@ public class AuthController {
             } else {
                 // For regular Firebase tokens, decode them
                 decodedToken = firebaseAuthService.verifyIdToken(idToken);
-                name = decodedToken != null ? decodedToken.getName() : null;
                 if (decodedToken != null) {
+                    name = decodedToken.getName();
                     Object phoneClaim = decodedToken.getClaims().get("phone_number");
                     if (phoneClaim instanceof String phoneString && !phoneString.isBlank()) {
                         phoneNumber = phoneString;
                     }
                 }
+
+                if ((name == null || name.isBlank()) || (phoneNumber == null || phoneNumber.isBlank())) {
+                    try {
+                        UserRecord userRecord = firebaseAuthService.getUserRecord(firebaseUid);
+                        if (userRecord != null) {
+                            if ((name == null || name.isBlank()) && userRecord.getDisplayName() != null && !userRecord.getDisplayName().isBlank()) {
+                                name = userRecord.getDisplayName();
+                            }
+                            if ((phoneNumber == null || phoneNumber.isBlank()) && userRecord.getPhoneNumber() != null && !userRecord.getPhoneNumber().isBlank()) {
+                                phoneNumber = userRecord.getPhoneNumber();
+                            }
+                        }
+                    } catch (FirebaseAuthException e) {
+                        logger.warn("Failed to fetch Firebase user record for {}: {}", firebaseUid, e.getMessage());
+                    }
+                }
             }
 
-            // Parse name into first and last name (simple approach)
-            String firstName = "";
-            String lastName = "";
+            String firebaseFirstName = "";
+            String firebaseLastName = "";
             if (name != null && !name.isBlank()) {
                 String[] nameParts = name.trim().split("\\s+", 2);
-                firstName = nameParts[0];
-                lastName = nameParts.length > 1 ? nameParts[1] : "";
+                firebaseFirstName = nameParts[0];
+                if (nameParts.length > 1) {
+                    firebaseLastName = nameParts[1];
+                }
             }
 
-            if ((firstName == null || firstName.isBlank()) && email != null && email.contains("@")) {
-                firstName = email.substring(0, email.indexOf("@"));
-            }
-            if (firstName == null || firstName.isBlank()) {
-                firstName = "Volunteer";
-            }
-            if (lastName == null || lastName.isBlank()) {
-                lastName = "User";
+            String emailDerivedFirstName = null;
+            if (email != null && email.contains("@")) {
+                emailDerivedFirstName = email.substring(0, email.indexOf("@"));
             }
 
-            if (phoneNumber == null || phoneNumber.isBlank()) {
-                phoneNumber = "pending";
+            String defaultFirstName = firebaseFirstName;
+            String defaultLastName = firebaseLastName;
+
+            if ((defaultFirstName == null || defaultFirstName.isBlank()) && emailDerivedFirstName != null && !emailDerivedFirstName.isBlank()) {
+                defaultFirstName = emailDerivedFirstName;
             }
-            if (phoneNumber.length() > 20) {
+            if (defaultFirstName == null || defaultFirstName.isBlank()) {
+                defaultFirstName = "Volunteer";
+            }
+            if (defaultLastName == null || defaultLastName.isBlank()) {
+                defaultLastName = "User";
+            }
+
+            if (phoneNumber != null && phoneNumber.length() > 20) {
                 phoneNumber = phoneNumber.substring(0, 20);
             }
 
-            // Check if user already exists
             User user = userRepository.findByFirebaseUid(firebaseUid).orElse(null);
 
             if (user == null) {
-                // Create new user from Firebase data
-                user = new User(firebaseUid, firstName, lastName, email, phoneNumber);
+                String phoneForNewUser = (phoneNumber == null || phoneNumber.isBlank()) ? "pending" : phoneNumber;
+                user = new User(firebaseUid, defaultFirstName, defaultLastName, email, phoneForNewUser);
 
-                // Assign roles based on email
                 Set<Role> roles = new HashSet<>();
                 Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                         .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
                 roles.add(userRole);
 
-                // Check if this email should have admin privileges
                 if (isAdminEmail(email)) {
                     Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
                             .orElseThrow(() -> new RuntimeException("Error: Admin role is not found."));
@@ -131,7 +156,6 @@ public class AuthController {
                     userRepository.save(user);
                     return ResponseEntity.ok(new MessageResponse("User created successfully!"));
                 } catch (DataIntegrityViolationException ex) {
-                    // Another request likely created this user concurrently; fall back to update flow
                     user = userRepository.findByFirebaseUid(firebaseUid).orElse(null);
                     if (user == null) {
                         throw ex;
@@ -139,23 +163,46 @@ public class AuthController {
                 }
             }
 
-            // Update existing user details if missing
             boolean updated = false;
 
             if (!user.getEmail().equals(email)) {
                 user.setEmail(email);
                 updated = true;
             }
-            if ((user.getFirstName() == null || user.getFirstName().isBlank()) && firstName != null) {
-                user.setFirstName(firstName);
+
+            boolean isAutoFirstName = user.getFirstName() == null
+                    || user.getFirstName().isBlank()
+                    || "Volunteer".equalsIgnoreCase(user.getFirstName())
+                    || (emailDerivedFirstName != null && user.getFirstName().equalsIgnoreCase(emailDerivedFirstName));
+
+            if ((user.getFirstName() == null || user.getFirstName().isBlank()) && defaultFirstName != null && !defaultFirstName.isBlank()) {
+                user.setFirstName(defaultFirstName);
+                updated = true;
+            } else if (firebaseFirstName != null && !firebaseFirstName.isBlank() && !firebaseFirstName.equals(user.getFirstName()) && isAutoFirstName) {
+                user.setFirstName(firebaseFirstName);
                 updated = true;
             }
-            if ((user.getLastName() == null || user.getLastName().isBlank()) && lastName != null) {
-                user.setLastName(lastName);
+
+            boolean isAutoLastName = user.getLastName() == null
+                    || user.getLastName().isBlank()
+                    || "User".equalsIgnoreCase(user.getLastName());
+
+            if ((user.getLastName() == null || user.getLastName().isBlank()) && defaultLastName != null && !defaultLastName.isBlank()) {
+                user.setLastName(defaultLastName);
+                updated = true;
+            } else if (firebaseLastName != null && !firebaseLastName.isBlank() && !firebaseLastName.equals(user.getLastName()) && isAutoLastName) {
+                user.setLastName(firebaseLastName);
                 updated = true;
             }
-            if ((user.getPhoneNumber() == null || user.getPhoneNumber().isBlank()) && phoneNumber != null) {
-                user.setPhoneNumber(phoneNumber);
+
+            if (phoneNumber != null && !phoneNumber.isBlank()) {
+                String normalizedPhone = phoneNumber.length() > 20 ? phoneNumber.substring(0, 20) : phoneNumber;
+                if (!normalizedPhone.equals(user.getPhoneNumber())) {
+                    user.setPhoneNumber(normalizedPhone);
+                    updated = true;
+                }
+            } else if (user.getPhoneNumber() == null || user.getPhoneNumber().isBlank()) {
+                user.setPhoneNumber("pending");
                 updated = true;
             }
 
@@ -233,13 +280,27 @@ public class AuthController {
 
             // Update user profile
             if (updateRequest.getFirstName() != null) {
-                user.setFirstName(updateRequest.getFirstName());
+                String firstName = updateRequest.getFirstName().trim();
+                if (!firstName.isEmpty()) {
+                    user.setFirstName(firstName);
+                }
             }
             if (updateRequest.getLastName() != null) {
-                user.setLastName(updateRequest.getLastName());
+                String lastName = updateRequest.getLastName().trim();
+                if (!lastName.isEmpty()) {
+                    user.setLastName(lastName);
+                }
             }
             if (updateRequest.getPhoneNumber() != null) {
-                user.setPhoneNumber(updateRequest.getPhoneNumber());
+                String newPhoneNumber = updateRequest.getPhoneNumber().trim();
+                if (!newPhoneNumber.isEmpty()) {
+                    if (newPhoneNumber.length() > 20) {
+                        newPhoneNumber = newPhoneNumber.substring(0, 20);
+                    }
+                    user.setPhoneNumber(newPhoneNumber);
+                } else {
+                    user.setPhoneNumber("pending");
+                }
             }
 
             userRepository.save(user);
@@ -334,10 +395,5 @@ public class AuthController {
         return false;
     }
 }
-
-
-
-
-
 
 
