@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import DynamicImage from '../components/DynamicImage';
 import { ArrowRight, Users, Award, Gift, Heart } from 'lucide-react';
 import { assetUrls } from '../utils/firebaseAssets';
@@ -79,7 +79,7 @@ const About = () => {
   ];
 
   return (
-    <Layout>
+    <>
       {/* Hero Section */}
       <section className="hero" style={{
         background: 'linear-gradient(135deg, #4a7ca3 0%, #2f506a 100%)',
@@ -503,7 +503,7 @@ const About = () => {
           </div>
         </div>
       </section>
-    </Layout>
+    </>
   );
 };
 

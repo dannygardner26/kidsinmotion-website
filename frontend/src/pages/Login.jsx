@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
-import Layout from '../components/Layout';
+
 
 const Login = () => {
   const navigate = useNavigate();
@@ -142,12 +142,12 @@ const Login = () => {
   // Consider if a global loading indicator is better if auth check is slow.
   // For now, the existing isLoading logic should cover most cases.
   // if (isLoading && !error) { 
-  //     return <Layout><div className="container mt-4 text-center"><p>Loading...</p></div></Layout>;
+  //     return <><div className="container mt-4 text-center"><p>Loading...</p></div></>;
   // }
 
 
   return (
-    <Layout>
+    <>
       {/* Use flexbox for centering */}
       <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]"> 
         {/* Adjust min-height based on header/footer */}
@@ -243,7 +243,7 @@ const Login = () => {
           </div>
         {/* Removed extra closing div */}
       </div>
-    </Layout>
+    </>
   );
 };
 

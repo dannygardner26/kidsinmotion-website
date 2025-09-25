@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 
@@ -131,7 +131,7 @@ const AdminDashboard = () => {
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card">
             <div className="card-body text-center">
@@ -141,25 +141,25 @@ const AdminDashboard = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="loading-container">
             <div className="loading-spinner"></div>
             <p>Loading admin dashboard...</p>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="container mt-4">
         <div className="admin-header mb-4">
           <h1>Admin Dashboard</h1>
@@ -509,13 +509,13 @@ const AdminDashboard = () => {
 
                       <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem' }}>
                         <span style={{ color: announcement.sendToWebsite ? '#059669' : '#9ca3af' }}>
-                          📬 Website: {announcement.sendToWebsite ? 'Yes' : 'No'}
+                          Ã°Å¸â€œÂ¬ Website: {announcement.sendToWebsite ? 'Yes' : 'No'}
                         </span>
                         <span style={{ color: announcement.sendToEmail ? '#059669' : '#9ca3af' }}>
-                          📧 Email: {announcement.sendToEmail ? 'Yes' : 'No'}
+                          Ã°Å¸â€œÂ§ Email: {announcement.sendToEmail ? 'Yes' : 'No'}
                         </span>
                         <span style={{ color: announcement.sendToPhone ? '#059669' : '#9ca3af' }}>
-                          📱 SMS: {announcement.sendToPhone ? 'Yes' : 'No'}
+                          Ã°Å¸â€œÂ± SMS: {announcement.sendToPhone ? 'Yes' : 'No'}
                         </span>
                       </div>
                     </div>
@@ -711,7 +711,7 @@ const AdminDashboard = () => {
           }
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 
@@ -24,7 +24,7 @@ const CreateEvent = () => {
 
   if (!isAdmin) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card">
             <div className="card-body text-center">
@@ -36,7 +36,7 @@ const CreateEvent = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
@@ -78,7 +78,7 @@ const CreateEvent = () => {
   };
 
   return (
-    <Layout>
+    <>
       <div className="container mt-4">
         <div className="row justify-content-center">
           <div className="col-md-8">
@@ -366,7 +366,7 @@ const CreateEvent = () => {
           }
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 
