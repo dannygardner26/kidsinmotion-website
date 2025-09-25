@@ -248,6 +248,58 @@ const Register = () => {
                     )}
                   </div>
 
+                  {/* Conditional Grade and School fields for volunteers */}
+                  {formData.role === 'VOLUNTEER' && (
+                    <>
+                      <div className="flex flex-wrap -mx-2 mb-3">
+                        <div className="w-full md:w-1/3 px-2 mb-3 md:mb-0">
+                          <div className="form-group">
+                            <label htmlFor="grade">Grade*</label>
+                            <select
+                              id="grade"
+                              name="grade"
+                              className={`form-control ${formErrors.grade ? 'border-red-500' : ''}`}
+                              value={formData.grade}
+                              onChange={handleChange}
+                              required
+                            >
+                              <option value="">Select grade...</option>
+                              <option value="middleschool">Middle School</option>
+                              <option value="9">9th Grade</option>
+                              <option value="10">10th Grade</option>
+                              <option value="11">11th Grade</option>
+                              <option value="12">12th Grade</option>
+                              <option value="college">College</option>
+                              <option value="adult">Adult</option>
+                            </select>
+                            {formErrors.grade && (
+                              <p className="text-red-500 text-xs italic mt-1">{formErrors.grade}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="w-full md:w-2/3 px-2">
+                          <div className="form-group">
+                            <label htmlFor="school">School/Organization*</label>
+                            <input
+                              type="text"
+                              id="school"
+                              name="school"
+                              className={`form-control ${formErrors.school ? 'border-red-500' : ''}`}
+                              value={formData.school}
+                              onChange={handleChange}
+                              placeholder="e.g., Great Valley High School, Penn State, etc."
+                              required
+                            />
+                            {formErrors.school && (
+                              <p className="text-red-500 text-xs italic mt-1">{formErrors.school}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
                   {/* Use theme heading style */}
                   <h3 className="text-lg font-semibold mt-6 mb-4 text-primary">Account Security</h3> 
 

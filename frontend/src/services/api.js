@@ -233,6 +233,34 @@ class ApiService {
       method: 'POST',
     });
   }
+
+  // Inbox/Messaging Methods
+  async getInboxMessages() {
+    return this.makeRequest('/messages/inbox');
+  }
+
+  async sendMessage(userId, messageData) {
+    return this.makeRequest(`/messages/send/${userId}`, {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+  }
+
+  async markMessageAsRead(messageId) {
+    return this.makeRequest(`/messages/${messageId}/read`, {
+      method: 'PUT',
+    });
+  }
+
+  async deleteMessage(messageId) {
+    return this.makeRequest(`/messages/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAllUsers() {
+    return this.makeRequest('/users/all');
+  }
 }
 
 export const apiService = new ApiService();

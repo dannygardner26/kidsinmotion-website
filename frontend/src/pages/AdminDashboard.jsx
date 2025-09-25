@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import AdminMessaging from '../components/AdminMessaging';
 
 const AdminDashboard = () => {
   const { userProfile } = useAuth();
@@ -178,6 +179,12 @@ const AdminDashboard = () => {
             onClick={() => setActiveTab('announcements')}
           >
             Announcements
+          </button>
+          <button
+            className={`tab-btn ${activeTab === 'messaging' ? 'active' : ''}`}
+            onClick={() => setActiveTab('messaging')}
+          >
+            Messaging
           </button>
           <button
             className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
@@ -523,6 +530,12 @@ const AdminDashboard = () => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'messaging' && (
+          <div className="admin-section">
+            <AdminMessaging />
           </div>
         )}
 
