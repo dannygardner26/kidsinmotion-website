@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
-import Layout from '../components/Layout';
+
 
 const Register = () => {
   const navigate = useNavigate();
@@ -131,7 +131,7 @@ const Register = () => {
   };
 
   return (
-    <Layout>
+    <>
       {/* Use flexbox for centering, allow more width for register form */}
       <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]"> 
         <div className="w-full max-w-xl"> {/* Increased max-width */}
@@ -310,7 +310,7 @@ const Register = () => {
           </div> {/* Closing tag for w-full max-w-xl */}
         </div> 
       {/* Removed the extra closing div here */}
-    </Layout>
+    </>
   );
 };
 

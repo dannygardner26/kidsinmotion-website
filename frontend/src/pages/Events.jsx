@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 
@@ -57,7 +57,7 @@ const Events = () => {
   };
   
   return (
-    <Layout>
+    <>
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center' }}>
         <div className="hero-bg" style={{ backgroundImage: `url("${assetUrls['placeholder.png']}")` }}></div>
@@ -203,7 +203,7 @@ const Events = () => {
           margin-left: 0.5rem;
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

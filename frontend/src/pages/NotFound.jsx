@@ -1,9 +1,9 @@
 import React from 'react';
-import Layout from '../components/Layout';
+
 
 const NotFound = () => {
   return (
-    <Layout>
+    <>
       <div className="container mt-4">
         <div className="card">
           <div className="card-header">
@@ -20,7 +20,7 @@ const NotFound = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Layout from '../components/Layout';
+
 
 const VolunteerApplication = () => {
   const [formData, setFormData] = useState({
@@ -91,7 +91,7 @@ const VolunteerApplication = () => {
   };
 
   return (
-    <Layout>
+    <>
       {/* Hero Section */}
       <section style={{
         background: 'linear-gradient(135deg, #4a7ca3 0%, #2f506a 100%)',
@@ -574,7 +574,7 @@ const VolunteerApplication = () => {
           </div>
         </div>
       </section>
-    </Layout>
+    </>
   );
 };
 

@@ -17,18 +17,31 @@ const firebaseConfig = {
 
 // Debug: Check if Firebase config is loaded
 console.log("Firebase Config Debug:", {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY ? "✅ Loaded" : "❌ Missing",
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN ? "✅ Loaded" : "❌ Missing",
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID ? "✅ Loaded" : "❌ Missing",
-  config: firebaseConfig
+  apiKey: Boolean(process.env.REACT_APP_FIREBASE_API_KEY),
+  authDomain: Boolean(process.env.REACT_APP_FIREBASE_AUTH_DOMAIN),
+  projectId: Boolean(process.env.REACT_APP_FIREBASE_PROJECT_ID)
 });
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const analytics = getAnalytics(app);
+let analytics;
+
+if (typeof window !== "undefined" && process.env.REACT_APP_FIREBASE_MEASUREMENT_ID && window.location.hostname !== "localhost") {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.warn("Firebase analytics disabled:", error?.message || error);
+  }
+}
 const db = getFirestore(app);
 const storage = getStorage(app);
-const messaging = getMessaging(app);
+let messaging;
+
+try {
+  messaging = getMessaging(app);
+} catch (error) {
+  console.warn("Firebase messaging disabled:", error?.message || error);
+}
 
 export { auth, analytics, db, storage, messaging };

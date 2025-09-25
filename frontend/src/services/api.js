@@ -36,6 +36,12 @@ class ApiService {
         ...options,
       };
 
+      const tokenPreview = token ? `${token.slice(0, 8)}...` : 'none';
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[api] ${options.method || 'GET'} ${endpoint} token: ${tokenPreview}`);
+        console.log('[api] headers', config.headers);
+      }
+
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
       
       if (!response.ok) {

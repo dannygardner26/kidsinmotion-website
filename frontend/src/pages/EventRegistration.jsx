@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import EventRegistrationForm from '../components/EventRegistrationForm';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
@@ -60,20 +60,20 @@ const EventRegistration = () => {
   
   if (authLoading || isLoading) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="loading-container">
             <div className="loading-spinner"></div>
             <p>Loading event details...</p>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
   if (error) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card">
             <div className="card-body text-center">
@@ -86,13 +86,13 @@ const EventRegistration = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
   if (successMessage) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card">
             <div className="card-body text-center">
@@ -110,12 +110,12 @@ const EventRegistration = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
   return (
-    <Layout>
+    <>
       <div className="container mt-4">
         <EventRegistrationForm 
           event={event}
@@ -182,7 +182,7 @@ const EventRegistration = () => {
           40% { transform: scale(1); }
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

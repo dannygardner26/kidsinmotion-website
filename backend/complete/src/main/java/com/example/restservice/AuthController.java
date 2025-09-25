@@ -8,6 +8,7 @@ import com.example.restservice.payload.response.UserProfileResponse;
 import com.example.restservice.repository.RoleRepository;
 import com.example.restservice.repository.UserRepository;
 import com.example.restservice.security.FirebaseAuthService;
+import com.google.firebase.auth.FirebaseToken;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -49,26 +50,54 @@ public class AuthController {
                     .body(new MessageResponse("Error: Firebase authentication required"));
             }
 
+            String authHeader = request.getHeader("Authorization");
+            String idToken = authHeader != null && authHeader.startsWith("Bearer ") ? authHeader.substring(7) : null;
+            if (idToken == null || idToken.isBlank()) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: Firebase token missing"));
+            }
+            FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
+            String name = decodedToken != null ? decodedToken.getName() : null;
+            String phoneNumber = null;
+            if (decodedToken != null) {
+                Object phoneClaim = decodedToken.getClaims().get("phone_number");
+                if (phoneClaim instanceof String phoneString && !phoneString.isBlank()) {
+                    phoneNumber = phoneString;
+                }
+            }
+
+            // Parse name into first and last name (simple approach)
+            String firstName = "";
+            String lastName = "";
+            if (name != null && !name.isBlank()) {
+                String[] nameParts = name.trim().split("\\s+", 2);
+                firstName = nameParts[0];
+                lastName = nameParts.length > 1 ? nameParts[1] : "";
+            }
+
+            if ((firstName == null || firstName.isBlank()) && email != null && email.contains("@")) {
+                firstName = email.substring(0, email.indexOf("@"));
+            }
+            if (firstName == null || firstName.isBlank()) {
+                firstName = "Volunteer";
+            }
+            if (lastName == null || lastName.isBlank()) {
+                lastName = "User";
+            }
+
+            if (phoneNumber == null || phoneNumber.isBlank()) {
+                phoneNumber = "pending";
+            }
+            if (phoneNumber.length() > 20) {
+                phoneNumber = phoneNumber.substring(0, 20);
+            }
+
             // Check if user already exists
             User user = userRepository.findByFirebaseUid(firebaseUid).orElse(null);
             
             if (user == null) {
                 // Create new user from Firebase data
-                // Get additional info from Firebase token
-                String authHeader = request.getHeader("Authorization");
-                String idToken = authHeader.substring(7);
-                String name = firebaseAuthService.getNameFromToken(idToken);
-                
-                // Parse name into first and last name (simple approach)
-                String firstName = "";
-                String lastName = "";
-                if (name != null) {
-                    String[] nameParts = name.split(" ", 2);
-                    firstName = nameParts[0];
-                    lastName = nameParts.length > 1 ? nameParts[1] : "";
-                }
-                
-                user = new User(firebaseUid, firstName, lastName, email, ""); // Phone will be empty initially
+                user = new User(firebaseUid, firstName, lastName, email, phoneNumber);
                 
                 // Assign roles based on email
                 Set<Role> roles = new HashSet<>();
@@ -89,12 +118,30 @@ public class AuthController {
                 
                 return ResponseEntity.ok(new MessageResponse("User created successfully!"));
             } else {
-                // Update existing user's email if it changed
+                // Update existing user details if missing
+                boolean updated = false;
+
                 if (!user.getEmail().equals(email)) {
                     user.setEmail(email);
+                    updated = true;
+                }
+                if ((user.getFirstName() == null || user.getFirstName().isBlank()) && firstName != null) {
+                    user.setFirstName(firstName);
+                    updated = true;
+                }
+                if ((user.getLastName() == null || user.getLastName().isBlank()) && lastName != null) {
+                    user.setLastName(lastName);
+                    updated = true;
+                }
+                if ((user.getPhoneNumber() == null || user.getPhoneNumber().isBlank()) && phoneNumber != null) {
+                    user.setPhoneNumber(phoneNumber);
+                    updated = true;
+                }
+
+                if (updated) {
                     userRepository.save(user);
                 }
-                
+
                 return ResponseEntity.ok(new MessageResponse("User synchronized successfully!"));
             }
             
@@ -267,6 +314,7 @@ public class AuthController {
         return false;
     }
 }
+
 
 
 

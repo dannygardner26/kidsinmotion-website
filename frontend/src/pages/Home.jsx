@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import { assetUrls } from '../utils/firebaseAssets';
 
 const Home = () => {
@@ -69,7 +69,7 @@ const Home = () => {
   };
   
   return (
-    <Layout>
+    <>
       {/* Hero Section with Parallax */}
       <section className="hero" style={{ height: '100vh', display: 'flex', alignItems: 'center' }}>
         <div className="hero-bg" style={{ backgroundImage: `url("${assetUrls['team-huddle.jpg']}")` }}></div>
@@ -110,8 +110,8 @@ const Home = () => {
               <h2>Our Mission</h2>
               <p>
                 Kids in Motion is on a mission to make sports accessible to every child. Through free 
-                sports clinics and donated equipment, we give kids—especially those facing financial or 
-                opportunity barriers—the chance to explore new sports, develop skills, and build lasting friendships.
+                sports clinics and donated equipment, we give kidsÃ¢â‚¬â€especially those facing financial or 
+                opportunity barriersÃ¢â‚¬â€the chance to explore new sports, develop skills, and build lasting friendships.
               </p>
               <p>
                 Founded by high school athletes who believe in the power of sports, we aim to break down 
@@ -199,7 +199,7 @@ const Home = () => {
               onMouseEnter={(e) => e.target.style.background = 'white'}
               onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.9)'}
             >
-              ‹
+              Ã¢â‚¬Â¹
             </button>
             <button 
               className="slide-nav next" 
@@ -223,7 +223,7 @@ const Home = () => {
               onMouseEnter={(e) => e.target.style.background = 'white'}
               onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.9)'}
             >
-              ›
+              Ã¢â‚¬Âº
             </button>
             
             {/* Slide indicators */}
@@ -436,7 +436,7 @@ const Home = () => {
           to { transform: rotate(360deg); }
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

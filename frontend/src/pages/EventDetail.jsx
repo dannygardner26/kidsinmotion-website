@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
@@ -46,20 +46,20 @@ const EventDetail = () => {
   
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="loading-spinner-container">
             <div className="loading-spinner"></div>
             <p>Loading event details...</p>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
   if (error || !event) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card error-card">
             <div className="card-body text-center">
@@ -72,7 +72,7 @@ const EventDetail = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
@@ -80,7 +80,7 @@ const EventDetail = () => {
   const sportBackground = getSportBackground(event.ageGroup);
   
   return (
-    <Layout>
+    <>
       {/* Event hero section */}
       <section className="hero" style={{ minHeight: '40vh', display: 'flex', alignItems: 'center' }}>
         <div className="hero-bg" style={{ backgroundImage: `url("${sportBackground}")` }}></div>
@@ -575,7 +575,7 @@ const EventDetail = () => {
           });
         `}
       </script>
-    </Layout>
+    </>
   );
 };
 

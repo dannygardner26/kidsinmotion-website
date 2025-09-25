@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Layout from '../components/Layout';
+
 import VolunteerSignupForm from '../components/VolunteerSignupForm';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
@@ -60,17 +60,17 @@ const VolunteerSignup = () => {
   
   if (authLoading || isLoading) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <p>Loading event details...</p>
         </div>
-      </Layout>
+      </>
     );
   }
   
   if (error) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card">
             <div className="card-body">
@@ -80,13 +80,13 @@ const VolunteerSignup = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
   if (successMessage) {
     return (
-      <Layout>
+      <>
         <div className="container mt-4">
           <div className="card">
             <div className="card-body text-center">
@@ -96,12 +96,12 @@ const VolunteerSignup = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
   
   return (
-    <Layout>
+    <>
       <div className="container mt-4">
         <VolunteerSignupForm 
           event={event}
@@ -109,7 +109,7 @@ const VolunteerSignup = () => {
           onCancel={handleCancel}
         />
       </div>
-    </Layout>
+    </>
   );
 };
 
