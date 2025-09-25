@@ -236,7 +236,16 @@ class ApiService {
 
   // Inbox/Messaging Methods
   async getInboxMessages() {
-    return this.makeRequest('/messages/inbox');
+    try {
+      return await this.makeRequest('/messages/inbox');
+    } catch (error) {
+      // Handle 403 errors gracefully for inbox (expected when endpoint isn't available for regular users)
+      if (error.message.includes('403') || error.message.includes('Forbidden')) {
+        // Return null to indicate API is unavailable, let caller handle fallback
+        return null;
+      }
+      throw error;
+    }
   }
 
   async sendMessage(userId, messageData) {
