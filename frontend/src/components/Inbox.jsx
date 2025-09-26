@@ -8,6 +8,26 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const isAdminUser = userProfile?.roles?.includes('ROLE_ADMIN') || userProfile?.accountType === 'admin';
+
+  const normalizeMessageLinks = (msgs, persist = false) => {
+    if (!Array.isArray(msgs)) return [];
+    let updated = false;
+    const normalized = msgs.map(msg => {
+      if (msg?.actionLink === '/volunteer-application') {
+        updated = true;
+        return { ...msg, actionLink: '/volunteer' };
+      }
+      return msg;
+    });
+
+    if (persist && updated && currentUser) {
+      localStorage.setItem(`inbox_${currentUser.uid}`, JSON.stringify(normalized));
+    }
+
+    return normalized;
+  };
+
   useEffect(() => {
     if (isOpen && currentUser) {
       loadMessages();
@@ -25,38 +45,55 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
   const loadMessages = async () => {
     if (!currentUser) return;
 
+    if (!isAdminUser) {
+      const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
+      const normalizedSaved = normalizeMessageLinks(savedMessages, true);
+      setMessages(normalizedSaved);
+      const unread = normalizedSaved.filter(msg => !msg.read).length;
+      setUnreadCount(unread);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       // Try to load messages from backend
       const response = await apiService.getInboxMessages();
       if (response && response.messages) {
-        setMessages(response.messages);
-        setUnreadCount(response.unreadCount || 0);
+        const normalizedMessages = normalizeMessageLinks(response.messages);
+        const unreadFromApi = normalizedMessages.filter(msg => !msg.read).length;
+        setMessages(normalizedMessages);
+        setUnreadCount(response.unreadCount !== undefined ? response.unreadCount : unreadFromApi);
       } else {
         // API returned null (403 handled gracefully) or invalid format - use localStorage fallback
         const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
-        setMessages(savedMessages);
-        const unread = savedMessages.filter(msg => !msg.read).length;
+        const normalizedSaved = normalizeMessageLinks(savedMessages, true);
+        const unread = normalizedSaved.filter(msg => !msg.read).length;
+        setMessages(normalizedSaved);
         setUnreadCount(unread);
       }
     } catch (error) {
       // Handle any other errors
       console.warn('Inbox API error, using localStorage fallback:', error.message);
       const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
-      setMessages(savedMessages);
-      const unread = savedMessages.filter(msg => !msg.read).length;
+      const normalizedSaved = normalizeMessageLinks(savedMessages, true);
+      const unread = normalizedSaved.filter(msg => !msg.read).length;
+      setMessages(normalizedSaved);
       setUnreadCount(unread);
     }
     setLoading(false);
   };
 
   const generateSystemMessages = () => {
+    if (!currentUser) return;
+
     const existingMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
-    let newMessages = [...existingMessages];
+    const normalizedExisting = normalizeMessageLinks(existingMessages);
+    let newMessages = [...normalizedExisting];
+    let didMutate = JSON.stringify(normalizedExisting) !== JSON.stringify(existingMessages);
 
     // Only show welcome message for verified users
     const isVerified = currentUser && userProfile && userProfile.firstName && userProfile.lastName;
-    const hasWelcomeMessage = existingMessages.some(msg => msg.type === 'welcome');
 
     // Determine user type - volunteers typically have 'volunteer' in email or specific roles
     const email = userProfile?.email || currentUser?.email || '';
@@ -64,46 +101,48 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
                        userProfile?.roles?.includes('ROLE_VOLUNTEER') ||
                        userProfile?.accountType === 'volunteer';
 
-    // Remove old messages to update with role-appropriate content
-    newMessages = newMessages.filter(msg => !(msg.type === 'welcome' || (msg.type === 'volunteer' && msg.title !== 'Apply for a Team!')));
+    const filteredMessages = newMessages.filter(msg => !(msg.type === 'welcome' || (msg.type === 'volunteer' && msg.title !== 'Apply for a Team!')));
+    if (filteredMessages.length !== newMessages.length) {
+      didMutate = true;
+    }
+    newMessages = filteredMessages;
+
+    const hasWelcomeMessage = newMessages.some(msg => msg.type === 'welcome');
 
     if (isVerified && !hasWelcomeMessage) {
-      if (isVolunteer) {
-        // Message for volunteers
-        newMessages.unshift({
-          id: `vol_team_${Date.now()}`,
-          type: 'welcome',
-          title: 'Apply for a Team!',
-          message: 'Choose from our available volunteer teams: Coaching, Event Coordination, Social Media, Website Development, Community Outreach, and more! Submit your application to get started.',
-          actionLink: '/volunteer-application',
-          actionText: 'Apply Now',
-          from: 'Kids in Motion Team',
-          timestamp: new Date().toISOString(),
-          read: false,
-          isSystem: true
-        });
-      } else {
-        // Message for parents
-        newMessages.unshift({
-          id: `parent_welcome_${Date.now()}`,
-          type: 'welcome',
-          title: 'Discover Our Programs!',
-          message: 'Explore our free sports clinics and programs designed to help kids build skills, make friends, and have fun! Check out our upcoming events and register your children today.',
-          actionLink: '/events',
-          actionText: 'View Events',
-          from: 'Kids in Motion Team',
-          timestamp: new Date().toISOString(),
-          read: false,
-          isSystem: true
-        });
-      }
+      const welcomeMessage = isVolunteer
+        ? {
+            id: `vol_team_${Date.now()}`,
+            type: 'welcome',
+            title: 'Apply for a Team!',
+            message: 'Choose from our available volunteer teams: Coaching, Event Coordination, Social Media, Website Development, Community Outreach, and more! Submit your application to get started.',
+            actionLink: '/volunteer',
+            actionText: 'Apply Now',
+            from: 'Kids in Motion Team',
+            timestamp: new Date().toISOString(),
+            read: false,
+            isSystem: true
+          }
+        : {
+            id: `parent_welcome_${Date.now()}`,
+            type: 'welcome',
+            title: 'Discover Our Programs!',
+            message: 'Explore our free sports clinics and programs designed to help kids build skills, make friends, and have fun! Check out our upcoming events and register your children today.',
+            actionLink: '/events',
+            actionText: 'View Events',
+            from: 'Kids in Motion Team',
+            timestamp: new Date().toISOString(),
+            read: false,
+            isSystem: true
+          };
+      newMessages.unshift(welcomeMessage);
+      didMutate = true;
     }
 
-    // Save to localStorage and update state
-    if (newMessages.length !== existingMessages.length) {
-      localStorage.setItem(`inbox_${currentUser.uid}`, JSON.stringify(newMessages));
-      setMessages(newMessages);
-      const unread = newMessages.filter(msg => !msg.read).length;
+    if (didMutate) {
+      const normalizedFinal = normalizeMessageLinks(newMessages, true);
+      setMessages(normalizedFinal);
+      const unread = normalizedFinal.filter(msg => !msg.read).length;
       setUnreadCount(unread);
     }
   };

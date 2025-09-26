@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
+import { collection, doc as firestoreDoc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,9 +19,25 @@ const Dashboard = () => {
 
   // Admin-specific state
   const [volunteerApplications, setVolunteerApplications] = useState([]);
+  const [currentVolunteerApplication, setCurrentVolunteerApplication] = useState(null);
   const [allChildEvents, setAllChildEvents] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [roleDecisions, setRoleDecisions] = useState({});
+  const [adminResponseNote, setAdminResponseNote] = useState('');
+  const [decisionError, setDecisionError] = useState('');
+  const [decisionSubmitting, setDecisionSubmitting] = useState(false);
+
+  // Messaging system state
+  const [messagingMode, setMessagingMode] = useState('emails'); // 'emails' or 'categories'
+  const [messageTitle, setMessageTitle] = useState('');
+  const [messageContent, setMessageContent] = useState('');
+  const [emailList, setEmailList] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [deliveryChannels, setDeliveryChannels] = useState(['inbox']);
+  const [messagingError, setMessagingError] = useState('');
+  const [messagingSending, setMessagingSending] = useState(false);
+  const [messagingSuccess, setMessagingSuccess] = useState('');
 
   // Determine user type based on email or role
   const isVolunteer = () => {
@@ -48,11 +66,174 @@ const Dashboard = () => {
   // Format team names properly (remove dashes, capitalize)
   const formatTeamName = (teamSlug) => {
     if (!teamSlug) return '';
-    return teamSlug
+    const words = teamSlug
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
+    return words.toLowerCase().endsWith(' team') ? words : `${words} Team`;
   };
+
+  const APPLICATION_STORE_KEY = 'volunteer_applications_global';
+
+  const readGlobalApplications = () => {
+    try {
+      return JSON.parse(localStorage.getItem(APPLICATION_STORE_KEY) || '{}');
+    } catch (error) {
+      console.error('Failed to parse global volunteer applications:', error);
+      return {};
+    }
+  };
+
+  const writeGlobalApplications = (applications) => {
+    localStorage.setItem(APPLICATION_STORE_KEY, JSON.stringify(applications));
+  };
+
+  const VOLUNTEER_APPLICATIONS_COLLECTION = 'volunteerApplications';
+
+  const getApplicationDocRef = (uid) => firestoreDoc(db, VOLUNTEER_APPLICATIONS_COLLECTION, uid);
+
+  const FIRESTORE_ENABLED = process.env.REACT_APP_ENABLE_FIRESTORE_SYNC === 'true';
+
+  const VOLUNTEER_DRAFT_PREFIX = 'volunteer_draft_';
+
+  const getApplicationTimestamp = (record) => {
+    if (!record) return 0;
+    const fields = ['lastUpdatedAt', 'reviewedAt', 'submittedAt', 'lastSaved'];
+    for (const field of fields) {
+      if (record[field]) {
+        const value = new Date(record[field]).getTime();
+        if (!Number.isNaN(value)) {
+          return value;
+        }
+      }
+    }
+    return 0;
+  };
+
+  const normalizeApplicationRecord = (id, raw = {}) => {
+    if (!id || !raw || typeof raw !== 'object') {
+      return null;
+    }
+
+    const selectedCategories = Array.isArray(raw.selectedCategories) ? raw.selectedCategories : [];
+    const approvedRoles = Array.isArray(raw.approvedRoles) ? raw.approvedRoles : [];
+    const deniedRoles = Array.isArray(raw.deniedRoles) ? raw.deniedRoles : [];
+    const derivedStatus = raw.status || (approvedRoles.length
+      ? 'approved'
+      : (deniedRoles.length && !approvedRoles.length ? 'denied' : (raw.submittedAt ? 'submitted' : 'draft')));
+    const submittedAt = raw.submittedAt || raw.lastSaved || null;
+    const lastUpdatedAt = raw.lastUpdatedAt || raw.reviewedAt || submittedAt || raw.lastSaved || null;
+
+    return {
+      id,
+      ...raw,
+      status: derivedStatus,
+      selectedCategories,
+      preferredContact: Array.isArray(raw.preferredContact) ? raw.preferredContact : [],
+      dynamicAnswers: raw.dynamicAnswers || {},
+      decisionsByRole: raw.decisionsByRole || {},
+      approvedRoles,
+      deniedRoles,
+      applicantName: `${raw.firstName || 'Unknown'} ${raw.lastName || 'Applicant'}`.trim(),
+      submittedAt,
+      lastUpdatedAt
+    };
+  };
+
+  const syncApplicationRecordCaches = async (id, data, options = {}) => {
+    if (!id || !data) return;
+
+    try {
+      localStorage.setItem(`${VOLUNTEER_DRAFT_PREFIX}${id}`, JSON.stringify(data));
+    } catch (error) {
+      console.error('Failed to cache volunteer application locally:', error);
+    }
+
+    try {
+      const globalApplications = readGlobalApplications();
+      globalApplications[id] = data;
+      writeGlobalApplications(globalApplications);
+    } catch (error) {
+      console.error('Failed to update shared volunteer application store:', error);
+    }
+
+    if (FIRESTORE_ENABLED && !options.skipFirestore) {
+      try {
+        await setDoc(getApplicationDocRef(id), data, { merge: true });
+      } catch (error) {
+        console.error('Failed to sync volunteer application to Firestore:', error);
+      }
+    }
+  };
+
+  const loadVolunteerApplicationById = async (applicantId) => {
+    if (!applicantId) return null;
+
+    const candidates = [];
+    const pushCandidate = (source, raw) => {
+      const normalized = normalizeApplicationRecord(applicantId, raw);
+      if (normalized) {
+        candidates.push({ source, data: normalized });
+      }
+    };
+
+    const localKey = `${VOLUNTEER_DRAFT_PREFIX}${applicantId}`;
+    const localRaw = localStorage.getItem(localKey);
+    if (localRaw) {
+      try {
+        pushCandidate('local', JSON.parse(localRaw));
+      } catch (error) {
+        console.error('Failed to parse local volunteer application cache:', error);
+      }
+    }
+
+    try {
+      const globalApplications = readGlobalApplications();
+      if (globalApplications[applicantId]) {
+        pushCandidate('global', globalApplications[applicantId]);
+      }
+    } catch (error) {
+      console.error('Failed to read shared volunteer application cache:', error);
+    }
+
+    if (FIRESTORE_ENABLED) {
+      try {
+        const docSnap = await getDoc(getApplicationDocRef(applicantId));
+        if (docSnap.exists()) {
+          pushCandidate('firestore', docSnap.data());
+        }
+      } catch (error) {
+        console.error('Failed to load volunteer application from Firestore:', error);
+      }
+    }
+
+    if (!candidates.length) {
+      return null;
+    }
+
+    candidates.sort((a, b) => getApplicationTimestamp(b.data) - getApplicationTimestamp(a.data));
+    const { source, data } = candidates[0];
+
+    await syncApplicationRecordCaches(applicantId, data, { skipFirestore: source === 'firestore' });
+
+    return data;
+  };
+
+  const buildVolunteerStatusPayload = (record) => {
+    if (!record) return null;
+    return {
+      status: record.status || 'draft',
+      submittedAt: record.submittedAt || record.lastUpdatedAt,
+      lastUpdatedAt: record.lastUpdatedAt,
+      teamSlugs: record.selectedCategories || [],
+      teams: (record.selectedCategories || []).map(team => formatTeamName(team)),
+      decisionsByRole: record.decisionsByRole || {},
+      approvedRoles: record.approvedRoles || [],
+      deniedRoles: record.deniedRoles || []
+    };
+  };
+
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [cancelItemId, setCancelItemId] = useState(null);
   const [cancelItemType, setCancelItemType] = useState(null);
@@ -99,32 +280,23 @@ const Dashboard = () => {
           setVolunteerEvents([]);
         }
 
-        // Check for volunteer application status (from localStorage for now)
-        // This would ideally come from your backend API
-        const savedApplication = localStorage.getItem(`volunteer_draft_${currentUser.uid}`);
-        if (savedApplication) {
-          const appData = JSON.parse(savedApplication);
-          // If application has been submitted (has selectedCategories), show as submitted
-          const hasCompletedApplication = appData.selectedCategories && appData.selectedCategories.length > 0;
-          setVolunteerApplicationStatus({
-            status: hasCompletedApplication ? 'submitted' : 'draft',
-            submittedAt: appData.submittedAt || appData.lastSaved,
-            teams: (appData.selectedCategories || []).map(team => formatTeamName(team))
-          });
+        // Check for volunteer application status using the shared caches (Firestore when available)
+        const applicationRecord = await loadVolunteerApplicationById(currentUser.uid);
+
+        if (applicationRecord) {
+          setCurrentVolunteerApplication(applicationRecord);
+          setVolunteerApplicationStatus(buildVolunteerStatusPayload(applicationRecord));
+        } else {
+          setCurrentVolunteerApplication(null);
+          setVolunteerApplicationStatus(null);
         }
 
-        // Set default tab for volunteers based on their status
         if (!activeTab) {
-          // If no application or draft application, show application tab first
-          if (!savedApplication) {
+          const noTeamsSelected = !applicationRecord || !Array.isArray(applicationRecord.selectedCategories) || applicationRecord.selectedCategories.length === 0;
+          if (!applicationRecord || ((applicationRecord.status === 'draft' || applicationRecord.status === 'new') && noTeamsSelected)) {
             setActiveTab('application');
           } else {
-            const appData = JSON.parse(savedApplication);
-            if (appData.status === 'draft' && (!appData.selectedCategories || appData.selectedCategories.length === 0)) {
-              setActiveTab('application');
-            } else {
-              setActiveTab('volunteer');
-            }
+            setActiveTab('volunteer');
           }
         }
       } else {
@@ -169,83 +341,500 @@ const Dashboard = () => {
   };
 
   const loadAllVolunteerApplications = async () => {
-    // In a real app, this would be an API call to get all applications
-    // For now, we'll simulate by checking localStorage for saved applications
-    const applications = [];
+    const applicationsMap = new Map();
 
-    // This is a simplified version - in production you'd have an admin API endpoint
-    // For now, we'll create some mock data based on localStorage patterns
+    const upsertRecord = (id, raw, source) => {
+      const normalized = normalizeApplicationRecord(id, raw);
+      if (!normalized) return;
+
+      const existing = applicationsMap.get(id);
+      if (!existing || getApplicationTimestamp(normalized) > getApplicationTimestamp(existing.record)) {
+        applicationsMap.set(id, { record: normalized, source });
+      }
+    };
+
     try {
-      // Check if there are any volunteer applications in localStorage
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key && key.startsWith('volunteer_draft_')) {
-          const appData = JSON.parse(localStorage.getItem(key));
-          if (appData && appData.selectedCategories && appData.selectedCategories.length > 0) {
-            applications.push({
-              id: key.replace('volunteer_draft_', ''),
-              ...appData,
-              status: 'submitted', // Mark as submitted if they have selected categories
-              applicantName: `${appData.firstName || 'Unknown'} ${appData.lastName || 'Applicant'}`,
-              submittedAt: appData.submittedAt || appData.lastSaved || new Date().toISOString()
-            });
+        if (key && key.startsWith(VOLUNTEER_DRAFT_PREFIX)) {
+          const applicantId = key.replace(VOLUNTEER_DRAFT_PREFIX, '');
+          try {
+            const raw = JSON.parse(localStorage.getItem(key));
+            upsertRecord(applicantId, raw, 'local');
+          } catch (error) {
+            console.error('Failed to parse volunteer application from localStorage:', error);
           }
         }
       }
     } catch (error) {
-      console.error('Error loading volunteer applications:', error);
+      console.error('Error iterating volunteer applications in localStorage:', error);
     }
 
-    return applications;
-  };
+    try {
+      const globalApplications = readGlobalApplications();
+      Object.entries(globalApplications).forEach(([applicantId, raw]) => {
+        upsertRecord(applicantId, raw, 'shared');
+      });
+    } catch (error) {
+      console.error('Error reading global volunteer applications store:', error);
+    }
 
-  const approveApplication = async (applicationId) => {
-    // Update application status in localStorage (would be API call in production)
-    const key = `volunteer_draft_${applicationId}`;
-    const appData = JSON.parse(localStorage.getItem(key) || '{}');
-    appData.status = 'approved';
-    appData.approvedAt = new Date().toISOString();
-    localStorage.setItem(key, JSON.stringify(appData));
+    if (FIRESTORE_ENABLED) {
+      try {
+        const snapshot = await getDocs(collection(db, VOLUNTEER_APPLICATIONS_COLLECTION));
+        snapshot.forEach((docSnap) => {
+          upsertRecord(docSnap.id, docSnap.data(), 'firestore');
+        });
+      } catch (error) {
+        console.error('Error loading volunteer applications from Firestore:', error);
+      }
+    }
 
-    // Update state
-    setVolunteerApplications(prev =>
-      prev.map(app =>
-        app.id === applicationId
-          ? { ...app, status: 'approved', approvedAt: new Date().toISOString() }
-          : app
-      )
-    );
-    setShowApplicationModal(false);
-  };
+    const mergedRecords = Array.from(applicationsMap.entries())
+      .map(([id, payload]) => ({
+        id,
+        record: payload.record,
+        source: payload.source
+      }))
+      .sort((a, b) => getApplicationTimestamp(b.record) - getApplicationTimestamp(a.record));
 
-  const rejectApplication = async (applicationId, reason = '') => {
-    // Update application status in localStorage (would be API call in production)
-    const key = `volunteer_draft_${applicationId}`;
-    const appData = JSON.parse(localStorage.getItem(key) || '{}');
-    appData.status = 'rejected';
-    appData.rejectedAt = new Date().toISOString();
-    appData.rejectionReason = reason;
-    localStorage.setItem(key, JSON.stringify(appData));
+    await Promise.all(mergedRecords.map(({ id, record, source }) =>
+      syncApplicationRecordCaches(id, record, { skipFirestore: source === 'firestore' })
+    ));
 
-    // Update state
-    setVolunteerApplications(prev =>
-      prev.map(app =>
-        app.id === applicationId
-          ? { ...app, status: 'rejected', rejectedAt: new Date().toISOString(), rejectionReason: reason }
-          : app
-      )
-    );
-    setShowApplicationModal(false);
+    return mergedRecords.map(({ record }) => record);
   };
 
   const openApplicationModal = (application) => {
     setSelectedApplication(application);
+
+    const initialDecisions = {};
+    (application?.selectedCategories || []).forEach(team => {
+      const existingDecision = application?.decisionsByRole?.[team];
+      initialDecisions[team] = existingDecision || 'pending';
+    });
+    setRoleDecisions(initialDecisions);
+    setAdminResponseNote(application?.adminNote || '');
+    setDecisionError('');
+    setDecisionSubmitting(false);
     setShowApplicationModal(true);
   };
 
   const closeApplicationModal = () => {
     setSelectedApplication(null);
     setShowApplicationModal(false);
+    setRoleDecisions({});
+    setAdminResponseNote('');
+    setDecisionError('');
+    setDecisionSubmitting(false);
+  };
+
+  const handleRoleDecisionChange = (team, decision) => {
+    setRoleDecisions(prev => ({
+      ...prev,
+      [team]: decision
+    }));
+  };
+
+  const buildDecisionSummary = (decisions, teams) => {
+    const approvedRoles = teams.filter(team => decisions[team] === 'approved');
+    const deniedRoles = teams.filter(team => decisions[team] === 'denied');
+    const pendingRoles = teams.filter(team => !decisions[team] || decisions[team] === 'pending');
+
+    const summaryLines = [
+      `Approved: ${approvedRoles.length ? approvedRoles.map(formatTeamName).join(', ') : 'None'}`
+    ];
+    summaryLines.push(`Denied: ${deniedRoles.length ? deniedRoles.map(formatTeamName).join(', ') : 'None'}`);
+
+    if (pendingRoles.length) {
+      summaryLines.push(`Pending: ${pendingRoles.map(formatTeamName).join(', ')}`);
+    }
+
+    return { approvedRoles, deniedRoles, pendingRoles, summaryLines };
+  };
+
+  const sendInboxMessageWithFallback = async (userId, message) => {
+    try {
+      await apiService.sendMessage(userId, message);
+    } catch (error) {
+      console.error('Error sending inbox message, using localStorage fallback:', error);
+      const fallbackMessages = JSON.parse(localStorage.getItem(`inbox_${userId}`) || '[]');
+      fallbackMessages.unshift(message);
+      localStorage.setItem(`inbox_${userId}`, JSON.stringify(fallbackMessages));
+    }
+  };
+
+  const recordContactNotification = (userId, notification) => {
+    const key = `contact_notifications_${userId}`;
+    const existing = JSON.parse(localStorage.getItem(key) || '[]');
+    existing.unshift({
+      id: `contact_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      timestamp: new Date().toISOString(),
+      ...notification
+    });
+    localStorage.setItem(key, JSON.stringify(existing));
+  };
+
+  const sendPreferredContactNotifications = (application, payload) => {
+    const preferred = Array.isArray(application?.preferredContact) && application.preferredContact.length > 0
+      ? application.preferredContact
+      : ['email'];
+
+    preferred.forEach(method => {
+      const normalizedMethod = method.toLowerCase();
+      let destination = null;
+      if (normalizedMethod === 'email') {
+        destination = application.email || application.username || '';
+      } else if (normalizedMethod === 'phone') {
+        destination = application.phone || application.phoneNumber || '';
+      } else if (normalizedMethod === 'other') {
+        destination = application.preferredContactOther || '';
+      }
+
+      recordContactNotification(application.id, {
+        method: normalizedMethod,
+        destination: destination || 'not-provided',
+        summary: payload.summary,
+        message: payload.message,
+        note: payload.note
+      });
+
+      console.log(`Queued ${normalizedMethod} notification for ${application.id} (${destination || 'n/a'})`);
+    });
+  };
+
+  const handleSubmitApplicationDecision = async () => {
+    if (!selectedApplication) return;
+
+    const appliedTeams = selectedApplication.selectedCategories || [];
+    if (appliedTeams.length === 0) {
+      setDecisionError('This application does not list any roles to review.');
+      return;
+    }
+
+    const undecided = appliedTeams.filter(team => !['approved', 'denied'].includes(roleDecisions[team]));
+    if (undecided.length > 0) {
+      setDecisionError('Please choose approve or deny for every applied role.');
+      return;
+    }
+
+    setDecisionError('');
+    setDecisionSubmitting(true);
+
+    try {
+      const { approvedRoles, deniedRoles, summaryLines } = buildDecisionSummary(roleDecisions, appliedTeams);
+      const summaryText = summaryLines.join('\n');
+      const noteText = adminResponseNote.trim();
+      const reviewTimestamp = new Date().toISOString();
+
+      const messageTitle = 'Volunteer Application Review Update';
+
+      
+      const messageBodyLines = [
+        `Hello ${selectedApplication.firstName || selectedApplication.applicantName || 'there'},`,
+        '',
+        'Here is the update from the Kids in Motion admin team regarding your volunteer application:',
+        summaryText
+      ];
+
+      if (noteText) {
+        messageBodyLines.push('', `Note from the team: ${noteText}`);
+      }
+
+      messageBodyLines.push('', 'Thank you for applying and supporting Kids in Motion!');
+      const messageBody = messageBodyLines.join('\n');
+
+      const existingRecord = await loadVolunteerApplicationById(selectedApplication.id) || selectedApplication;
+
+      const decisionStatus = approvedRoles.length > 0 ? 'approved' : 'denied';
+      const updatedApplication = {
+        ...existingRecord,
+        ...selectedApplication,
+        status: decisionStatus,
+        reviewedAt: reviewTimestamp,
+        lastUpdatedAt: reviewTimestamp,
+        adminNote: noteText,
+        decisionsByRole: roleDecisions,
+        decisionSummary: summaryText,
+        approvedRoles,
+        deniedRoles
+      };
+
+      const normalizedUpdatedApplication = normalizeApplicationRecord(selectedApplication.id, updatedApplication) || updatedApplication;
+
+      await syncApplicationRecordCaches(selectedApplication.id, normalizedUpdatedApplication);
+
+      setVolunteerApplications(prev => {
+        const exists = prev.some(app => app.id === selectedApplication.id);
+        if (exists) {
+          return prev.map(app =>
+            app.id === selectedApplication.id ? normalizedUpdatedApplication : app
+          );
+        }
+        return [...prev, normalizedUpdatedApplication];
+      });
+
+      if (currentVolunteerApplication?.id === selectedApplication.id) {
+        setCurrentVolunteerApplication(normalizedUpdatedApplication);
+        const refreshedStatus = buildVolunteerStatusPayload(normalizedUpdatedApplication);
+        if (refreshedStatus) {
+          setVolunteerApplicationStatus(refreshedStatus);
+        }
+      }
+
+
+      const message = {
+        id: `decision_${Date.now()}_${selectedApplication.id}`,
+        type: 'admin',
+        title: messageTitle,
+        message: messageBody,
+        from: 'Kids in Motion Admin',
+        timestamp: reviewTimestamp,
+        read: false,
+        isSystem: true
+      };
+
+      await sendInboxMessageWithFallback(selectedApplication.id, message);
+
+      sendPreferredContactNotifications(selectedApplication, {
+        summary: summaryText,
+        message: messageBody,
+        note: noteText
+      });
+
+      setDecisionSubmitting(false);
+      closeApplicationModal();
+    } catch (error) {
+      console.error('Error finalizing application decision:', error);
+      setDecisionError('Failed to submit the decision. Please try again.');
+      setDecisionSubmitting(false);
+    }
+  };
+
+  // Messaging functions
+  const userCategories = [
+    { id: 'all', label: 'All Users', description: 'Everyone in the system' },
+    { id: 'parents', label: 'Parents', description: 'Users who have registered children' },
+    { id: 'volunteers', label: 'Volunteers', description: 'Users with volunteer accounts' },
+    { id: 'coaches', label: 'Coaches', description: 'Volunteers on coaching teams' },
+    { id: 'approved', label: 'Approved Volunteers', description: 'Volunteers with approved applications' },
+    { id: 'pending', label: 'Pending Applications', description: 'Users with submitted applications' },
+    { id: 'event-coordinators', label: 'Event Coordinators', description: 'Event coordination team members' },
+    { id: 'social-media', label: 'Social Media Team', description: 'Social media team members' }
+  ];
+
+  const availableChannels = [
+    { id: 'inbox', label: 'Inbox', icon: 'fa-inbox' },
+    { id: 'email', label: 'Email', icon: 'fa-envelope' },
+    { id: 'phone', label: 'Phone/SMS', icon: 'fa-phone' },
+    { id: 'all', label: 'All Channels', icon: 'fa-broadcast-tower' }
+  ];
+
+  const handleCategoryToggle = (categoryId) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  };
+
+  const handleChannelToggle = (channelId) => {
+    if (channelId === 'all') {
+      setDeliveryChannels(['inbox', 'email', 'phone']);
+    } else {
+      setDeliveryChannels(prev => {
+        if (prev.includes(channelId)) {
+          return prev.filter(id => id !== channelId);
+        } else {
+          return [...prev.filter(id => id !== 'all'), channelId];
+        }
+      });
+    }
+  };
+
+  const getUsersByCategory = (categoryId) => {
+    // This would typically query your database
+    // For now, we'll simulate by checking localStorage and volunteer applications
+    const users = [];
+
+    if (categoryId === 'all') {
+      // Add all users from localStorage keys
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('volunteer_draft_')) {
+          const userData = JSON.parse(localStorage.getItem(key));
+          users.push({
+            id: key.replace('volunteer_draft_', ''),
+            email: userData.email,
+            name: `${userData.firstName} ${userData.lastName}`,
+            type: 'volunteer'
+          });
+        }
+      }
+    } else if (categoryId === 'volunteers') {
+      volunteerApplications.forEach(app => {
+        users.push({
+          id: app.id,
+          email: app.email,
+          name: app.applicantName,
+          type: 'volunteer'
+        });
+      });
+    } else if (categoryId === 'approved') {
+      volunteerApplications.filter(app => app.status === 'approved').forEach(app => {
+        users.push({
+          id: app.id,
+          email: app.email,
+          name: app.applicantName,
+          type: 'approved-volunteer'
+        });
+      });
+    } else if (categoryId === 'pending') {
+      volunteerApplications.filter(app => app.status === 'submitted').forEach(app => {
+        users.push({
+          id: app.id,
+          email: app.email,
+          name: app.applicantName,
+          type: 'pending-volunteer'
+        });
+      });
+    } else if (categoryId === 'coaches') {
+      volunteerApplications.filter(app =>
+        app.selectedCategories?.includes('coach') && app.status === 'approved'
+      ).forEach(app => {
+        users.push({
+          id: app.id,
+          email: app.email,
+          name: app.applicantName,
+          type: 'coach'
+        });
+      });
+    }
+    // Add more categories as needed
+
+    return users;
+  };
+
+  const sendMessage = async () => {
+    setMessagingError('');
+    setMessagingSuccess('');
+
+    if (!messageTitle.trim() || !messageContent.trim()) {
+      setMessagingError('Please enter both a title and message content.');
+      return;
+    }
+
+    if (deliveryChannels.length === 0) {
+      setMessagingError('Please select at least one delivery channel.');
+      return;
+    }
+
+    let recipients = [];
+
+    if (messagingMode === 'emails') {
+      if (!emailList.trim()) {
+        setMessagingError('Please enter email addresses.');
+        return;
+      }
+
+      const emails = emailList.split(/[,;\n]/).map(email => email.trim()).filter(email => email);
+      recipients = emails.map(email => ({
+        id: email,
+        email: email,
+        name: email,
+        type: 'direct'
+      }));
+    } else {
+      if (selectedCategories.length === 0) {
+        setMessagingError('Please select at least one user category.');
+        return;
+      }
+
+      selectedCategories.forEach(categoryId => {
+        const categoryUsers = getUsersByCategory(categoryId);
+        recipients.push(...categoryUsers);
+      });
+
+      // Remove duplicates
+      recipients = recipients.filter((user, index, self) =>
+        index === self.findIndex(u => u.email === user.email)
+      );
+    }
+
+    if (recipients.length === 0) {
+      setMessagingError('No recipients found for the selected criteria.');
+      return;
+    }
+
+    setMessagingSending(true);
+
+    try {
+      const message = {
+        id: `admin_message_${Date.now()}`,
+        type: 'admin',
+        title: messageTitle,
+        message: messageContent,
+        from: 'Kids in Motion Admin',
+        timestamp: new Date().toISOString(),
+        read: false,
+        isSystem: true
+      };
+
+      let sentCount = 0;
+
+      for (const recipient of recipients) {
+        try {
+          // Send to inbox
+          if (deliveryChannels.includes('inbox')) {
+            await sendInboxMessageWithFallback(recipient.id, message);
+          }
+
+          // Log other delivery channels (email, phone would be actual API calls)
+          if (deliveryChannels.includes('email')) {
+            console.log(`Would send email to: ${recipient.email}`);
+            recordContactNotification(recipient.id, {
+              method: 'email',
+              destination: recipient.email,
+              subject: messageTitle,
+              message: messageContent,
+              sentBy: 'admin'
+            });
+          }
+
+          if (deliveryChannels.includes('phone')) {
+            console.log(`Would send SMS to: ${recipient.phone || 'phone not available'}`);
+            recordContactNotification(recipient.id, {
+              method: 'phone',
+              destination: recipient.phone || 'not-available',
+              subject: messageTitle,
+              message: messageContent,
+              sentBy: 'admin'
+            });
+          }
+
+          sentCount++;
+        } catch (error) {
+          console.error(`Failed to send message to ${recipient.email}:`, error);
+        }
+      }
+
+      setMessagingSuccess(`Message sent successfully to ${sentCount} recipient${sentCount !== 1 ? 's' : ''} via ${deliveryChannels.join(', ')}.`);
+
+      // Clear form
+      setMessageTitle('');
+      setMessageContent('');
+      setEmailList('');
+      setSelectedCategories([]);
+      setDeliveryChannels(['inbox']);
+
+    } catch (error) {
+      console.error('Error sending messages:', error);
+      setMessagingError('Failed to send messages. Please try again.');
+    }
+
+    setMessagingSending(false);
   };
 
   const openCancelModal = (id, type) => {
@@ -348,7 +937,13 @@ const Dashboard = () => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
-  
+
+  const appliedTeamsForDecision = selectedApplication?.selectedCategories || [];
+  const volunteerTeamSlugs = currentVolunteerApplication?.selectedCategories || (volunteerApplicationStatus?.teamSlugs || []);
+  const approvedRolesPreview = appliedTeamsForDecision.filter(team => roleDecisions[team] === 'approved');
+  const deniedRolesPreview = appliedTeamsForDecision.filter(team => roleDecisions[team] === 'denied');
+  const pendingRolesPreview = appliedTeamsForDecision.filter(team => !roleDecisions[team] || roleDecisions[team] === 'pending');
+
   if (authLoading || isLoading) {
     return (
       <>
@@ -514,7 +1109,7 @@ const Dashboard = () => {
                   </Link>
 
                   {isVolunteer() ? (
-                    <Link to="/volunteer-application" className="quick-link-item">
+                    <Link to="/volunteer" className="quick-link-item">
                       <div className="quick-link-icon" style={{ backgroundColor: 'var(--secondary)' }}>
                         <i className="fas fa-hands-helping"></i>
                       </div>
@@ -567,6 +1162,13 @@ const Dashboard = () => {
                       >
                         <i className="fas fa-child mr-2"></i>
                         Child Events
+                      </li>
+                      <li
+                        className={`nav-tab ${activeTab === 'messaging' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('messaging')}
+                      >
+                        <i className="fas fa-bullhorn mr-2"></i>
+                        Send Messages
                       </li>
                     </>
                   )}
@@ -720,14 +1322,31 @@ const Dashboard = () => {
                         <div className="application-details">
                           <h4>Applied Teams:</h4>
                           <div className="teams-list">
-                            {volunteerApplicationStatus.teams.map((team, index) => (
-                              <span key={index} className="team-badge">{team}</span>
-                            ))}
+                            {volunteerTeamSlugs.length === 0 ? (
+                              <span className="team-badge status-pending">
+                                <span className="team-badge-name">No teams selected yet</span>
+                                <span className="team-badge-status">Pending</span>
+                              </span>
+                            ) : (
+                              volunteerTeamSlugs.map((teamSlug, index) => {
+                                const decisionForTeam = (currentVolunteerApplication?.decisionsByRole?.[teamSlug] || volunteerApplicationStatus.decisionsByRole?.[teamSlug] || (volunteerApplicationStatus.status === 'approved' ? 'approved' : volunteerApplicationStatus.status === 'denied' ? 'denied' : 'pending'));
+                                const normalizedDecision = ['approved', 'denied'].includes(decisionForTeam) ? decisionForTeam : 'pending';
+                                const pendingLabel = volunteerApplicationStatus.status === 'submitted' ? 'Under Review' : 'Pending';
+                                return (
+                                  <span key={`${teamSlug}-${index}`} className={`team-badge status-${normalizedDecision}`}>
+                                    <span className="team-badge-name">{formatTeamName(teamSlug)}</span>
+                                    <span className="team-badge-status">
+                                      {normalizedDecision === 'approved' ? 'Approved' : normalizedDecision === 'denied' ? 'Denied' : pendingLabel}
+                                    </span>
+                                  </span>
+                                );
+                              })
+                            )}
                           </div>
 
                           {volunteerApplicationStatus.status === 'draft' && (
                             <div className="application-actions mt-3">
-                              <Link to="/volunteer-application" className="btn btn-primary">
+                              <Link to="/volunteer" className="btn btn-primary">
                                 <i className="fas fa-edit mr-2"></i>Continue Application
                               </Link>
                             </div>
@@ -735,7 +1354,7 @@ const Dashboard = () => {
 
                           {volunteerApplicationStatus.status === 'submitted' && (
                             <div className="application-actions mt-3">
-                              <Link to="/volunteer-application" className="btn btn-outline">
+                              <Link to="/volunteer" className="btn btn-outline">
                                 <i className="fas fa-edit mr-2"></i>Edit Application
                               </Link>
                             </div>
@@ -743,7 +1362,7 @@ const Dashboard = () => {
 
                           {volunteerApplicationStatus.status === 'denied' && (
                             <div className="application-actions mt-3">
-                              <Link to="/volunteer-application" className="btn btn-secondary">
+                              <Link to="/volunteer" className="btn btn-secondary">
                                 <i className="fas fa-redo mr-2"></i>Reapply for Teams
                               </Link>
                             </div>
@@ -875,9 +1494,20 @@ const Dashboard = () => {
                               <p><strong>Phone:</strong> {application.phone}</p>
                               <p><strong>Applied Teams:</strong></p>
                               <div className="teams-list">
-                                {application.selectedCategories?.map((team, idx) => (
-                                  <span key={idx} className="team-badge">{formatTeamName(team)}</span>
-                                ))}
+                                {application.selectedCategories?.map((team, idx) => {
+                                  const decision = application.decisionsByRole?.[team] || (application.status === 'approved' ? 'approved' : application.status === 'denied' ? 'denied' : 'pending');
+                                  return (
+                                    <span
+                                      key={`${application.id}-${idx}`}
+                                      className={`team-badge status-${decision}`}
+                                    >
+                                      <span className="team-badge-name">{formatTeamName(team)}</span>
+                                      <span className="team-badge-status">
+                                        {decision === 'approved' ? 'Approved' : decision === 'denied' ? 'Denied' : 'Awaiting Review'}
+                                      </span>
+                                    </span>
+                                  );
+                                })}
                               </div>
                               <p><strong>Submitted:</strong> {new Date(application.submittedAt).toLocaleDateString()}</p>
                             </div>
@@ -962,6 +1592,179 @@ const Dashboard = () => {
                     )}
                   </div>
                 )}
+
+                {/* Admin: Messaging Tab */}
+                {activeTab === 'messaging' && isAdmin() && (
+                  <div className="tab-content">
+                    <h2>Send Messages</h2>
+                    <p className="text-muted mb-3">Send messages to users through multiple channels</p>
+
+                    <div className="messaging-panel">
+                      {/* Mode Selection */}
+                      <div className="messaging-mode">
+                        <h4>Select Recipients</h4>
+                        <div className="mode-selector">
+                          <button
+                            type="button"
+                            className={`mode-btn ${messagingMode === 'emails' ? 'active' : ''}`}
+                            onClick={() => setMessagingMode('emails')}
+                          >
+                            <i className="fas fa-at mr-2"></i>
+                            Direct Emails
+                          </button>
+                          <button
+                            type="button"
+                            className={`mode-btn ${messagingMode === 'categories' ? 'active' : ''}`}
+                            onClick={() => setMessagingMode('categories')}
+                          >
+                            <i className="fas fa-users mr-2"></i>
+                            User Categories
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Email Input Mode */}
+                      {messagingMode === 'emails' && (
+                        <div className="email-input-section">
+                          <h5>Email Addresses</h5>
+                          <p className="text-muted small">Enter email addresses separated by commas, semicolons, or new lines</p>
+                          <textarea
+                            className="form-control"
+                            rows={4}
+                            placeholder="user1@example.com, user2@example.com
+volunteer@example.com
+parent@example.com"
+                            value={emailList}
+                            onChange={(e) => setEmailList(e.target.value)}
+                          />
+                          <div className="email-count">
+                            {emailList.split(/[,;\n]/).filter(e => e.trim()).length} email(s) entered
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Category Selection Mode */}
+                      {messagingMode === 'categories' && (
+                        <div className="category-selection">
+                          <h5>User Categories</h5>
+                          <p className="text-muted small">Select one or more user groups to message</p>
+                          <div className="category-grid">
+                            {userCategories.map(category => (
+                              <label key={category.id} className="category-card">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCategories.includes(category.id)}
+                                  onChange={() => handleCategoryToggle(category.id)}
+                                />
+                                <div className="category-info">
+                                  <strong>{category.label}</strong>
+                                  <small>{category.description}</small>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                          <div className="category-count">
+                            {selectedCategories.length} categor{selectedCategories.length !== 1 ? 'ies' : 'y'} selected
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Message Content */}
+                      <div className="message-content">
+                        <h4>Message Details</h4>
+
+                        <div className="form-group">
+                          <label>Subject/Title</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Enter message title..."
+                            value={messageTitle}
+                            onChange={(e) => setMessageTitle(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Message Content</label>
+                          <textarea
+                            className="form-control"
+                            rows={6}
+                            placeholder="Enter your message content..."
+                            value={messageContent}
+                            onChange={(e) => setMessageContent(e.target.value)}
+                          />
+                          <small className="text-muted">
+                            {messageContent.length} characters
+                          </small>
+                        </div>
+                      </div>
+
+                      {/* Delivery Channels */}
+                      <div className="delivery-channels">
+                        <h4>Delivery Channels</h4>
+                        <p className="text-muted small">Choose how to deliver the message (select multiple options)</p>
+                        <div className="channel-options">
+                          {availableChannels.map(channel => (
+                            <label key={channel.id} className="channel-option">
+                              <input
+                                type="checkbox"
+                                checked={
+                                  channel.id === 'all'
+                                    ? deliveryChannels.includes('inbox') && deliveryChannels.includes('email') && deliveryChannels.includes('phone')
+                                    : deliveryChannels.includes(channel.id)
+                                }
+                                onChange={() => handleChannelToggle(channel.id)}
+                              />
+                              <div className="channel-info">
+                                <i className={`fas ${channel.icon} mr-2`}></i>
+                                <span>{channel.label}</span>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                        <div className="channel-summary">
+                          Delivering via: {deliveryChannels.join(', ') || 'none selected'}
+                        </div>
+                      </div>
+
+                      {/* Error/Success Messages */}
+                      {messagingError && (
+                        <div className="alert alert-danger">
+                          <i className="fas fa-exclamation-triangle mr-2"></i>
+                          {messagingError}
+                        </div>
+                      )}
+
+                      {messagingSuccess && (
+                        <div className="alert alert-success">
+                          <i className="fas fa-check-circle mr-2"></i>
+                          {messagingSuccess}
+                        </div>
+                      )}
+
+                      {/* Send Button */}
+                      <div className="messaging-actions">
+                        <button
+                          className="btn btn-primary btn-lg"
+                          onClick={sendMessage}
+                          disabled={messagingSending}
+                        >
+                          {messagingSending ? (
+                            <>
+                              <div className="loading-spinner-small"></div>
+                              Sending Messages...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fas fa-paper-plane mr-2"></i>
+                              Send Messages
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -995,9 +1798,20 @@ const Dashboard = () => {
                 <div className="applied-teams">
                   <h4>Applied Teams</h4>
                   <div className="teams-list">
-                    {selectedApplication.selectedCategories?.map((team, idx) => (
-                      <span key={idx} className="team-badge">{formatTeamName(team)}</span>
-                    ))}
+                    {selectedApplication.selectedCategories?.map((team, idx) => {
+                      const decision = roleDecisions[team] || selectedApplication.decisionsByRole?.[team] || 'pending';
+                      return (
+                        <span
+                          key={idx}
+                          className={`team-badge status-${decision}`}
+                        >
+                          <span className="team-badge-name">{formatTeamName(team)}</span>
+                          <span className="team-badge-status">
+                            {decision === 'approved' ? 'Approved' : decision === 'denied' ? 'Denied' : 'Pending'}
+                          </span>
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1034,29 +1848,131 @@ const Dashboard = () => {
                     </a>
                   </div>
                 )}
+
+                              </div>
+
+              <div className="admin-decision-panel">
+                <h4>Admin Decision</h4>
+                <p className="text-muted small">Set the outcome for each role and include a note before sending.</p>
+
+                <div className="team-decisions">
+                  <h5>Role Outcomes</h5>
+                  <p className="text-muted small">Choose approve or deny for every role this candidate applied for.</p>
+                  {selectedApplication.selectedCategories?.length > 0 ? (
+                    <div className="decision-list">
+                      {selectedApplication.selectedCategories.map((team, idx) => {
+                        const decision = roleDecisions[team] || 'pending';
+
+                        return (
+                          <div key={`${team}-${idx}`} className="team-decision-row">                            <div className="team-decision-label">
+
+                              <span className="team-name">{formatTeamName(team)}</span>
+
+                              <span className={`team-decision-status status-${decision}`}>
+
+                                {decision === 'approved' ? 'Approved' : decision === 'denied' ? 'Denied' : 'Pending'}
+
+                              </span>
+
+                            </div>
+
+                            <div className="decision-buttons">
+
+                              <button
+                                type="button"
+                                className={`decision-btn approve ${decision === 'approved' ? 'active' : ''}`}
+                                onClick={() => handleRoleDecisionChange(team, 'approved')}
+                              >
+                                <i className="fas fa-check mr-1"></i>
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                className={`decision-btn deny ${decision === 'denied' ? 'active' : ''}`}
+                                onClick={() => handleRoleDecisionChange(team, 'denied')}
+                              >
+                                <i className="fas fa-times mr-1"></i>
+                                Deny
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-muted">This applicant has not selected any specific roles.</p>
+                  )}
+                </div>
+
+                <div className="admin-response">
+                  <h5>Response to Applicant</h5>
+                  <textarea
+                    id="adminResponseNote"
+                    className="form-control"
+                    rows={3}
+                    placeholder="Add an optional note for the candidate..."
+                    value={adminResponseNote}
+                    onChange={(e) => setAdminResponseNote(e.target.value)}
+                  ></textarea>
+                  <small className="text-muted">This note is included in the summary sent to the candidate.</small>
+                </div>
+
+                <div className="decision-preview">
+                  <h5>Decision Summary Preview</h5>
+                  {appliedTeamsForDecision.length === 0 ? (
+                    <p className="text-muted">No roles selected yet.</p>
+                  ) : (
+                    <div className="decision-preview-list">
+                      {appliedTeamsForDecision.map(team => {
+                        const previewDecision = roleDecisions[team] || 'pending';
+                        return (
+                          <div key={team} className={`decision-preview-row status-${previewDecision}`}>
+                            <span className="decision-team-name">{formatTeamName(team)}</span>
+                            <span className={`decision-team-status status-${previewDecision}`}>
+                              {previewDecision === 'approved' ? 'Approved' : previewDecision === 'denied' ? 'Denied' : 'Pending'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <small className="text-muted">Summary and note are delivered to the applicant's inbox and preferred contact methods.</small>
+                </div>
+
+                {decisionError && (
+                  <div className="alert alert-danger decision-alert">
+                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                    {decisionError}
+                  </div>
+                )}
               </div>
+
             </div>
+
             <div className="modal-footer application-actions">
-              {selectedApplication.status === 'submitted' && (
-                <>
-                  <button
-                    className="btn btn-success"
-                    onClick={() => approveApplication(selectedApplication.id)}
-                  >
-                    <i className="fas fa-check mr-1"></i>
-                    Approve
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={() => rejectApplication(selectedApplication.id)}
-                  >
-                    <i className="fas fa-times mr-1"></i>
-                    Reject
-                  </button>
-                </>
-              )}
-              <button className="btn btn-outline" onClick={closeApplicationModal}>
-                Close
+              <button
+                className="btn btn-primary"
+                onClick={handleSubmitApplicationDecision}
+                disabled={decisionSubmitting}
+              >
+                {decisionSubmitting ? (
+                  <>
+                    <div className="loading-spinner-small"></div>
+                    Sending Decision...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane mr-1"></i>
+                    Submit Decision
+                  </>
+                )}
+              </button>
+              <button
+                className="btn btn-outline"
+                onClick={closeApplicationModal}
+                disabled={decisionSubmitting}
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -1591,12 +2507,47 @@ const Dashboard = () => {
         }
 
         .team-badge {
-          padding: 0.5rem 1rem;
-          background-color: var(--primary);
-          color: white;
-          border-radius: 20px;
+          display: inline-flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.25rem;
+          padding: 0.55rem 0.85rem;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background-color: #f8fafc;
+          color: #0f172a;
           font-size: 0.85rem;
           font-weight: 600;
+          min-width: 150px;
+          transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .team-badge-name {
+          font-weight: 600;
+        }
+
+        .team-badge-status {
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .team-badge.status-approved {
+          border-color: #34d399;
+          background-color: #ecfdf5;
+          color: #047857;
+        }
+
+        .team-badge.status-denied {
+          border-color: #f87171;
+          background-color: #fef2f2;
+          color: #b91c1c;
+        }
+
+        .team-badge.status-pending {
+          border-color: #facc15;
+          background-color: #fef9c3;
+          color: #92400e;
         }
 
         .application-actions {
@@ -1846,6 +2797,459 @@ const Dashboard = () => {
             grid-template-columns: 1fr;
           }
         }
+
+        .admin-decision-panel {
+          margin-top: 2rem;
+          padding: 1.75rem 1.5rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          background-color: #ffffff;
+          box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+        }
+
+        .admin-decision-panel h4 {
+          margin-bottom: 0.75rem;
+        }
+
+        .admin-decision-panel > p {
+          margin-bottom: 1.5rem;
+        }
+
+        .team-decisions {
+          padding: 1rem 1.25rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          background-color: #f8fafc;
+        }
+
+        .team-decisions h5 {
+          margin-bottom: 0.65rem;
+        }
+
+        .team-decisions .decision-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .team-decision-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .team-decision-row + .team-decision-row {
+          border-top: 1px dashed #dde5f1;
+          padding-top: 0.75rem;
+        }
+
+        .team-name {
+          font-weight: 600;
+          flex: 1;
+          min-width: 160px;
+        }
+
+        .decision-buttons {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .decision-btn {
+          border: 1px solid #d1d5db;
+          background-color: #ffffff;
+          color: #1f2937;
+          padding: 0.45rem 1.1rem;
+          border-radius: 999px;
+          font-weight: 600;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          transition: all 0.2s ease;
+        }
+
+        .decision-btn i {
+          color: inherit;
+        }
+
+        .decision-btn.approve {
+          border-color: #34d399;
+          color: #047857;
+        }
+
+        .decision-btn.deny {
+          border-color: #f87171;
+          color: #b91c1c;
+        }
+
+        .decision-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .decision-btn.approve.active {
+          background-color: #10b981;
+          border-color: #10b981;
+          color: #ffffff;
+        }
+
+        .decision-btn.deny.active {
+          background-color: #ef4444;
+          border-color: #ef4444;
+          color: #ffffff;
+        }
+
+        .admin-response {
+          margin-top: 1.75rem;
+        }
+
+        .admin-response h5 {
+          margin-bottom: 0.5rem;
+        }
+
+        .admin-response textarea {
+          margin-top: 0.5rem;
+          resize: vertical;
+        }
+
+        .decision-preview {
+          margin-top: 1.75rem;
+          background-color: #f1f5f9;
+          border: 1px dashed #cbd5f5;
+          border-radius: 12px;
+          padding: 1rem 1.25rem;
+        }
+
+        .decision-preview h5 {
+          margin-bottom: 0.6rem;
+        }
+
+        .decision-preview p {
+          margin-bottom: 0.35rem;
+        }
+
+        .decision-preview-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .decision-preview-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.6rem 0.75rem;
+          border-radius: 10px;
+          border: 1px solid #e2e8f0;
+          background-color: #ffffff;
+        }
+
+        .decision-preview-row.status-approved {
+          border-color: #34d399;
+          background-color: #ecfdf5;
+        }
+
+        .decision-preview-row.status-denied {
+          border-color: #f87171;
+          background-color: #fef2f2;
+        }
+
+        .decision-preview-row.status-pending {
+          border-color: #facc15;
+          background-color: #fef9c3;
+        }
+
+        .decision-team-name {
+          font-weight: 600;
+          color: #0f172a;
+        }
+
+        .decision-team-status,
+        .team-decision-status {
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .team-decision-status.status-approved,
+        .decision-team-status.status-approved {
+          color: #047857;
+        }
+
+        .team-decision-status.status-denied,
+        .decision-team-status.status-denied {
+          color: #b91c1c;
+        }
+
+        .team-decision-status.status-pending,
+        .decision-team-status.status-pending {
+          color: #92400e;
+        }
+
+        .team-decision-label {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+          flex: 1;
+          min-width: 170px;
+        }
+
+        .team-decision-row {
+          align-items: flex-start;
+        }
+
+        .decision-alert {
+          margin: 1.25rem 0 0;
+        }
+
+        .application-modal .modal-footer {
+          border-top: 1px solid #e2e8f0;
+          margin-top: 1.5rem;
+          padding-top: 1.5rem;
+        }
+
+        /* Messaging Panel Styles */
+        .messaging-panel {
+          max-width: 800px;
+          margin: 0 auto;
+        }
+
+        .messaging-mode {
+          margin-bottom: 2rem;
+        }
+
+        .mode-selector {
+          display: flex;
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .mode-btn {
+          padding: 1rem 1.5rem;
+          border: 2px solid #e5e7eb;
+          background-color: white;
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          font-weight: 600;
+          flex: 1;
+        }
+
+        .mode-btn:hover {
+          border-color: var(--primary);
+          background-color: #f8f9fa;
+        }
+
+        .mode-btn.active {
+          border-color: var(--primary);
+          background-color: var(--primary);
+          color: white;
+        }
+
+        .email-input-section, .category-selection {
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          background-color: #f8f9fa;
+        }
+
+        .email-count, .category-count {
+          text-align: right;
+          margin-top: 0.5rem;
+          font-size: 0.875rem;
+          color: #6b7280;
+        }
+
+        .category-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .category-card {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          padding: 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          background-color: white;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+          border-color: var(--primary);
+          background-color: #f0f7ff;
+        }
+
+        .category-card input[type="checkbox"] {
+          margin-top: 0.125rem;
+        }
+
+        .category-card input[type="checkbox"]:checked + .category-info {
+          color: var(--primary);
+        }
+
+        .category-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+
+        .category-info small {
+          color: #6b7280;
+          font-size: 0.8rem;
+        }
+
+        .message-content {
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+        }
+
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .form-control {
+          width: 100%;
+          padding: 0.75rem;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 1rem;
+          transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .delivery-channels {
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          background-color: #f9fafb;
+        }
+
+        .channel-options {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .channel-option {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1rem;
+          border: 1px solid #d1d5db;
+          border-radius: 8px;
+          background-color: white;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .channel-option:hover {
+          border-color: var(--secondary);
+          background-color: #fef7f0;
+        }
+
+        .channel-option input[type="checkbox"]:checked + .channel-info {
+          color: var(--secondary);
+          font-weight: 600;
+        }
+
+        .channel-summary {
+          margin-top: 1rem;
+          font-size: 0.875rem;
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        .alert {
+          padding: 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+        }
+
+        .alert-danger {
+          background-color: #fef2f2;
+          border: 1px solid #fecaca;
+          color: #b91c1c;
+        }
+
+        .alert-success {
+          background-color: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          color: #166534;
+        }
+
+        .messaging-actions {
+          text-align: center;
+        }
+
+        .btn-lg {
+          padding: 1rem 2rem;
+          font-size: 1.125rem;
+          font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+          .mode-selector {
+            flex-direction: column;
+          }
+
+          .category-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .channel-options {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .team-decision-row {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+
+          .decision-buttons {
+            width: 100%;
+            justify-content: center;
+          }
+
+          .decision-btn {
+            flex: 1;
+            justify-content: center;
+          }
+
+          .admin-decision-panel {
+            padding: 1.25rem;
+          }
+        }
+
+
+        }
       `}</style>
     </>
   );
@@ -1865,3 +3269,17 @@ function formatDay(dateString) {
 }
 
 export default Dashboard;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
