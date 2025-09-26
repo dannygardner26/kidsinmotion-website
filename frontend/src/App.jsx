@@ -82,6 +82,7 @@ const App = () => {
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/volunteer" element={<VolunteerApplication />} />
+                <Route path="/volunteer-application" element={<VolunteerApplication />} />
 
                 {/* Routes only accessible when logged OUT */}
                 <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />

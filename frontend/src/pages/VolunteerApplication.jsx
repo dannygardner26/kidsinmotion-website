@@ -1,8 +1,55 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { auth } from '../firebaseConfig';
 import { apiService } from '../services/api';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 
+
+const APPLICATION_STORE_KEY = 'volunteer_applications_global';
+
+const readGlobalApplications = () => {
+  try {
+    return JSON.parse(localStorage.getItem(APPLICATION_STORE_KEY) || '{}');
+  } catch (error) {
+    console.error('Failed to parse global applications store:', error);
+    return {};
+  }
+};
+
+const writeGlobalApplications = (applications) => {
+  localStorage.setItem(APPLICATION_STORE_KEY, JSON.stringify(applications));
+};
+
+const VOLUNTEER_APPLICATIONS_COLLECTION = 'volunteerApplications';
+
+const getApplicationDocRef = (uid) => doc(db, VOLUNTEER_APPLICATIONS_COLLECTION, uid);
+
+const FIRESTORE_ENABLED = process.env.REACT_APP_ENABLE_FIRESTORE_SYNC === 'true';
+const syncApplicationCaches = async (uid, data, options = {}) => {
+  if (!uid || !data) return;
+  try {
+    localStorage.setItem(`volunteer_draft_${uid}`, JSON.stringify(data));
+  } catch (error) {
+    console.error('Failed to persist volunteer application draft locally:', error);
+  }
+
+  try {
+    const globalRecords = readGlobalApplications();
+    globalRecords[uid] = data;
+    writeGlobalApplications(globalRecords);
+  } catch (error) {
+    console.error('Failed to update shared volunteer applications store:', error);
+  }
+
+  if (FIRESTORE_ENABLED && !options.skipFirestore) {
+    try {
+      await setDoc(getApplicationDocRef(uid), data, { merge: true });
+    } catch (error) {
+      console.error('Failed to sync volunteer application to Firestore:', error);
+    }
+  }
+};
 
 const VolunteerApplication = () => {
   const [formData, setFormData] = useState({
@@ -124,64 +171,134 @@ const VolunteerApplication = () => {
   };
 
   // Save draft to localStorage
-  const saveDraft = () => {
+  const saveDraft = async () => {
     if (isLoggedIn) {
-      const draftKey = `volunteer_draft_${auth.currentUser?.uid}`;
+      const now = new Date().toISOString();
+      const draftStatus = ['approved', 'denied', 'submitted'].includes(applicationStatus) ? applicationStatus : 'draft';
       const draftData = {
         ...formData,
-        lastSaved: new Date().toISOString(),
-        status: applicationStatus === 'submitted' ? 'submitted' : 'draft'
+        lastSaved: now,
+        lastUpdatedAt: now,
+        status: draftStatus
       };
-      localStorage.setItem(draftKey, JSON.stringify(draftData));
-      setLastSaved(new Date().toISOString());
+
+      await syncApplicationCaches(auth.currentUser?.uid, draftData);
+
+      setLastSaved(now);
     }
   };
 
   // Load existing application or draft
-  const loadExistingApplication = (user) => {
-    if (user) {
-      const draftKey = `volunteer_draft_${user.uid}`;
-      const savedData = localStorage.getItem(draftKey);
-
-      console.log('Loading existing application for user:', user.uid);
-      console.log('Saved data found:', savedData ? 'Yes' : 'No');
-
-      if (savedData) {
-        try {
-          const parsed = JSON.parse(savedData);
-          console.log('Parsed saved data:', parsed);
-
-          setFormData({
-            firstName: parsed.firstName || '',
-            lastName: parsed.lastName || '',
-            email: parsed.email || '',
-            phone: parsed.phone || '',
-            grade: parsed.grade || '',
-            school: parsed.school || '',
-            preferredContact: parsed.preferredContact || [],
-            preferredContactOther: parsed.preferredContactOther || '',
-            selectedCategories: parsed.selectedCategories || [],
-            motivation: parsed.motivation || '',
-            dynamicAnswers: parsed.dynamicAnswers || {},
-            resume: parsed.resume || '',
-            portfolioLink: parsed.portfolioLink || ''
-          });
-          setApplicationStatus(parsed.status || 'draft');
-          setLastSaved(parsed.lastSaved);
-
-          if (parsed.status === 'submitted') {
-            setIsEditing(true);
-          }
-          return parsed; // Return the loaded data
-        } catch (error) {
-          console.error('Error parsing saved data:', error);
-          setApplicationStatus('new');
+  const getApplicationTimestamp = (data) => {
+    if (!data) return 0;
+    const fields = ['lastUpdatedAt', 'reviewedAt', 'submittedAt', 'lastSaved'];
+    for (const field of fields) {
+      if (data[field]) {
+        const value = new Date(data[field]).getTime();
+        if (!Number.isNaN(value)) {
+          return value;
         }
-      } else {
-        setApplicationStatus('new');
       }
     }
-    return null;
+    return 0;
+  };
+
+  const normalizeLoadedApplication = (raw = {}) => {
+    if (!raw || typeof raw !== 'object') {
+      return null;
+    }
+
+    return {
+      ...raw,
+      selectedCategories: Array.isArray(raw.selectedCategories) ? raw.selectedCategories : [],
+      preferredContact: Array.isArray(raw.preferredContact) ? raw.preferredContact : [],
+      dynamicAnswers: raw.dynamicAnswers || {},
+      status: raw.status || (raw.submittedAt ? 'submitted' : 'draft'),
+      lastSaved: raw.lastSaved || raw.lastUpdatedAt || raw.submittedAt || null,
+      lastUpdatedAt: raw.lastUpdatedAt || raw.reviewedAt || raw.submittedAt || raw.lastSaved || null,
+      submittedAt: raw.submittedAt || null
+    };
+  };
+
+  const loadExistingApplication = async (user) => {
+    if (!user) {
+      setApplicationStatus('new');
+      setIsEditing(false);
+      return null;
+    }
+
+    const draftKey = `volunteer_draft_${user.uid}`;
+    const candidates = [];
+
+    const pushCandidate = (source, raw) => {
+      const normalized = normalizeLoadedApplication(raw);
+      if (normalized) {
+        candidates.push({ source, data: normalized });
+      }
+    };
+
+    const savedData = localStorage.getItem(draftKey);
+    if (savedData) {
+      try {
+        pushCandidate('local', JSON.parse(savedData));
+      } catch (error) {
+        console.error('Error parsing saved volunteer application:', error);
+      }
+    }
+
+    try {
+      const globalApplications = readGlobalApplications();
+      if (globalApplications[user.uid]) {
+        pushCandidate('global', globalApplications[user.uid]);
+      }
+    } catch (error) {
+      console.error('Error loading volunteer application from shared store:', error);
+    }
+
+    if (FIRESTORE_ENABLED) {
+      try {
+        const docSnap = await getDoc(getApplicationDocRef(user.uid));
+        if (docSnap.exists()) {
+          pushCandidate('firestore', docSnap.data());
+        }
+      } catch (error) {
+        console.error('Error loading volunteer application from Firestore:', error);
+      }
+    }
+
+    if (candidates.length === 0) {
+      setApplicationStatus('new');
+      setIsEditing(false);
+      return null;
+    }
+
+    candidates.sort((a, b) => getApplicationTimestamp(b.data) - getApplicationTimestamp(a.data));
+    const { source: latestSource, data: latestData } = candidates[0];
+
+    setFormData({
+      firstName: latestData.firstName || '',
+      lastName: latestData.lastName || '',
+      email: latestData.email || '',
+      phone: latestData.phone || '',
+      grade: latestData.grade || '',
+      school: latestData.school || '',
+      preferredContact: latestData.preferredContact || [],
+      preferredContactOther: latestData.preferredContactOther || '',
+      selectedCategories: latestData.selectedCategories || [],
+      motivation: latestData.motivation || '',
+      dynamicAnswers: latestData.dynamicAnswers || {},
+      resume: latestData.resume || '',
+      portfolioLink: latestData.portfolioLink || ''
+    });
+
+    const normalizedStatus = latestData.status || 'draft';
+    setApplicationStatus(normalizedStatus);
+    setLastSaved(latestData.lastSaved || latestData.lastUpdatedAt || null);
+    setIsEditing(true);
+
+    await syncApplicationCaches(user.uid, latestData, { skipFirestore: latestSource === 'firestore' });
+
+    return latestData;
   };
 
   // Auto-fill form data for logged-in users and load existing application
@@ -191,7 +308,7 @@ const VolunteerApplication = () => {
         setIsLoggedIn(true);
 
         // First, load any existing application or draft
-        const existingData = loadExistingApplication(user);
+        const existingData = await loadExistingApplication(user);
 
         // Only auto-fill if no existing draft was found
         if (!existingData) {
@@ -245,14 +362,14 @@ const VolunteerApplication = () => {
   useEffect(() => {
     if (isLoggedIn && applicationStatus !== null) {
       const autoSaveInterval = setInterval(() => {
-        saveDraft();
+        saveDraft().catch(error => console.error('Auto-save failed:', error));
       }, 30000); // 30 seconds
 
       return () => clearInterval(autoSaveInterval);
     }
   }, [isLoggedIn, formData, applicationStatus]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate email format
@@ -299,22 +416,23 @@ const VolunteerApplication = () => {
 
     // Mark as submitted
     setApplicationStatus('submitted');
-    setIsEditing(false);
+    setIsEditing(true);
 
     // Save the submitted application
     if (isLoggedIn) {
-      const draftKey = `volunteer_draft_${auth.currentUser?.uid}`;
+      const submittedAt = new Date().toISOString();
       const submittedData = {
         ...formData,
-        lastSaved: new Date().toISOString(),
+        lastSaved: submittedAt,
+        lastUpdatedAt: submittedAt,
         status: 'submitted',
-        submittedAt: new Date().toISOString()
+        submittedAt
       };
-      localStorage.setItem(draftKey, JSON.stringify(submittedData));
+
+      await syncApplicationCaches(auth.currentUser?.uid, submittedData);
     }
 
     console.log('Form submitted:', formData);
-    // TODO: Add API call to submit form
     const message = isEditing
       ? 'Application updated successfully! We\'ll review your changes and get back to you soon.'
       : 'Application submitted successfully! We\'ll review your application and get back to you soon.';
@@ -322,9 +440,14 @@ const VolunteerApplication = () => {
     showCustomNotification(message, 'success');
   };
 
-  const handleSaveDraft = () => {
-    saveDraft();
-    showCustomNotification('Draft saved! You can come back and finish your application later.', 'info');
+  const handleSaveDraft = async () => {
+    try {
+      await saveDraft();
+      showCustomNotification('Draft saved! You can come back and finish your application later.', 'info');
+    } catch (error) {
+      console.error('Manual draft save failed:', error);
+      showCustomNotification('Unable to save draft right now. Please try again soon.', 'error');
+    }
   };
 
   return (
@@ -408,6 +531,38 @@ const VolunteerApplication = () => {
               }}>
                 <i className="fas fa-save" style={{ marginRight: '0.5rem' }}></i>
                 <strong>Draft saved.</strong> {lastSaved && `Last saved: ${new Date(lastSaved).toLocaleString()}`}
+              </div>
+            )}
+
+            {applicationStatus === 'approved' && (
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                backgroundColor: '#dcfce7',
+                border: '1px solid #22c55e',
+                borderRadius: '8px',
+                fontSize: '0.95rem',
+                color: '#166534',
+                textAlign: 'center'
+              }}>
+                <i className="fas fa-check-circle" style={{ marginRight: '0.5rem' }}></i>
+                <strong>Your application was approved.</strong> You can still make updates below and resubmit if you want to pursue additional teams.
+              </div>
+            )}
+
+            {applicationStatus === 'denied' && (
+              <div style={{
+                marginBottom: '1.5rem',
+                padding: '1rem',
+                backgroundColor: '#fee2e2',
+                border: '1px solid #ef4444',
+                borderRadius: '8px',
+                fontSize: '0.95rem',
+                color: '#991b1b',
+                textAlign: 'center'
+              }}>
+                <i className="fas fa-undo" style={{ marginRight: '0.5rem' }}></i>
+                <strong>Your application was marked as denied.</strong> Update your answers and resubmit when you're ready for another review.
               </div>
             )}
 
@@ -529,7 +684,8 @@ const VolunteerApplication = () => {
                       onChange={handleInputChange}
                       required
                       placeholder="example@email.com"
-                      pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                      pattern="^[^@ ]+@[^@ ]+\.[^@ ]+$"
+
                       title="Please enter a valid email address"
                       style={{
                         width: '100%',
@@ -562,7 +718,9 @@ const VolunteerApplication = () => {
                       onChange={handleInputChange}
                       required
                       placeholder="(123) 456-7890"
-                      pattern="^[\+]?[1]?[\s\-\.]?[(]?[0-9]{3}[)]?[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{4}$"
+                      pattern="^[0-9()+ .-]{10,}$"
+
+
                       title="Please enter a valid phone number (e.g., (123) 456-7890)"
                       style={{
                         width: '100%',
@@ -1216,3 +1374,10 @@ const VolunteerApplication = () => {
 };
 
 export default VolunteerApplication;
+
+
+
+
+
+
+

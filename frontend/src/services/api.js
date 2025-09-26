@@ -17,7 +17,14 @@ class ApiService {
 
     const user = auth.currentUser;
     if (user) {
-      return await user.getIdToken();
+      try {
+        // Get token with caching (false = use cached if valid)
+        return await user.getIdToken(false);
+      } catch (error) {
+        console.warn('Token refresh error, retrying:', error.message);
+        // Try one more time with force refresh
+        return await user.getIdToken(true);
+      }
     }
     throw new Error('User not authenticated');
   }

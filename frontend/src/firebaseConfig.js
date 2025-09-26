@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getMessaging } from "firebase/messaging";
 
@@ -35,6 +35,21 @@ if (typeof window !== "undefined" && process.env.REACT_APP_FIREBASE_MEASUREMENT_
   }
 }
 const db = getFirestore(app);
+
+// Enable offline persistence for faster loading
+try {
+  enableMultiTabIndexedDbPersistence(db);
+  console.log("Firestore offline persistence enabled");
+} catch (error) {
+  if (error.code === 'failed-precondition') {
+    console.warn("Firestore persistence failed: Multiple tabs open");
+  } else if (error.code === 'unimplemented') {
+    console.warn("Firestore persistence not available in this browser");
+  } else {
+    console.warn("Firestore persistence error:", error);
+  }
+}
+
 const storage = getStorage(app);
 let messaging;
 

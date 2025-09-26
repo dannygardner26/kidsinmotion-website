@@ -11,7 +11,8 @@ module.exports = {
   entry: './src/index.js', // Entry point of your application
   output: {
     path: path.resolve(__dirname, 'build'), // Output directory
-    filename: 'static/js/[name].js', // Output bundle file name
+    filename: 'static/js/[name].js', // Output bundle file name without hash
+    chunkFilename: 'static/js/[name].chunk.js', // Chunk files for code splitting
     publicPath: '/', // Ensures assets are served correctly
     clean: true, // Clean the output directory before each build
   },
@@ -32,9 +33,6 @@ module.exports = {
       },
     },
     historyApiFallback: true, // Important for single-page applications using React Router
-    devMiddleware: {
-      index: false, // Disable serve-index middleware to prevent URI malformed errors
-    },
     headers: {
       'X-Content-Type-Options': 'nosniff',
     },
@@ -81,7 +79,7 @@ module.exports = {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
         type: 'asset/resource',
         generator: {
-           filename: 'static/media/[name][hash][ext]'
+           filename: 'static/media/[name][ext]'
         }
       },
     ]
@@ -102,5 +100,32 @@ module.exports = {
   ],
   resolve: {
     extensions: ['.js', '.jsx'], // Allow importing without specifying .js or .jsx extension
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+        },
+        firebase: {
+          test: /[\\/]node_modules[\\/](firebase|@firebase)[\\/]/,
+          name: 'firebase',
+          chunks: 'all',
+          priority: 10,
+        },
+        common: {
+          name: 'common',
+          minChunks: 2,
+          priority: 5,
+          reuseExistingChunk: true,
+        },
+      },
+    },
+    runtimeChunk: {
+      name: 'runtime',
+    },
   },
 };

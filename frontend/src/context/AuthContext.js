@@ -13,21 +13,38 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   const syncUserWithBackend = async (user) => {
     if (user) {
       try {
+        // Check for cached profile first to speed up loading
+        const cachedProfile = localStorage.getItem(`userProfile_${user.uid}`);
+        if (cachedProfile) {
+          const parsed = JSON.parse(cachedProfile);
+          // Use cached profile immediately, then refresh in background
+          setUserProfile(parsed);
+          setAuthReady(true);
+          console.log("Using cached user profile:", parsed);
+        }
+
         // Sync user with backend
         await apiService.syncUser();
-        
+
         // Fetch user profile from backend
         const profile = await apiService.getUserProfile();
         setUserProfile(profile);
-        
+
+        // Cache the profile for faster future loads
+        localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(profile));
+
         console.log("User synced with backend:", profile);
       } catch (error) {
         console.error("Failed to sync user with backend:", error);
         // Don't prevent login if backend sync fails
+        if (!authReady) {
+          setAuthReady(true); // Still allow app to load
+        }
       }
     } else {
       setUserProfile(null);
@@ -101,6 +118,7 @@ export const AuthProvider = ({ children }) => {
         }
         
         clearTimeout(loadingTimeout);
+        setAuthReady(true);
         setLoading(false);
       });
 
@@ -180,6 +198,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     userProfile,
     loading,
+    authReady, // New flag for faster UI rendering
     logout,
     updateProfile,
     getIdToken, // Provide function to get token
