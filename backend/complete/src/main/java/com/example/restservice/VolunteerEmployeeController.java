@@ -167,6 +167,72 @@ public class VolunteerEmployeeController {
         }
     }
 
+    // Admin endpoints - get all volunteer employees and team applications
+    @GetMapping("/admin/all")
+    public ResponseEntity<?> getAllVolunteerEmployees(HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            String email = (String) httpRequest.getAttribute("firebaseEmail");
+
+            if (firebaseUid == null || email == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            // Check if user is admin
+            if (!isAdminEmail(email)) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Admin access required"));
+            }
+
+            List<VolunteerEmployee> allVolunteerEmployees = volunteerEmployeeRepository.findAll();
+            return ResponseEntity.ok(allVolunteerEmployees);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to get volunteer employees - " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/admin/team-applications")
+    public ResponseEntity<?> getAllTeamApplications(HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            String email = (String) httpRequest.getAttribute("firebaseEmail");
+
+            if (firebaseUid == null || email == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            // Check if user is admin
+            if (!isAdminEmail(email)) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Admin access required"));
+            }
+
+            List<TeamApplication> allApplications = teamApplicationRepository.findAll();
+            return ResponseEntity.ok(allApplications);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to get team applications - " + e.getMessage()));
+        }
+    }
+
+    // Helper method to check if an email should have admin privileges
+    private boolean isAdminEmail(String email) {
+        String[] adminEmails = {"kidsinmotion0@gmail.com", "kidsinmotion@gmail.com", "danny@example.com", "admin@kidsinmotion.org"};
+        if (email == null) return false;
+
+        for (String adminEmail : adminEmails) {
+            if (adminEmail.equalsIgnoreCase(email.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Request DTOs
     public static class VolunteerEmployeeRegistrationRequest {
         private String grade;

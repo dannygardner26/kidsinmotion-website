@@ -323,9 +323,43 @@ const Dashboard = () => {
 
   const fetchAdminData = async () => {
     try {
-      // Fetch volunteer applications from localStorage (would be API in production)
-      const applications = await loadAllVolunteerApplications();
-      setVolunteerApplications(applications);
+      // For test admin, use backend API instead of Firestore
+      const isTestAdmin = localStorage.getItem('isTestAdmin') === 'true';
+
+      if (isTestAdmin) {
+        // Fetch volunteer applications from backend API
+        try {
+          const backendApplications = await apiService.getAllVolunteerEmployees();
+          console.log('Loaded volunteer applications from backend:', backendApplications);
+
+          // Convert backend format to frontend format
+          const convertedApplications = backendApplications.map(emp => ({
+            id: emp.id || emp.user?.id,
+            applicantName: `${emp.user?.firstName || 'Unknown'} ${emp.user?.lastName || 'User'}`,
+            email: emp.user?.email || 'No email',
+            phone: emp.user?.phoneNumber || 'No phone',
+            grade: emp.grade,
+            school: emp.school,
+            motivation: emp.motivation,
+            skills: emp.skills || '',
+            preferredContact: emp.preferredContact,
+            status: emp.status?.toLowerCase() || 'pending',
+            submittedAt: emp.registrationDate,
+            selectedCategories: ['volunteer'] // Default category
+          }));
+
+          setVolunteerApplications(convertedApplications);
+        } catch (backendError) {
+          console.error('Failed to load from backend, falling back to localStorage:', backendError);
+          // Fall back to localStorage if backend fails
+          const applications = await loadAllVolunteerApplications();
+          setVolunteerApplications(applications);
+        }
+      } else {
+        // Regular user - use Firestore/localStorage
+        const applications = await loadAllVolunteerApplications();
+        setVolunteerApplications(applications);
+      }
 
       // Fetch all child events/registrations
       try {
