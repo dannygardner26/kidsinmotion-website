@@ -103,15 +103,18 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
                 String uid = decodedToken.getUid();
                 String email = decodedToken.getEmail();
 
+                // Get user authorities from database
+                List<SimpleGrantedAuthority> authorities = resolveAuthorities(uid, false);
+
                 // Create a UserDetails object with Firebase UID as username
                 UserDetails userDetails = User.builder()
                         .username(uid)
                         .password("") // No password needed for Firebase auth
-                        .authorities(new ArrayList<>()) // Will be populated from database
+                        .authorities(authorities)
                         .build();
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // Store Firebase UID and email in request attributes for use in controllers
