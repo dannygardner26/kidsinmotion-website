@@ -227,6 +227,66 @@ const VolunteerApplication = () => {
       return null;
     }
 
+    // **PRIORITY 1: Check backend database first**
+    try {
+      console.log('Loading volunteer status from backend...');
+      const backendStatus = await apiService.getVolunteerStatus();
+
+      if (backendStatus && backendStatus.volunteerEmployeeStatus !== 'NOT_REGISTERED') {
+        console.log('Found backend registration:', backendStatus);
+
+        // Map backend status to frontend status
+        const statusMapping = {
+          'PENDING': 'submitted',
+          'APPROVED': 'approved',
+          'REJECTED': 'denied',
+          'SUSPENDED': 'denied'
+        };
+
+        const frontendStatus = statusMapping[backendStatus.volunteerEmployeeStatus] || 'submitted';
+
+        // Populate form fields with backend data (including user information and team applications)
+        if (backendStatus.grade || backendStatus.school || backendStatus.motivation || backendStatus.firstName) {
+          // Extract team applications data
+          const teamApplications = backendStatus.teamApplications || [];
+          const selectedCategories = teamApplications.map(ta => ta.teamName.toLowerCase().replace(/\s+/g, '-'));
+          const dynamicAnswers = teamApplications.reduce((acc, ta) => {
+            const categorySlug = ta.teamName.toLowerCase().replace(/\s+/g, '-');
+            acc[categorySlug] = ta.teamSpecificAnswer || '';
+            return acc;
+          }, {});
+
+          setFormData(prevData => ({
+            ...prevData,
+            // User information fields
+            firstName: backendStatus.firstName || '',
+            lastName: backendStatus.lastName || '',
+            email: backendStatus.email || '',
+            phone: backendStatus.phoneNumber || '',
+            // Volunteer employee fields
+            grade: backendStatus.grade || '',
+            school: backendStatus.school || '',
+            preferredContact: backendStatus.preferredContact ? backendStatus.preferredContact.split(', ') : [],
+            motivation: backendStatus.motivation || '',
+            skills: backendStatus.skills || '',
+            // Team application fields
+            selectedCategories,
+            dynamicAnswers
+          }));
+        }
+
+        setApplicationStatus(frontendStatus);
+        setLastSaved(backendStatus.registrationDate);
+        setIsEditing(true);
+
+        console.log('Using backend data, status:', frontendStatus);
+        return { status: frontendStatus, source: 'backend' };
+      }
+    } catch (error) {
+      console.log('Backend status check failed, falling back to local storage:', error);
+    }
+
+    // **FALLBACK: Check local storage for drafts**
     const draftKey = `volunteer_draft_${user.uid}`;
     const candidates = [];
 
@@ -371,6 +431,7 @@ const VolunteerApplication = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submission started');
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -418,7 +479,54 @@ const VolunteerApplication = () => {
     setApplicationStatus('submitted');
     setIsEditing(true);
 
-    // Save the submitted application
+    // **PRIORITY 1: Submit to backend API first**
+    try {
+      const backendData = {
+        grade: formData.grade,
+        school: formData.school,
+        preferredContact: formData.preferredContact.join(', '), // Convert array to string for backend
+        motivation: formData.motivation,
+        skills: formData.skills
+      };
+
+      const response = await apiService.registerVolunteerEmployee(backendData);
+      console.log('Backend volunteer employee registration successful:', response);
+
+      // **STEP 2: Apply to each selected team**
+      console.log('Selected categories for team applications:', formData.selectedCategories);
+      console.log('Dynamic answers:', formData.dynamicAnswers);
+      console.log('Available categories:', categories);
+      for (const categorySlug of formData.selectedCategories) {
+        try {
+          console.log(`Processing category slug: ${categorySlug}`);
+          const teamName = categories.find(cat => cat.toLowerCase().replace(/\s+/g, '-') === categorySlug);
+          console.log(`Found team name: ${teamName}`);
+          const teamApplicationData = {
+            teamName: teamName,
+            teamSpecificAnswer: formData.dynamicAnswers[categorySlug] || ''
+          };
+          console.log(`Team application data:`, teamApplicationData);
+
+          const teamResponse = await apiService.applyToTeam(teamApplicationData);
+          console.log(`Team application successful for ${teamName}:`, teamResponse);
+        } catch (teamError) {
+          console.error(`Failed to apply to team ${categorySlug}:`, teamError);
+          showCustomNotification(`Failed to apply to ${categories.find(cat => cat.toLowerCase().replace(/\s+/g, '-') === categorySlug)} team. Please try again.`, 'error');
+          return;
+        }
+      }
+
+      // Backend submission successful - update local status to match
+      setApplicationStatus('submitted');
+      setLastSaved(new Date().toISOString());
+
+    } catch (error) {
+      console.error('Backend submission failed:', error);
+      showCustomNotification('Failed to submit application to server. Please try again.', 'error');
+      return; // Don't proceed with local save if backend fails
+    }
+
+    // **FALLBACK: Save to local caches as backup**
     if (isLoggedIn) {
       const submittedAt = new Date().toISOString();
       const submittedData = {
@@ -429,7 +537,13 @@ const VolunteerApplication = () => {
         submittedAt
       };
 
-      await syncApplicationCaches(auth.currentUser?.uid, submittedData);
+      try {
+        await syncApplicationCaches(auth.currentUser?.uid, submittedData);
+        console.log('Local backup save successful');
+      } catch (localError) {
+        console.error('Local backup save failed:', localError);
+        // Don't fail the entire submission for local save issues
+      }
     }
 
     console.log('Form submitted:', formData);
@@ -717,11 +831,11 @@ const VolunteerApplication = () => {
                       value={formData.phone}
                       onChange={handleInputChange}
                       required
-                      placeholder="(123) 456-7890"
-                      pattern="^[0-9()+ .-]{10,}$"
+                      placeholder="1234567890"
+                      pattern="[0-9]{10}"
 
 
-                      title="Please enter a valid phone number (e.g., (123) 456-7890)"
+                      title="Please enter exactly 10 digits (e.g., 1234567890)"
                       style={{
                         width: '100%',
                         padding: '0.75rem',

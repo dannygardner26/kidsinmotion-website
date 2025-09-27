@@ -1,5 +1,6 @@
 package com.example.restservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,6 +18,7 @@ public class VolunteerEmployee {
     // Link to the User who is registering as a volunteer employee
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     @NotBlank
@@ -52,6 +54,7 @@ public class VolunteerEmployee {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "approved_by")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User approvedBy; // Admin who approved the registration
 
     public VolunteerEmployee() {

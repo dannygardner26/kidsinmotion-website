@@ -51,6 +51,7 @@ public class WebSecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll() // Allow H2 console access (for dev)
                 .requestMatchers("/api/events", "/api/events/upcoming", "/api/events/past").permitAll() // Allow public event viewing
                 .requestMatchers("/api/events/{id}").permitAll() // Allow public event detail viewing
+                .requestMatchers("/api/announcements/recent", "/api/announcements/active").permitAll() // Allow public announcements
                 // Admin endpoints (will implement role checking later)
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated() // All other requests require authentication

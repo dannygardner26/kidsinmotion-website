@@ -90,7 +90,13 @@ const Dashboard = () => {
 
   const VOLUNTEER_APPLICATIONS_COLLECTION = 'volunteerApplications';
 
-  const getApplicationDocRef = (uid) => firestoreDoc(db, VOLUNTEER_APPLICATIONS_COLLECTION, uid);
+  const getApplicationDocRef = (uid) => {
+    // Validate that uid is a valid Firebase document ID (string, not number)
+    if (!uid || typeof uid !== 'string' || uid.length < 1) {
+      throw new Error(`Invalid Firebase document ID: ${uid}`);
+    }
+    return firestoreDoc(db, VOLUNTEER_APPLICATIONS_COLLECTION, uid);
+  };
 
   const FIRESTORE_ENABLED = process.env.REACT_APP_ENABLE_FIRESTORE_SYNC === 'true';
 
@@ -143,26 +149,33 @@ const Dashboard = () => {
   const syncApplicationRecordCaches = async (id, data, options = {}) => {
     if (!id || !data) return;
 
-    try {
-      localStorage.setItem(`${VOLUNTEER_DRAFT_PREFIX}${id}`, JSON.stringify(data));
-    } catch (error) {
-      console.error('Failed to cache volunteer application locally:', error);
-    }
+    // Skip Firestore sync for backend applications (numeric IDs)
+    const isBackendApplication = typeof id === 'number' || /^\d+$/.test(id);
 
-    try {
-      const globalApplications = readGlobalApplications();
-      globalApplications[id] = data;
-      writeGlobalApplications(globalApplications);
-    } catch (error) {
-      console.error('Failed to update shared volunteer application store:', error);
-    }
-
-    if (FIRESTORE_ENABLED && !options.skipFirestore) {
+    if (!isBackendApplication) {
       try {
-        await setDoc(getApplicationDocRef(id), data, { merge: true });
+        localStorage.setItem(`${VOLUNTEER_DRAFT_PREFIX}${id}`, JSON.stringify(data));
       } catch (error) {
-        console.error('Failed to sync volunteer application to Firestore:', error);
+        console.error('Failed to cache volunteer application locally:', error);
       }
+
+      try {
+        const globalApplications = readGlobalApplications();
+        globalApplications[id] = data;
+        writeGlobalApplications(globalApplications);
+      } catch (error) {
+        console.error('Failed to update shared volunteer application store:', error);
+      }
+
+      if (FIRESTORE_ENABLED && !options.skipFirestore) {
+        try {
+          await setDoc(getApplicationDocRef(id), data, { merge: true });
+        } catch (error) {
+          console.error('Failed to sync volunteer application to Firestore:', error);
+        }
+      }
+    } else {
+      console.log('Skipping local/Firestore sync for backend application:', id);
     }
   };
 
@@ -280,23 +293,59 @@ const Dashboard = () => {
           setVolunteerEvents([]);
         }
 
-        // Check for volunteer application status using the shared caches (Firestore when available)
-        const applicationRecord = await loadVolunteerApplicationById(currentUser.uid);
+        // Check volunteer status from backend API first (most accurate)
+        try {
+          const backendVolunteerStatus = await apiService.getVolunteerStatus();
+          console.log('Backend volunteer status:', backendVolunteerStatus);
 
-        if (applicationRecord) {
-          setCurrentVolunteerApplication(applicationRecord);
-          setVolunteerApplicationStatus(buildVolunteerStatusPayload(applicationRecord));
-        } else {
-          setCurrentVolunteerApplication(null);
-          setVolunteerApplicationStatus(null);
+          if (backendVolunteerStatus && backendVolunteerStatus.volunteerEmployeeStatus !== 'NOT_REGISTERED') {
+            // Build status from backend data
+            const volunteerStatus = {
+              status: backendVolunteerStatus.volunteerEmployeeStatus?.toLowerCase() || 'pending',
+              submittedAt: backendVolunteerStatus.registrationDate,
+              teamSlugs: backendVolunteerStatus.teamApplications?.map(ta => ta.teamName.toLowerCase().replace(/\s+/g, '-')) || [],
+              decisionsByRole: backendVolunteerStatus.teamApplications?.reduce((acc, ta) => {
+                acc[ta.teamName.toLowerCase().replace(/\s+/g, '-')] = ta.status?.toLowerCase() || 'pending';
+                return acc;
+              }, {}) || {}
+            };
+
+            setVolunteerApplicationStatus(volunteerStatus);
+            setCurrentVolunteerApplication(backendVolunteerStatus);
+          } else {
+            // Fall back to checking Firestore/localStorage for draft applications
+            const applicationRecord = await loadVolunteerApplicationById(currentUser.uid);
+            if (applicationRecord) {
+              setCurrentVolunteerApplication(applicationRecord);
+              setVolunteerApplicationStatus(buildVolunteerStatusPayload(applicationRecord));
+            } else {
+              setCurrentVolunteerApplication(null);
+              setVolunteerApplicationStatus(null);
+            }
+          }
+        } catch (error) {
+          console.log('Failed to load backend volunteer status, using local data:', error.message);
+          // Fall back to Firestore/localStorage
+          const applicationRecord = await loadVolunteerApplicationById(currentUser.uid);
+          if (applicationRecord) {
+            setCurrentVolunteerApplication(applicationRecord);
+            setVolunteerApplicationStatus(buildVolunteerStatusPayload(applicationRecord));
+          } else {
+            setCurrentVolunteerApplication(null);
+            setVolunteerApplicationStatus(null);
+          }
         }
 
         if (!activeTab) {
-          const noTeamsSelected = !applicationRecord || !Array.isArray(applicationRecord.selectedCategories) || applicationRecord.selectedCategories.length === 0;
-          if (!applicationRecord || ((applicationRecord.status === 'draft' || applicationRecord.status === 'new') && noTeamsSelected)) {
-            setActiveTab('application');
+          // Determine default tab based on volunteer status
+          if (volunteerApplicationStatus) {
+            if (volunteerApplicationStatus.status === 'pending' || volunteerApplicationStatus.status === 'approved') {
+              setActiveTab('volunteer');
+            } else {
+              setActiveTab('application');
+            }
           } else {
-            setActiveTab('volunteer');
+            setActiveTab('application');
           }
         }
       } else {
@@ -329,24 +378,39 @@ const Dashboard = () => {
       if (isTestAdmin) {
         // Fetch volunteer applications from backend API
         try {
-          const backendApplications = await apiService.getAllVolunteerEmployees();
+          const [backendApplications, teamApplications] = await Promise.all([
+            apiService.getAllVolunteerEmployees(),
+            apiService.getAllTeamApplications()
+          ]);
           console.log('Loaded volunteer applications from backend:', backendApplications);
+          console.log('Loaded team applications from backend:', teamApplications);
 
           // Convert backend format to frontend format
-          const convertedApplications = backendApplications.map(emp => ({
-            id: emp.id || emp.user?.id,
-            applicantName: `${emp.user?.firstName || 'Unknown'} ${emp.user?.lastName || 'User'}`,
-            email: emp.user?.email || 'No email',
-            phone: emp.user?.phoneNumber || 'No phone',
-            grade: emp.grade,
-            school: emp.school,
-            motivation: emp.motivation,
-            skills: emp.skills || '',
-            preferredContact: emp.preferredContact,
-            status: emp.status?.toLowerCase() || 'pending',
-            submittedAt: emp.registrationDate,
-            selectedCategories: ['volunteer'] // Default category
-          }));
+          const convertedApplications = backendApplications.map(emp => {
+            // Find team applications for this volunteer employee
+            const empTeamApps = teamApplications.filter(ta => ta.volunteerEmployee?.id === emp.id);
+            const selectedCategories = empTeamApps.map(ta => ta.teamName.toLowerCase().replace(/\s+/g, '-'));
+
+            return {
+              id: emp.id || emp.user?.id,
+              applicantName: `${emp.user?.firstName || 'Unknown'} ${emp.user?.lastName || 'User'}`,
+              email: emp.user?.email || 'No email',
+              phone: emp.user?.phoneNumber || 'No phone',
+              grade: emp.grade,
+              school: emp.school,
+              motivation: emp.motivation,
+              skills: emp.skills || '',
+              preferredContact: emp.preferredContact,
+              status: emp.status?.toLowerCase() || 'pending',
+              submittedAt: emp.registrationDate,
+              selectedCategories: selectedCategories.length > 0 ? selectedCategories : ['general-volunteer'], // Use actual team applications
+              teamApplications: empTeamApps, // Include team applications for detailed review
+              decisionsByRole: empTeamApps.reduce((acc, ta) => {
+                acc[ta.teamName.toLowerCase().replace(/\s+/g, '-')] = ta.status?.toLowerCase() || 'pending';
+                return acc;
+              }, {})
+            };
+          });
 
           setVolunteerApplications(convertedApplications);
         } catch (backendError) {
@@ -468,6 +532,30 @@ const Dashboard = () => {
       ...prev,
       [team]: decision
     }));
+  };
+
+  const handleVolunteerEmployeeStatusUpdate = async (status, adminNotes = '') => {
+    try {
+      if (!selectedApplication?.id) {
+        console.error('No application selected');
+        return;
+      }
+
+      await apiService.updateVolunteerEmployeeStatus(selectedApplication.id, status, adminNotes);
+
+      // Update the local application data
+      setSelectedApplication(prev => ({
+        ...prev,
+        status: status.toLowerCase()
+      }));
+
+      // Refresh the volunteer applications list
+      await fetchAdminData();
+
+      console.log(`Volunteer employee status updated to ${status}`);
+    } catch (error) {
+      console.error('Failed to update volunteer employee status:', error);
+    }
   };
 
   const buildDecisionSummary = (decisions, teams) => {
@@ -1868,7 +1956,7 @@ parent@example.com"
 
                 <div className="contact-preferences">
                   <h4>Contact Preferences</h4>
-                  <p>{selectedApplication.preferredContact?.join(', ') || 'None specified'}</p>
+                  <p>{selectedApplication.preferredContact || 'None specified'}</p>
                   {selectedApplication.preferredContactOther && (
                     <p><strong>Other:</strong> {selectedApplication.preferredContactOther}</p>
                   )}
@@ -1887,12 +1975,48 @@ parent@example.com"
 
               <div className="admin-decision-panel">
                 <h4>Admin Decision</h4>
-                <p className="text-muted small">Set the outcome for each role and include a note before sending.</p>
+                <p className="text-muted small">First approve/reject as general volunteer, then approve/reject for specific teams.</p>
+
+                {/* Volunteer Employee Status Section */}
+                <div className="volunteer-employee-status">
+                  <h5>General Volunteer Status</h5>
+                  <p className="text-muted small">Approve or reject this person as a general volunteer employee (Step 1 - required before team applications).</p>
+
+                  <div className="employee-status-row">
+                    <div className="current-status">
+                      <span className="status-label">Current Status:</span>
+                      <span className={`status-pill ${selectedApplication.status.toLowerCase()}`}>
+                        {selectedApplication.status.charAt(0).toUpperCase() + selectedApplication.status.slice(1)}
+                      </span>
+                    </div>
+
+                    <div className="status-actions">
+                      <button
+                        type="button"
+                        className={`decision-btn approve ${selectedApplication.status === 'approved' ? 'active' : ''}`}
+                        onClick={() => handleVolunteerEmployeeStatusUpdate('APPROVED', adminResponseNote)}
+                        disabled={selectedApplication.status === 'approved'}
+                      >
+                        <i className="fas fa-user-check mr-1"></i>
+                        Approve as General Volunteer
+                      </button>
+                      <button
+                        type="button"
+                        className={`decision-btn deny ${selectedApplication.status === 'rejected' || selectedApplication.status === 'denied' ? 'active' : ''}`}
+                        onClick={() => handleVolunteerEmployeeStatusUpdate('REJECTED', adminResponseNote)}
+                        disabled={selectedApplication.status === 'rejected' || selectedApplication.status === 'denied'}
+                      >
+                        <i className="fas fa-user-times mr-1"></i>
+                        Reject Volunteer Application
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="team-decisions">
-                  <h5>Role Outcomes</h5>
-                  <p className="text-muted small">Choose approve or deny for every role this candidate applied for.</p>
-                  {selectedApplication.selectedCategories?.length > 0 ? (
+                  <h5>Team Applications (Step 2)</h5>
+                  <p className="text-muted small">Approve/deny for specific teams this candidate applied for.</p>
+                  {selectedApplication.selectedCategories?.length > 0 && !selectedApplication.selectedCategories.includes('general-volunteer') ? (
                     <div className="decision-list">
                       {selectedApplication.selectedCategories.map((team, idx) => {
                         const decision = roleDecisions[team] || 'pending';
@@ -1934,7 +2058,7 @@ parent@example.com"
                       })}
                     </div>
                   ) : (
-                    <p className="text-muted">This applicant has not selected any specific roles.</p>
+                    <p className="text-muted">This applicant registered as a general volunteer only (no specific team applications).</p>
                   )}
                 </div>
 

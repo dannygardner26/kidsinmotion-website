@@ -50,23 +50,50 @@ public class VolunteerEmployeeController {
                     .body(new MessageResponse("Error: User not found"));
             }
 
-            // Check if user is already registered as volunteer employee
-            if (volunteerEmployeeRepository.existsByUser(user)) {
+            // Check if user is an admin - admins shouldn't register as volunteers
+            String email = (String) httpRequest.getAttribute("firebaseEmail");
+            if (isAdminEmail(email)) {
                 return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error: You are already registered as a volunteer employee"));
+                    .body(new MessageResponse("Error: Admin users cannot register as volunteer employees"));
             }
 
-            // Create new volunteer employee registration
-            VolunteerEmployee volunteerEmployee = new VolunteerEmployee(user);
-            volunteerEmployee.setGrade(request.getGrade());
-            volunteerEmployee.setSchool(request.getSchool());
-            volunteerEmployee.setPreferredContact(request.getPreferredContact());
-            volunteerEmployee.setMotivation(request.getMotivation());
-            volunteerEmployee.setSkills(request.getSkills());
+            // Check if user already has a volunteer employee registration - update it instead of creating new
+            VolunteerEmployee volunteerEmployee = volunteerEmployeeRepository.findByUser(user)
+                    .orElse(null);
+
+            System.out.println("DEBUG: VolunteerEmployee found: " + (volunteerEmployee != null ? volunteerEmployee.getId() : "null"));
+
+            boolean isUpdate = false;
+            if (volunteerEmployee != null) {
+                System.out.println("DEBUG: Updating existing volunteer employee with ID: " + volunteerEmployee.getId());
+                // Update existing registration
+                isUpdate = true;
+                volunteerEmployee.setGrade(request.getGrade());
+                volunteerEmployee.setSchool(request.getSchool());
+                volunteerEmployee.setPreferredContact(request.getPreferredContact());
+                volunteerEmployee.setMotivation(request.getMotivation());
+                volunteerEmployee.setSkills(request.getSkills());
+                // Reset status to pending when resubmitting
+                volunteerEmployee.setStatus(VolunteerEmployee.EmployeeStatus.PENDING);
+                volunteerEmployee.setApprovedDate(null);
+                volunteerEmployee.setApprovedBy(null);
+            } else {
+                // Create new volunteer employee registration
+                volunteerEmployee = new VolunteerEmployee(user);
+                volunteerEmployee.setGrade(request.getGrade());
+                volunteerEmployee.setSchool(request.getSchool());
+                volunteerEmployee.setPreferredContact(request.getPreferredContact());
+                volunteerEmployee.setMotivation(request.getMotivation());
+                volunteerEmployee.setSkills(request.getSkills());
+            }
 
             volunteerEmployeeRepository.save(volunteerEmployee);
 
-            return ResponseEntity.ok(new MessageResponse("Volunteer employee registration submitted successfully! We'll review your application."));
+            String message = isUpdate ?
+                "Volunteer employee application updated and resubmitted successfully! We'll review your changes." :
+                "Volunteer employee registration submitted successfully! We'll review your application.";
+
+            return ResponseEntity.ok(new MessageResponse(message));
 
         } catch (Exception e) {
             return ResponseEntity.status(500)
@@ -100,9 +127,12 @@ public class VolunteerEmployeeController {
                     .body(new MessageResponse("Error: You must first register as a volunteer employee"));
             }
 
-            if (volunteerEmployee.getStatus() != VolunteerEmployee.EmployeeStatus.APPROVED) {
+            // Allow all volunteers (including pending) to apply to teams
+            // Only reject if they're specifically rejected or suspended
+            if (volunteerEmployee.getStatus() == VolunteerEmployee.EmployeeStatus.REJECTED ||
+                volunteerEmployee.getStatus() == VolunteerEmployee.EmployeeStatus.SUSPENDED) {
                 return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error: Your volunteer employee registration must be approved before applying to teams"));
+                    .body(new MessageResponse("Error: Cannot apply to teams - your volunteer registration was rejected or suspended"));
             }
 
             // Check if user has already applied to this team
@@ -152,6 +182,19 @@ public class VolunteerEmployeeController {
                 response.setRegistrationDate(volunteerEmployee.getRegistrationDate());
                 response.setApprovedDate(volunteerEmployee.getApprovedDate());
 
+                // Include the actual volunteer employee data for form population
+                response.setGrade(volunteerEmployee.getGrade());
+                response.setSchool(volunteerEmployee.getSchool());
+                response.setPreferredContact(volunteerEmployee.getPreferredContact());
+                response.setMotivation(volunteerEmployee.getMotivation());
+                response.setSkills(volunteerEmployee.getSkills());
+
+                // Include user information
+                response.setFirstName(volunteerEmployee.getUser().getFirstName());
+                response.setLastName(volunteerEmployee.getUser().getLastName());
+                response.setEmail(volunteerEmployee.getUser().getEmail());
+                response.setPhoneNumber(volunteerEmployee.getUser().getPhoneNumber());
+
                 // Get team applications
                 List<TeamApplication> teamApplications = teamApplicationRepository.findByVolunteerEmployee(volunteerEmployee);
                 response.setTeamApplications(teamApplications);
@@ -174,15 +217,18 @@ public class VolunteerEmployeeController {
             String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
             String email = (String) httpRequest.getAttribute("firebaseEmail");
 
+            System.out.println("DEBUG: Volunteer admin endpoint - UID: " + firebaseUid + ", Email: " + email);
+
             if (firebaseUid == null || email == null) {
                 return ResponseEntity.status(401)
-                    .body(new MessageResponse("Error: User not authenticated"));
+                    .body(new MessageResponse("Error: User not authenticated - UID: " + firebaseUid + ", Email: " + email));
             }
 
             // Check if user is admin
             if (!isAdminEmail(email)) {
+                System.out.println("DEBUG: Admin check failed for email: " + email);
                 return ResponseEntity.status(403)
-                    .body(new MessageResponse("Error: Admin access required"));
+                    .body(new MessageResponse("Error: Admin access required - Email: " + email + " is not in admin list"));
             }
 
             List<VolunteerEmployee> allVolunteerEmployees = volunteerEmployeeRepository.findAll();
@@ -217,6 +263,69 @@ public class VolunteerEmployeeController {
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(new MessageResponse("Error: Failed to get team applications - " + e.getMessage()));
+        }
+    }
+
+    // Admin endpoint to update volunteer employee status
+    @PostMapping("/admin/update-status")
+    public ResponseEntity<?> updateVolunteerStatus(@Valid @RequestBody VolunteerStatusUpdateRequest request,
+                                                   HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            String email = (String) httpRequest.getAttribute("firebaseEmail");
+
+            if (firebaseUid == null || email == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            // Check if user is admin
+            if (!isAdminEmail(email)) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Admin access required"));
+            }
+
+            // Get admin user for tracking who made the change
+            User adminUser = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElse(null);
+            if (adminUser == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Admin user not found"));
+            }
+
+            // Find the volunteer employee to update
+            VolunteerEmployee volunteerEmployee = volunteerEmployeeRepository.findById(request.getVolunteerEmployeeId())
+                    .orElse(null);
+            if (volunteerEmployee == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Volunteer employee not found"));
+            }
+
+            // Update status
+            VolunteerEmployee.EmployeeStatus newStatus;
+            try {
+                newStatus = VolunteerEmployee.EmployeeStatus.valueOf(request.getStatus().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: Invalid status. Valid values: PENDING, APPROVED, REJECTED, SUSPENDED"));
+            }
+
+            volunteerEmployee.setStatus(newStatus);
+            volunteerEmployee.setAdminNotes(request.getAdminNotes());
+
+            // If approving, set approval date and approver
+            if (newStatus == VolunteerEmployee.EmployeeStatus.APPROVED) {
+                volunteerEmployee.setApprovedDate(LocalDateTime.now());
+                volunteerEmployee.setApprovedBy(adminUser);
+            }
+
+            volunteerEmployeeRepository.save(volunteerEmployee);
+
+            return ResponseEntity.ok(new MessageResponse("Volunteer employee status updated successfully to " + newStatus.name()));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to update volunteer status - " + e.getMessage()));
         }
     }
 
@@ -269,11 +378,39 @@ public class VolunteerEmployeeController {
         public void setTeamSpecificAnswer(String teamSpecificAnswer) { this.teamSpecificAnswer = teamSpecificAnswer; }
     }
 
+    public static class VolunteerStatusUpdateRequest {
+        private Long volunteerEmployeeId;
+        private String status;
+        private String adminNotes;
+
+        public Long getVolunteerEmployeeId() { return volunteerEmployeeId; }
+        public void setVolunteerEmployeeId(Long volunteerEmployeeId) { this.volunteerEmployeeId = volunteerEmployeeId; }
+
+        public String getStatus() { return status; }
+        public void setStatus(String status) { this.status = status; }
+
+        public String getAdminNotes() { return adminNotes; }
+        public void setAdminNotes(String adminNotes) { this.adminNotes = adminNotes; }
+    }
+
     public static class VolunteerStatusResponse {
         private String volunteerEmployeeStatus;
         private LocalDateTime registrationDate;
         private LocalDateTime approvedDate;
         private List<TeamApplication> teamApplications;
+
+        // Volunteer employee data fields
+        private String grade;
+        private String school;
+        private String preferredContact;
+        private String motivation;
+        private String skills;
+
+        // User information fields
+        private String firstName;
+        private String lastName;
+        private String email;
+        private String phoneNumber;
 
         public String getVolunteerEmployeeStatus() { return volunteerEmployeeStatus; }
         public void setVolunteerEmployeeStatus(String volunteerEmployeeStatus) { this.volunteerEmployeeStatus = volunteerEmployeeStatus; }
@@ -286,5 +423,32 @@ public class VolunteerEmployeeController {
 
         public List<TeamApplication> getTeamApplications() { return teamApplications; }
         public void setTeamApplications(List<TeamApplication> teamApplications) { this.teamApplications = teamApplications; }
+
+        public String getGrade() { return grade; }
+        public void setGrade(String grade) { this.grade = grade; }
+
+        public String getSchool() { return school; }
+        public void setSchool(String school) { this.school = school; }
+
+        public String getPreferredContact() { return preferredContact; }
+        public void setPreferredContact(String preferredContact) { this.preferredContact = preferredContact; }
+
+        public String getMotivation() { return motivation; }
+        public void setMotivation(String motivation) { this.motivation = motivation; }
+
+        public String getSkills() { return skills; }
+        public void setSkills(String skills) { this.skills = skills; }
+
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+
+        public String getPhoneNumber() { return phoneNumber; }
+        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
     }
 }

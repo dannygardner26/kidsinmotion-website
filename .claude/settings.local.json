@@ -14,7 +14,9 @@
       "Bash(npm start)",
       "Bash(taskkill:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(/bashes)"
     ],
     "deny": []
   }

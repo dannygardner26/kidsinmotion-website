@@ -23,7 +23,7 @@ module.exports = {
       serveIndex: false, // Disable directory listing
     },
     compress: true,
-    port: 3001, // Use port 3001 (matches backend CORS config)
+    port: 3000, // React port
     hot: true, // Enable Hot Module Replacement
     open: true, // Open the browser automatically
     proxy: {

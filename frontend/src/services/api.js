@@ -1,6 +1,6 @@
 import { auth } from '../firebaseConfig';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8082/api';
 
 class ApiService {
   constructor() {
@@ -244,7 +244,20 @@ class ApiService {
   // Inbox/Messaging Methods
   async getInboxMessages() {
     try {
-      return await this.makeRequest('/messages/inbox');
+      // Use announcements endpoint instead of non-existent messages/inbox
+      const announcements = await this.makeRequest('/announcements/recent');
+      // Convert announcements to message format for compatibility
+      return {
+        messages: announcements.map(announcement => ({
+          id: announcement.id,
+          title: announcement.title,
+          message: announcement.message,
+          read: false, // Default to unread
+          createdAt: announcement.createdAt,
+          type: announcement.type
+        })),
+        unreadCount: announcements.length
+      };
     } catch (error) {
       // Handle 403 errors gracefully for inbox (expected when endpoint isn't available for regular users)
       if (error.message.includes('403') || error.message.includes('Forbidden')) {
@@ -302,6 +315,17 @@ class ApiService {
     return this.makeRequest('/volunteer/team/apply', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async updateVolunteerEmployeeStatus(volunteerEmployeeId, status, adminNotes = '') {
+    return this.makeRequest('/volunteer/admin/update-status', {
+      method: 'POST',
+      body: JSON.stringify({
+        volunteerEmployeeId,
+        status,
+        adminNotes
+      }),
     });
   }
 }
