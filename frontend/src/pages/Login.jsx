@@ -56,9 +56,9 @@ const Login = () => {
 
     try {
       // Check if this is the test admin login
-      if (email === 'kidsinmotion0@gmail.com' && password === 'admin123') {
-        console.log('Using test admin login...');
-
+      const normalizedEmail = email.trim().toLowerCase();
+      const testAdminEmails = ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com'];
+      if (testAdminEmails.includes(normalizedEmail) && password === 'admin123') {
         // Use test login endpoint
         const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/test-login`, {
           method: 'POST',
@@ -66,7 +66,7 @@ const Login = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: email,
+            email: normalizedEmail,
             password: password
           })
         });

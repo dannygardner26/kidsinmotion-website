@@ -123,7 +123,7 @@ public class AnnouncementService {
             User foundUser = user.get();
 
             // Check by email for known admin
-            if ("kidsinmotion0@gmail.com".equals(foundUser.getEmail())) {
+            if ("kidsinmotion0@gmail.com".equalsIgnoreCase(foundUser.getEmail()) || "kidsinmotion@gmail.com".equalsIgnoreCase(foundUser.getEmail())) {
                 return true;
             }
 

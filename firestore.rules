@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own volunteer applications
+    match /volunteerApplications/{userId} {
+      allow read, write: if request.auth != null &&
+        (request.auth.uid == userId ||
+         request.auth.token.email in ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com']);
+    }
+
+    // Allow admins to read all volunteer applications
+    match /volunteerApplications/{document=**} {
+      allow read: if request.auth != null &&
+        request.auth.token.email in ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com'];
+    }
+
+    // Allow read access to users collection for admins
+    match /users/{userId} {
+      allow read: if request.auth != null &&
+        (request.auth.uid == userId ||
+         request.auth.token.email in ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com']);
+    }
+
+    // Allow admins to read all users
+    match /users/{document=**} {
+      allow read: if request.auth != null &&
+        request.auth.token.email in ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com'];
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

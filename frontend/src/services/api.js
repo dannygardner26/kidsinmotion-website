@@ -277,6 +277,33 @@ class ApiService {
   async getAllUsers() {
     return this.makeRequest('/users/all');
   }
+
+  // Volunteer Employee endpoints
+  async getAllVolunteerEmployees() {
+    return this.makeRequest('/volunteer/admin/all');
+  }
+
+  async getAllTeamApplications() {
+    return this.makeRequest('/volunteer/admin/team-applications');
+  }
+
+  async getVolunteerStatus() {
+    return this.makeRequest('/volunteer/status');
+  }
+
+  async registerVolunteerEmployee(data) {
+    return this.makeRequest('/volunteer/employee/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async applyToTeam(data) {
+    return this.makeRequest('/volunteer/team/apply', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiService = new ApiService();
