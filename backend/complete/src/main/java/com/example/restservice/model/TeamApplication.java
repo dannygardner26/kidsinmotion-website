@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,6 +18,7 @@ public class TeamApplication {
     // Link to the VolunteerEmployee who is applying
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "volunteer_employee_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private VolunteerEmployee volunteerEmployee;
 
     @NotBlank
@@ -40,6 +42,7 @@ public class TeamApplication {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User reviewedBy; // Admin who reviewed the application
 
     // Additional fields for approved applications

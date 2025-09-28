@@ -57,10 +57,11 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
                 System.out.println("DEBUG: Processing test-admin-token");
 
                 // Create authentication for test admin user
+                List<SimpleGrantedAuthority> authorities = resolveAuthorities("test-admin-uid", true);
                 UserDetails userDetails = User.builder()
                         .username("test-admin-uid")
                         .password("")
-                        .authorities(new ArrayList<>())
+                        .authorities(authorities)
                         .build();
 
                 UsernamePasswordAuthenticationToken authentication =

@@ -73,6 +73,7 @@ const VolunteerApplication = () => {
   const [applicationStatus, setApplicationStatus] = useState(null); // 'draft', 'submitted', 'new'
   const [isEditing, setIsEditing] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
 
   // Custom notification modal state
   const [showNotification, setShowNotification] = useState(false);
@@ -263,6 +264,8 @@ const VolunteerApplication = () => {
             lastName: backendStatus.lastName || '',
             email: backendStatus.email || '',
             phone: backendStatus.phoneNumber || '',
+            resume: backendStatus.resumeLink || '',
+            portfolioLink: backendStatus.portfolioLink || '',
             // Volunteer employee fields
             grade: backendStatus.grade || '',
             school: backendStatus.school || '',
@@ -378,6 +381,7 @@ const VolunteerApplication = () => {
             const userProfile = await apiService.getCurrentUser();
 
             if (userProfile) {
+              setUserProfile(userProfile); // Store user profile for resume/portfolio reuse
               setFormData(prev => ({
                 ...prev,
                 firstName: userProfile.firstName || '',
@@ -385,7 +389,9 @@ const VolunteerApplication = () => {
                 email: user.email || '',
                 phone: userProfile.phoneNumber || '',
                 grade: userProfile.grade || '',
-                school: userProfile.school || ''
+                school: userProfile.school || '',
+                resume: userProfile.resumeLink || '',
+                portfolioLink: userProfile.portfolioLink || ''
               }));
             }
           } catch (error) {
@@ -486,7 +492,13 @@ const VolunteerApplication = () => {
         school: formData.school,
         preferredContact: formData.preferredContact.join(', '), // Convert array to string for backend
         motivation: formData.motivation,
-        skills: formData.skills
+        skills: formData.skills,
+        // Include profile fields to update user account
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phone,
+        resumeLink: formData.resume,
+        portfolioLink: formData.portfolioLink
       };
 
       const response = await apiService.registerVolunteerEmployee(backendData);
@@ -1179,6 +1191,41 @@ const VolunteerApplication = () => {
                       }}>
                         Share a link to your portfolio, GitHub, social media work, or any relevant examples. You can also mention you'll email a ZIP file.
                       </p>
+                      {userProfile && userProfile.portfolioLink && (
+                        <div style={{ marginBottom: '0.5rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, portfolioLink: userProfile.portfolioLink }))}
+                            style={{
+                              backgroundColor: '#f3f4f6',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '6px',
+                              padding: '0.5rem 0.75rem',
+                              fontSize: '0.875rem',
+                              color: '#374151',
+                              cursor: 'pointer',
+                              marginRight: '0.5rem'
+                            }}
+                          >
+                            Reuse Previous: {userProfile.portfolioLink.substring(0, 30)}...
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, portfolioLink: '' }))}
+                            style={{
+                              backgroundColor: '#ffffff',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '6px',
+                              padding: '0.5rem 0.75rem',
+                              fontSize: '0.875rem',
+                              color: '#374151',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Enter New
+                          </button>
+                        </div>
+                      )}
                       <input
                         type="text"
                         name="portfolioLink"
@@ -1229,6 +1276,41 @@ const VolunteerApplication = () => {
                   }}>
                     You can share a link to your resume (Google Drive, Dropbox, etc.) or mention that you'll email it separately.
                   </p>
+                  {userProfile && userProfile.resumeLink && (
+                    <div style={{ marginBottom: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, resume: userProfile.resumeLink }))}
+                        style={{
+                          backgroundColor: '#f3f4f6',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          padding: '0.5rem 0.75rem',
+                          fontSize: '0.875rem',
+                          color: '#374151',
+                          cursor: 'pointer',
+                          marginRight: '0.5rem'
+                        }}
+                      >
+                        Reuse Previous: {userProfile.resumeLink.substring(0, 30)}...
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, resume: '' }))}
+                        style={{
+                          backgroundColor: '#ffffff',
+                          border: '1px solid #d1d5db',
+                          borderRadius: '6px',
+                          padding: '0.5rem 0.75rem',
+                          fontSize: '0.875rem',
+                          color: '#374151',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Enter New
+                      </button>
+                    </div>
+                  )}
                   <input
                     type="text"
                     name="resume"

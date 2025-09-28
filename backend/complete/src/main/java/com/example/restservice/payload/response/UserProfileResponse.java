@@ -9,6 +9,8 @@ public class UserProfileResponse {
     private String firstName;
     private String lastName;
     private String phoneNumber;
+    private String resumeLink;
+    private String portfolioLink;
 
     public UserProfileResponse(Long id, String email, List<String> roles) {
         this.id = id;
@@ -72,5 +74,21 @@ public class UserProfileResponse {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getResumeLink() {
+        return resumeLink;
+    }
+
+    public void setResumeLink(String resumeLink) {
+        this.resumeLink = resumeLink;
+    }
+
+    public String getPortfolioLink() {
+        return portfolioLink;
+    }
+
+    public void setPortfolioLink(String portfolioLink) {
+        this.portfolioLink = portfolioLink;
     }
 }

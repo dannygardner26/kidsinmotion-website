@@ -250,6 +250,8 @@ public class AuthController {
             profile.setFirstName(user.getFirstName());
             profile.setLastName(user.getLastName());
             profile.setPhoneNumber(user.getPhoneNumber());
+            profile.setResumeLink(user.getResumeLink());
+            profile.setPortfolioLink(user.getPortfolioLink());
 
             return ResponseEntity.ok(profile);
             
@@ -354,6 +356,8 @@ public class AuthController {
                     profile.setFirstName(user.getFirstName());
                     profile.setLastName(user.getLastName());
                     profile.setPhoneNumber(user.getPhoneNumber());
+                    profile.setResumeLink(user.getResumeLink());
+                    profile.setPortfolioLink(user.getPortfolioLink());
 
                     return ResponseEntity.ok(profile);
                 }

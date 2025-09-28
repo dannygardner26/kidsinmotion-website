@@ -7,6 +7,7 @@ import com.example.restservice.payload.response.MessageResponse;
 import com.example.restservice.repository.VolunteerEmployeeRepository;
 import com.example.restservice.repository.TeamApplicationRepository;
 import com.example.restservice.repository.UserRepository;
+import com.example.restservice.service.FirestoreService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -31,6 +34,9 @@ public class VolunteerEmployeeController {
 
     @Autowired
     UserRepository userRepository;
+
+    @Autowired
+    FirestoreService firestoreService;
 
     // Register as a volunteer employee (Step 1)
     @PostMapping("/employee/register")
@@ -55,6 +61,36 @@ public class VolunteerEmployeeController {
             if (isAdminEmail(email)) {
                 return ResponseEntity.badRequest()
                     .body(new MessageResponse("Error: Admin users cannot register as volunteer employees"));
+            }
+
+            // Update user profile fields if provided
+            boolean userUpdated = false;
+            if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+                user.setFirstName(request.getFirstName().trim());
+                userUpdated = true;
+            }
+            if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+                user.setLastName(request.getLastName().trim());
+                userUpdated = true;
+            }
+            if (request.getPhoneNumber() != null && !request.getPhoneNumber().trim().isEmpty()) {
+                user.setPhoneNumber(request.getPhoneNumber().trim());
+                userUpdated = true;
+            }
+            if (request.getResumeLink() != null && !request.getResumeLink().trim().isEmpty()) {
+                user.setResumeLink(request.getResumeLink().trim());
+                userUpdated = true;
+            }
+            if (request.getPortfolioLink() != null && !request.getPortfolioLink().trim().isEmpty()) {
+                user.setPortfolioLink(request.getPortfolioLink().trim());
+                userUpdated = true;
+            }
+
+            if (userUpdated) {
+                userRepository.save(user);
+                System.out.println("DEBUG: Updated user profile - firstName: " + user.getFirstName() +
+                                 ", lastName: " + user.getLastName() + ", phone: " + user.getPhoneNumber() +
+                                 ", resume: " + user.getResumeLink() + ", portfolio: " + user.getPortfolioLink());
             }
 
             // Check if user already has a volunteer employee registration - update it instead of creating new
@@ -88,6 +124,9 @@ public class VolunteerEmployeeController {
             }
 
             volunteerEmployeeRepository.save(volunteerEmployee);
+
+            // Sync to Firestore
+            firestoreService.syncVolunteerApplication(volunteerEmployee);
 
             String message = isUpdate ?
                 "Volunteer employee application updated and resubmitted successfully! We'll review your changes." :
@@ -136,22 +175,122 @@ public class VolunteerEmployeeController {
             }
 
             // Check if user has already applied to this team
-            if (teamApplicationRepository.existsByVolunteerEmployeeAndTeamName(volunteerEmployee, request.getTeamName())) {
-                return ResponseEntity.badRequest()
-                    .body(new MessageResponse("Error: You have already applied to this team"));
+            Optional<TeamApplication> existingApplicationOpt = teamApplicationRepository.findByVolunteerEmployeeAndTeamName(volunteerEmployee, request.getTeamName());
+
+            TeamApplication teamApplication;
+            if (existingApplicationOpt.isPresent()) {
+                TeamApplication existingApplication = existingApplicationOpt.get();
+                // Update existing application
+                teamApplication = existingApplication;
+                teamApplication.setTeamSpecificAnswer(request.getTeamSpecificAnswer());
+                // Reset application date for re-submission
+                teamApplication.setApplicationDate(LocalDateTime.now());
+                // Reset status to pending for re-review
+                teamApplication.setStatus(TeamApplication.ApplicationStatus.PENDING);
+                teamApplication.setReviewedDate(null);
+                teamApplication.setReviewedBy(null);
+                teamApplication.setApprovedDate(null);
+                teamApplication.setAdminNotes(null);
+            } else {
+                // Create new team application
+                teamApplication = new TeamApplication(volunteerEmployee, request.getTeamName());
+                teamApplication.setTeamSpecificAnswer(request.getTeamSpecificAnswer());
             }
 
-            // Create new team application
-            TeamApplication teamApplication = new TeamApplication(volunteerEmployee, request.getTeamName());
-            teamApplication.setTeamSpecificAnswer(request.getTeamSpecificAnswer());
-
             teamApplicationRepository.save(teamApplication);
+
+            // Sync to Firestore
+            firestoreService.syncTeamApplication(teamApplication);
 
             return ResponseEntity.ok(new MessageResponse("Team application submitted successfully! We'll review your application."));
 
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(new MessageResponse("Error: Failed to apply to team - " + e.getMessage()));
+        }
+    }
+
+    // Update all team applications (add new ones, remove unchecked ones)
+    @PutMapping("/team/applications")
+    public ResponseEntity<?> updateTeamApplications(@Valid @RequestBody List<TeamApplicationRequest> teamRequests,
+                                                  HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            User user = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElse(null);
+            if (user == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: User not found"));
+            }
+
+            VolunteerEmployee volunteerEmployee = volunteerEmployeeRepository.findByUser(user)
+                    .orElse(null);
+            if (volunteerEmployee == null) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: You must first register as a volunteer employee"));
+            }
+
+            if (volunteerEmployee.getStatus() == VolunteerEmployee.EmployeeStatus.REJECTED ||
+                volunteerEmployee.getStatus() == VolunteerEmployee.EmployeeStatus.SUSPENDED) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: Cannot apply to teams - your volunteer registration was rejected or suspended"));
+            }
+
+            // Get all current team applications for this volunteer
+            List<TeamApplication> currentApplications = teamApplicationRepository.findByVolunteerEmployee(volunteerEmployee);
+
+            // Get team names from the request
+            Set<String> requestedTeamNames = teamRequests.stream()
+                    .map(TeamApplicationRequest::getTeamName)
+                    .collect(Collectors.toSet());
+
+            // Remove team applications that are no longer in the request
+            List<TeamApplication> applicationsToRemove = currentApplications.stream()
+                    .filter(app -> !requestedTeamNames.contains(app.getTeamName()))
+                    .collect(Collectors.toList());
+
+            for (TeamApplication appToRemove : applicationsToRemove) {
+                teamApplicationRepository.delete(appToRemove);
+            }
+
+            // Add or update team applications from the request
+            for (TeamApplicationRequest request : teamRequests) {
+                Optional<TeamApplication> existingApplicationOpt =
+                    teamApplicationRepository.findByVolunteerEmployeeAndTeamName(volunteerEmployee, request.getTeamName());
+
+                TeamApplication teamApplication;
+                if (existingApplicationOpt.isPresent()) {
+                    // Update existing application
+                    teamApplication = existingApplicationOpt.get();
+                    teamApplication.setTeamSpecificAnswer(request.getTeamSpecificAnswer());
+                    teamApplication.setApplicationDate(LocalDateTime.now());
+                    teamApplication.setStatus(TeamApplication.ApplicationStatus.PENDING);
+                    teamApplication.setReviewedDate(null);
+                    teamApplication.setReviewedBy(null);
+                    teamApplication.setApprovedDate(null);
+                    teamApplication.setAdminNotes(null);
+                } else {
+                    // Create new team application
+                    teamApplication = new TeamApplication(volunteerEmployee, request.getTeamName());
+                    teamApplication.setTeamSpecificAnswer(request.getTeamSpecificAnswer());
+                }
+
+                teamApplicationRepository.save(teamApplication);
+
+            // Sync to Firestore
+            firestoreService.syncTeamApplication(teamApplication);
+            }
+
+            return ResponseEntity.ok(new MessageResponse("Team applications updated successfully!"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to update team applications - " + e.getMessage()));
         }
     }
 
@@ -194,6 +333,8 @@ public class VolunteerEmployeeController {
                 response.setLastName(volunteerEmployee.getUser().getLastName());
                 response.setEmail(volunteerEmployee.getUser().getEmail());
                 response.setPhoneNumber(volunteerEmployee.getUser().getPhoneNumber());
+                response.setResumeLink(volunteerEmployee.getUser().getResumeLink());
+                response.setPortfolioLink(volunteerEmployee.getUser().getPortfolioLink());
 
                 // Get team applications
                 List<TeamApplication> teamApplications = teamApplicationRepository.findByVolunteerEmployee(volunteerEmployee);
@@ -321,6 +462,9 @@ public class VolunteerEmployeeController {
 
             volunteerEmployeeRepository.save(volunteerEmployee);
 
+            // Sync to Firestore
+            firestoreService.syncVolunteerApplication(volunteerEmployee);
+
             return ResponseEntity.ok(new MessageResponse("Volunteer employee status updated successfully to " + newStatus.name()));
 
         } catch (Exception e) {
@@ -350,6 +494,13 @@ public class VolunteerEmployeeController {
         private String motivation;
         private String skills;
 
+        // User profile fields
+        private String firstName;
+        private String lastName;
+        private String phoneNumber;
+        private String resumeLink;
+        private String portfolioLink;
+
         // Getters and setters
         public String getGrade() { return grade; }
         public void setGrade(String grade) { this.grade = grade; }
@@ -365,6 +516,21 @@ public class VolunteerEmployeeController {
 
         public String getSkills() { return skills; }
         public void setSkills(String skills) { this.skills = skills; }
+
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+
+        public String getPhoneNumber() { return phoneNumber; }
+        public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+        public String getResumeLink() { return resumeLink; }
+        public void setResumeLink(String resumeLink) { this.resumeLink = resumeLink; }
+
+        public String getPortfolioLink() { return portfolioLink; }
+        public void setPortfolioLink(String portfolioLink) { this.portfolioLink = portfolioLink; }
     }
 
     public static class TeamApplicationRequest {
@@ -411,6 +577,8 @@ public class VolunteerEmployeeController {
         private String lastName;
         private String email;
         private String phoneNumber;
+        private String resumeLink;
+        private String portfolioLink;
 
         public String getVolunteerEmployeeStatus() { return volunteerEmployeeStatus; }
         public void setVolunteerEmployeeStatus(String volunteerEmployeeStatus) { this.volunteerEmployeeStatus = volunteerEmployeeStatus; }
@@ -450,5 +618,11 @@ public class VolunteerEmployeeController {
 
         public String getPhoneNumber() { return phoneNumber; }
         public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+
+        public String getResumeLink() { return resumeLink; }
+        public void setResumeLink(String resumeLink) { this.resumeLink = resumeLink; }
+
+        public String getPortfolioLink() { return portfolioLink; }
+        public void setPortfolioLink(String portfolioLink) { this.portfolioLink = portfolioLink; }
     }
 }

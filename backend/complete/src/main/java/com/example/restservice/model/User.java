@@ -41,6 +41,12 @@ public class User {
     @Size(max = 20) // Adjust size as needed
     private String phoneNumber;
 
+    @Lob
+    private String resumeLink; // URL or text indicating where resume is stored
+
+    @Lob
+    private String portfolioLink; // URL or text indicating where portfolio is stored
+
     @ManyToMany(fetch = FetchType.EAGER) // Eager fetch roles
     @JoinTable(name = "user_roles",
                joinColumns = @JoinColumn(name = "user_id"),
@@ -106,6 +112,22 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getResumeLink() {
+        return resumeLink;
+    }
+
+    public void setResumeLink(String resumeLink) {
+        this.resumeLink = resumeLink;
+    }
+
+    public String getPortfolioLink() {
+        return portfolioLink;
+    }
+
+    public void setPortfolioLink(String portfolioLink) {
+        this.portfolioLink = portfolioLink;
     }
 
     public Set<Role> getRoles() {
