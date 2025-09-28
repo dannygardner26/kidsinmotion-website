@@ -28,7 +28,10 @@
       "Bash(curl:*)",
       "Bash(wmic:*)",
       "Bash(Stop-Process -Id 21132 -Force)",
-      "Bash(Stop-Process -Id 24928 -Force)"
+      "Bash(Stop-Process -Id 24928 -Force)",
+      "Bash(Stop-Process -Id 13608 -Force)",
+      "Bash(Stop-Process -Id 28884 -Force)",
+      "Bash(Stop-Process -Id 38624 -Force)"
     ],
     "deny": []
   }

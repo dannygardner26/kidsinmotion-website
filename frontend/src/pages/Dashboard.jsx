@@ -301,14 +301,52 @@ const Dashboard = () => {
 
           if (backendVolunteerStatus && backendVolunteerStatus.volunteerEmployeeStatus !== 'NOT_REGISTERED') {
             // Build status from backend data
+            const decisionsByRole = backendVolunteerStatus.teamApplications?.reduce((acc, ta) => {
+              const teamKey = ta.teamName.toLowerCase().replace(/\s+/g, '-');
+              const backendStatus = ta.status?.toUpperCase() || 'PENDING';
+              // Map backend status to frontend display values
+              let displayValue = 'pending';
+              if (backendStatus === 'APPROVED') {
+                displayValue = 'approved';
+              } else if (backendStatus === 'REJECTED') {
+                displayValue = 'denied';
+              }
+              acc[teamKey] = displayValue;
+              return acc;
+            }, {}) || {};
+
+            // Check if all applications have received feedback (not pending)
+            const teamApplications = backendVolunteerStatus.teamApplications || [];
+            console.log('DEBUG: Team applications:', teamApplications);
+            console.log('DEBUG: Team applications statuses:', teamApplications.map(ta => ta.status));
+
+            const allHaveFeedback = teamApplications.length > 0 && teamApplications.every(ta =>
+              ta.status?.toUpperCase() === 'APPROVED' || ta.status?.toUpperCase() === 'REJECTED'
+            );
+            console.log('DEBUG: All have feedback:', allHaveFeedback);
+
+            // Check if user has viewed the feedback notification
+            const feedbackViewedKey = `feedback_viewed_${currentUser.uid}`;
+            const hasViewedFeedback = localStorage.getItem(feedbackViewedKey) === 'true';
+            console.log('DEBUG: Has viewed feedback:', hasViewedFeedback);
+
+            let statusValue = backendVolunteerStatus.volunteerEmployeeStatus?.toLowerCase() || 'pending';
+            console.log('DEBUG: Original status value:', statusValue);
+
+            // If all applications have feedback and user hasn't viewed it, show submission-update
+            // Check for both 'pending' and 'submitted' status since backend might return either
+            if (allHaveFeedback && !hasViewedFeedback && (statusValue === 'submitted' || statusValue === 'pending')) {
+              statusValue = 'submission-update';
+              console.log('DEBUG: Changed status to submission-update');
+            }
+
             const volunteerStatus = {
-              status: backendVolunteerStatus.volunteerEmployeeStatus?.toLowerCase() || 'pending',
+              status: statusValue,
               submittedAt: backendVolunteerStatus.registrationDate,
               teamSlugs: backendVolunteerStatus.teamApplications?.map(ta => ta.teamName.toLowerCase().replace(/\s+/g, '-')) || [],
-              decisionsByRole: backendVolunteerStatus.teamApplications?.reduce((acc, ta) => {
-                acc[ta.teamName.toLowerCase().replace(/\s+/g, '-')] = ta.status?.toLowerCase() || 'pending';
-                return acc;
-              }, {}) || {}
+              decisionsByRole: decisionsByRole,
+              allHaveFeedback: allHaveFeedback,
+              hasViewedFeedback: hasViewedFeedback
             };
 
             setVolunteerApplicationStatus(volunteerStatus);
@@ -407,7 +445,16 @@ const Dashboard = () => {
               selectedCategories: selectedCategories.length > 0 ? selectedCategories : ['general-volunteer'], // Use actual team applications
               teamApplications: empTeamApps, // Include team applications for detailed review
               decisionsByRole: empTeamApps.reduce((acc, ta) => {
-                acc[ta.teamName.toLowerCase().replace(/\s+/g, '-')] = ta.status?.toLowerCase() || 'pending';
+                const teamKey = ta.teamName.toLowerCase().replace(/\s+/g, '-');
+                const backendStatus = ta.status?.toUpperCase() || 'PENDING';
+                // Map backend status to frontend slider values
+                let sliderValue = 'pending';
+                if (backendStatus === 'APPROVED') {
+                  sliderValue = 'approved';
+                } else if (backendStatus === 'REJECTED') {
+                  sliderValue = 'denied';
+                }
+                acc[teamKey] = sliderValue;
                 return acc;
               }, {})
             };
@@ -528,11 +575,39 @@ const Dashboard = () => {
     setDecisionSubmitting(false);
   };
 
-  const handleRoleDecisionChange = (team, decision) => {
+  const handleRoleDecisionChange = async (team, decision) => {
+    // Update local state immediately for responsive UI
     setRoleDecisions(prev => ({
       ...prev,
       [team]: decision
     }));
+
+    // For backend applications, also call the API to persist the decision
+    if (selectedApplication && selectedApplication.teamApplications) {
+      try {
+        // Find the team application that matches this team
+        const teamApplication = selectedApplication.teamApplications.find(ta =>
+          ta.teamName.toLowerCase().replace(/\s+/g, '-') === team
+        );
+
+        if (teamApplication && teamApplication.id) {
+          // Map frontend decision to backend status
+          const backendStatus = decision === 'approved' ? 'APPROVED' :
+                               decision === 'denied' ? 'REJECTED' : 'PENDING';
+
+          await apiService.updateTeamApplicationDecision(
+            teamApplication.id,
+            backendStatus,
+            '' // No admin notes for individual decisions
+          );
+
+          console.log(`Successfully updated team application ${teamApplication.id} to ${backendStatus}`);
+        }
+      } catch (error) {
+        console.error('Failed to update team application decision:', error);
+        // Don't revert the UI state - the decision will be saved when the modal is submitted
+      }
+    }
   };
 
   const handleVolunteerEmployeeStatusUpdate = async (status, adminNotes = '') => {
@@ -574,6 +649,27 @@ const Dashboard = () => {
     }
 
     return { approvedRoles, deniedRoles, pendingRoles, summaryLines };
+  };
+
+  const markFeedbackAsViewed = () => {
+    if (currentUser?.uid) {
+      const feedbackViewedKey = `feedback_viewed_${currentUser.uid}`;
+      localStorage.setItem(feedbackViewedKey, 'true');
+
+      // Update the volunteer status to remove the submission-update state
+      setVolunteerApplicationStatus(prev => prev ? {
+        ...prev,
+        status: prev.allHaveFeedback ? 'completed' : 'submitted', // Show 'completed' if all feedback received
+        hasViewedFeedback: true
+      } : null);
+    }
+  };
+
+  const clearFeedbackViewed = () => {
+    if (currentUser?.uid) {
+      const feedbackViewedKey = `feedback_viewed_${currentUser.uid}`;
+      localStorage.removeItem(feedbackViewedKey);
+    }
   };
 
   const sendInboxMessageWithFallback = async (userId, message) => {
@@ -1417,6 +1513,8 @@ const Dashboard = () => {
                           <div className="status-icon">
                             <i className={`fas ${
                               volunteerApplicationStatus.status === 'submitted' ? 'fa-paper-plane' :
+                              volunteerApplicationStatus.status === 'submission-update' ? 'fa-bell' :
+                              volunteerApplicationStatus.status === 'completed' ? 'fa-check-double' :
                               volunteerApplicationStatus.status === 'approved' ? 'fa-check-circle' :
                               volunteerApplicationStatus.status === 'denied' ? 'fa-times-circle' :
                               volunteerApplicationStatus.status === 'pending' ? 'fa-clock' :
@@ -1425,12 +1523,18 @@ const Dashboard = () => {
                           </div>
                           <div className="status-text">
                             <div className="status-title-container">
-                              <h3>Application {
-                                volunteerApplicationStatus.status === 'submitted' ? 'Submitted' :
-                                volunteerApplicationStatus.status.charAt(0).toUpperCase() + volunteerApplicationStatus.status.slice(1)
-                              }</h3>
+                              <h3>
+                                {volunteerApplicationStatus.status === 'submission-update' ? 'Submission Update' :
+                                volunteerApplicationStatus.status === 'completed' ? 'Application Complete' :
+                                volunteerApplicationStatus.status === 'submitted' ? 'Application Submitted' :
+                                'Application ' + volunteerApplicationStatus.status.charAt(0).toUpperCase() + volunteerApplicationStatus.status.slice(1)
+                                }
+                              </h3>
                               {volunteerApplicationStatus.status === 'submitted' && (
                                 <span className="pending-status-badge">PENDING</span>
+                              )}
+                              {volunteerApplicationStatus.status === 'submission-update' && (
+                                <span className="update-status-badge">NEW FEEDBACK</span>
                               )}
                             </div>
                             {volunteerApplicationStatus.submittedAt && (
@@ -1483,6 +1587,17 @@ const Dashboard = () => {
                             </div>
                           )}
 
+                          {volunteerApplicationStatus.status === 'submission-update' && (
+                            <div className="application-actions mt-3">
+                              <button onClick={markFeedbackAsViewed} className="btn btn-primary">
+                                <i className="fas fa-eye mr-2"></i>View Feedback
+                              </button>
+                              <Link to="/volunteer" className="btn btn-outline ml-2">
+                                <i className="fas fa-edit mr-2"></i>Edit Application
+                              </Link>
+                            </div>
+                          )}
+
                           {volunteerApplicationStatus.status === 'denied' && (
                             <div className="application-actions mt-3">
                               <Link to="/volunteer" className="btn btn-secondary">
@@ -1506,6 +1621,14 @@ const Dashboard = () => {
                               </Link>
                             </div>
                           )}
+
+                          {volunteerApplicationStatus.status === 'completed' && (
+                            <div className="application-actions mt-3">
+                              <Link to="/volunteer" className="btn btn-secondary">
+                                <i className="fas fa-plus mr-2"></i>Apply to Additional Teams
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1523,11 +1646,17 @@ const Dashboard = () => {
                           <i className={`fas ${
                             volunteerApplicationStatus.status === 'approved' ? 'fa-check-circle' :
                             volunteerApplicationStatus.status === 'submitted' ? 'fa-paper-plane' :
+                            volunteerApplicationStatus.status === 'submission-update' ? 'fa-bell' :
+                            volunteerApplicationStatus.status === 'completed' ? 'fa-check-double' :
                             volunteerApplicationStatus.status === 'pending' ? 'fa-clock' :
                             volunteerApplicationStatus.status === 'denied' ? 'fa-times-circle' :
                             'fa-edit'
                           }`}></i>
-                          Team Application: {volunteerApplicationStatus.status.charAt(0).toUpperCase() + volunteerApplicationStatus.status.slice(1)}
+                          Team Application: {
+                            volunteerApplicationStatus.status === 'submission-update' ? 'Submission Update' :
+                            volunteerApplicationStatus.status === 'completed' ? 'Complete' :
+                            volunteerApplicationStatus.status.charAt(0).toUpperCase() + volunteerApplicationStatus.status.slice(1)
+                          }
                         </div>
                       </div>
                     )}
@@ -2577,9 +2706,25 @@ parent@example.com"
           border-bottom: 2px solid #f59e0b;
         }
 
+        .status-header.status-submission-update {
+          background-color: #fef3c7;
+          border-bottom: 2px solid #f59e0b;
+          animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+          from { box-shadow: 0 0 5px rgba(245, 158, 11, 0.5); }
+          to { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+        }
+
         .status-header.status-approved {
           background-color: #ecfdf5;
           border-bottom: 2px solid #10b981;
+        }
+
+        .status-header.status-completed {
+          background-color: #f0f9ff;
+          border-bottom: 2px solid #0ea5e9;
         }
 
         .status-header.status-denied {
@@ -2603,13 +2748,27 @@ parent@example.com"
           color: white;
         }
 
-        .status-submitted .status-icon, .status-pending .status-icon {
+        .status-submitted .status-icon, .status-pending .status-icon, .status-submission-update .status-icon {
           background-color: #f59e0b;
           color: white;
         }
 
+        .status-submission-update .status-icon {
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+
         .status-approved .status-icon {
           background-color: #10b981;
+          color: white;
+        }
+
+        .status-completed .status-icon {
+          background-color: #0ea5e9;
           color: white;
         }
 
@@ -2726,9 +2885,21 @@ parent@example.com"
           color: #b97800;
         }
 
+        .status-pill.status-submission-update {
+          background-color: #fef3c7;
+          color: #92400e;
+          border: 2px solid #f59e0b;
+          font-weight: 600;
+        }
+
         .status-pill.status-approved {
           background-color: #ecfdf5;
           color: #0a866c;
+        }
+
+        .status-pill.status-completed {
+          background-color: #f0f9ff;
+          color: #0c6eb9;
         }
 
         .status-pill.status-denied {
@@ -2768,6 +2939,22 @@ parent@example.com"
           font-size: 0.75rem;
           font-weight: 600;
           text-transform: uppercase;
+        }
+
+        .update-status-badge {
+          background-color: #f59e0b;
+          color: white;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0.7; }
         }
 
         /* Additional status badge styles for volunteer activities */

@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -126,7 +127,7 @@ public class VolunteerEmployeeController {
             volunteerEmployeeRepository.save(volunteerEmployee);
 
             // Sync to Firestore
-            firestoreService.syncVolunteerApplication(volunteerEmployee);
+            // firestoreService.syncVolunteerApplication(volunteerEmployee); // Commented out due to Java module access issue
 
             String message = isUpdate ?
                 "Volunteer employee application updated and resubmitted successfully! We'll review your changes." :
@@ -200,7 +201,7 @@ public class VolunteerEmployeeController {
             teamApplicationRepository.save(teamApplication);
 
             // Sync to Firestore
-            firestoreService.syncTeamApplication(teamApplication);
+            // firestoreService.syncTeamApplication(teamApplication); // Commented out due to Java module access issue
 
             return ResponseEntity.ok(new MessageResponse("Team application submitted successfully! We'll review your application."));
 
@@ -283,7 +284,7 @@ public class VolunteerEmployeeController {
                 teamApplicationRepository.save(teamApplication);
 
             // Sync to Firestore
-            firestoreService.syncTeamApplication(teamApplication);
+            // firestoreService.syncTeamApplication(teamApplication); // Commented out due to Java module access issue
             }
 
             return ResponseEntity.ok(new MessageResponse("Team applications updated successfully!"));
@@ -463,13 +464,82 @@ public class VolunteerEmployeeController {
             volunteerEmployeeRepository.save(volunteerEmployee);
 
             // Sync to Firestore
-            firestoreService.syncVolunteerApplication(volunteerEmployee);
+            // firestoreService.syncVolunteerApplication(volunteerEmployee); // Commented out due to Java module access issue
 
             return ResponseEntity.ok(new MessageResponse("Volunteer employee status updated successfully to " + newStatus.name()));
 
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(new MessageResponse("Error: Failed to update volunteer status - " + e.getMessage()));
+        }
+    }
+
+    // Admin endpoint to update team application decisions
+    @PostMapping("/admin/team-application/update-decision")
+    public ResponseEntity<?> updateTeamApplicationDecision(@Valid @RequestBody TeamApplicationDecisionRequest request,
+                                                          HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            String email = (String) httpRequest.getAttribute("firebaseEmail");
+
+            if (firebaseUid == null || email == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            // Check if user is admin
+            if (!isAdminEmail(email)) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Admin access required"));
+            }
+
+            // Get admin user for tracking who made the change
+            User adminUser = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElse(null);
+            if (adminUser == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Admin user not found"));
+            }
+
+            // Find the team application to update
+            TeamApplication teamApplication = teamApplicationRepository.findById(request.getTeamApplicationId())
+                    .orElse(null);
+            if (teamApplication == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Team application not found"));
+            }
+
+            // Update status
+            TeamApplication.ApplicationStatus newStatus;
+            try {
+                newStatus = TeamApplication.ApplicationStatus.valueOf(request.getDecision().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Error: Invalid decision. Valid values: PENDING, UNDER_REVIEW, APPROVED, REJECTED, WITHDRAWN"));
+            }
+
+            teamApplication.setStatus(newStatus);
+            teamApplication.setAdminNotes(request.getAdminNotes());
+            teamApplication.setReviewedDate(LocalDateTime.now());
+            teamApplication.setReviewedBy(adminUser);
+
+            // If approving, set approval date
+            if (newStatus == TeamApplication.ApplicationStatus.APPROVED) {
+                teamApplication.setApprovedDate(LocalDateTime.now());
+            } else {
+                teamApplication.setApprovedDate(null);
+            }
+
+            teamApplicationRepository.save(teamApplication);
+
+            // Sync to Firestore
+            // firestoreService.syncTeamApplication(teamApplication); // Commented out due to Java module access issue
+
+            return ResponseEntity.ok(new MessageResponse("Team application decision updated successfully to " + newStatus.name()));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to update team application decision - " + e.getMessage()));
         }
     }
 
@@ -624,5 +694,20 @@ public class VolunteerEmployeeController {
 
         public String getPortfolioLink() { return portfolioLink; }
         public void setPortfolioLink(String portfolioLink) { this.portfolioLink = portfolioLink; }
+    }
+
+    public static class TeamApplicationDecisionRequest {
+        private Long teamApplicationId;
+        private String decision; // APPROVED, REJECTED, etc.
+        private String adminNotes;
+
+        public Long getTeamApplicationId() { return teamApplicationId; }
+        public void setTeamApplicationId(Long teamApplicationId) { this.teamApplicationId = teamApplicationId; }
+
+        public String getDecision() { return decision; }
+        public void setDecision(String decision) { this.decision = decision; }
+
+        public String getAdminNotes() { return adminNotes; }
+        public void setAdminNotes(String adminNotes) { this.adminNotes = adminNotes; }
     }
 }

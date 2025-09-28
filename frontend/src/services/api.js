@@ -328,6 +328,17 @@ class ApiService {
       }),
     });
   }
+
+  async updateTeamApplicationDecision(teamApplicationId, decision, adminNotes = '') {
+    return this.makeRequest('/volunteer/admin/team-application/update-decision', {
+      method: 'POST',
+      body: JSON.stringify({
+        teamApplicationId,
+        decision,
+        adminNotes
+      }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

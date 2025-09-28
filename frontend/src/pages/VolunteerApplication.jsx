@@ -559,6 +559,14 @@ const VolunteerApplication = () => {
     }
 
     console.log('Form submitted:', formData);
+
+    // Clear feedback viewed status when new application is submitted
+    // This will reset the notification state so they get yellow "pending" status
+    if (auth.currentUser?.uid) {
+      const feedbackViewedKey = `feedback_viewed_${auth.currentUser.uid}`;
+      localStorage.removeItem(feedbackViewedKey);
+    }
+
     const message = isEditing
       ? 'Application updated successfully! We\'ll review your changes and get back to you soon.'
       : 'Application submitted successfully! We\'ll review your application and get back to you soon.';
