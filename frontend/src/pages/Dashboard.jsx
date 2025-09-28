@@ -91,11 +91,12 @@ const Dashboard = () => {
   const VOLUNTEER_APPLICATIONS_COLLECTION = 'volunteerApplications';
 
   const getApplicationDocRef = (uid) => {
-    // Validate that uid is a valid Firebase document ID (string, not number)
-    if (!uid || typeof uid !== 'string' || uid.length < 1) {
+    // Convert uid to string and validate that it's a valid Firebase document ID
+    const docId = String(uid);
+    if (!uid || docId.length < 1) {
       throw new Error(`Invalid Firebase document ID: ${uid}`);
     }
-    return firestoreDoc(db, VOLUNTEER_APPLICATIONS_COLLECTION, uid);
+    return firestoreDoc(db, VOLUNTEER_APPLICATIONS_COLLECTION, docId);
   };
 
   const FIRESTORE_ENABLED = process.env.REACT_APP_ENABLE_FIRESTORE_SYNC === 'true';
@@ -1489,6 +1490,22 @@ const Dashboard = () => {
                               </Link>
                             </div>
                           )}
+
+                          {volunteerApplicationStatus.status === 'approved' && (
+                            <div className="application-actions mt-3">
+                              <Link to="/volunteer" className="btn btn-outline">
+                                <i className="fas fa-edit mr-2"></i>Edit Application
+                              </Link>
+                            </div>
+                          )}
+
+                          {volunteerApplicationStatus.status === 'pending' && (
+                            <div className="application-actions mt-3">
+                              <Link to="/volunteer" className="btn btn-outline">
+                                <i className="fas fa-edit mr-2"></i>Edit Application
+                              </Link>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -1974,47 +1991,11 @@ parent@example.com"
                               </div>
 
               <div className="admin-decision-panel">
-                <h4>Admin Decision</h4>
-                <p className="text-muted small">First approve/reject as general volunteer, then approve/reject for specific teams.</p>
-
-                {/* Volunteer Employee Status Section */}
-                <div className="volunteer-employee-status">
-                  <h5>General Volunteer Status</h5>
-                  <p className="text-muted small">Approve or reject this person as a general volunteer employee (Step 1 - required before team applications).</p>
-
-                  <div className="employee-status-row">
-                    <div className="current-status">
-                      <span className="status-label">Current Status:</span>
-                      <span className={`status-pill ${selectedApplication.status.toLowerCase()}`}>
-                        {selectedApplication.status.charAt(0).toUpperCase() + selectedApplication.status.slice(1)}
-                      </span>
-                    </div>
-
-                    <div className="status-actions">
-                      <button
-                        type="button"
-                        className={`decision-btn approve ${selectedApplication.status === 'approved' ? 'active' : ''}`}
-                        onClick={() => handleVolunteerEmployeeStatusUpdate('APPROVED', adminResponseNote)}
-                        disabled={selectedApplication.status === 'approved'}
-                      >
-                        <i className="fas fa-user-check mr-1"></i>
-                        Approve as General Volunteer
-                      </button>
-                      <button
-                        type="button"
-                        className={`decision-btn deny ${selectedApplication.status === 'rejected' || selectedApplication.status === 'denied' ? 'active' : ''}`}
-                        onClick={() => handleVolunteerEmployeeStatusUpdate('REJECTED', adminResponseNote)}
-                        disabled={selectedApplication.status === 'rejected' || selectedApplication.status === 'denied'}
-                      >
-                        <i className="fas fa-user-times mr-1"></i>
-                        Reject Volunteer Application
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <h4>Team Application Review</h4>
+                <p className="text-muted small">Review and approve/deny team applications for this volunteer.</p>
 
                 <div className="team-decisions">
-                  <h5>Team Applications (Step 2)</h5>
+                  <h5>Team Applications</h5>
                   <p className="text-muted small">Approve/deny for specific teams this candidate applied for.</p>
                   {selectedApplication.selectedCategories?.length > 0 && !selectedApplication.selectedCategories.includes('general-volunteer') ? (
                     <div className="decision-list">
