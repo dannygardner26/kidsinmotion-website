@@ -114,3 +114,5 @@ temp/
 .gradle/
 gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
+java17/
+openjdk-17.zip

@@ -8,7 +8,15 @@
       "Bash(firebase login:*)",
       "Bash(firebase use:*)",
       "Bash(firebase projects:list:*)",
-      "Bash(firebase deploy:*)"
+      "Bash(firebase deploy:*)",
+      "Bash(nslookup:*)",
+      "WebFetch(domain:kids-in-motion-website-b1c09.web.app)",
+      "Bash(git config:*)",
+      "Bash(git update-index:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

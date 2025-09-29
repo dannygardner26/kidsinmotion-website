@@ -27,22 +27,36 @@ const Home = () => {
   ];
   
   useEffect(() => {
-    // Fetch upcoming events
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('/api/events/upcoming');
-        if (response.ok) {
-          const data = await response.json();
-          setUpcomingEvents(data.slice(0, 3)); // Get first 3 events
-        }
-      } catch (error) {
-        console.error('Error fetching events:', error);
-      } finally {
-        setIsLoading(false);
+    // Sample events data for now
+    const sampleEvents = [
+      {
+        id: 1,
+        name: "Youth Basketball Clinic",
+        date: "2025-10-15",
+        location: "Community Center Gym",
+        description: "Free basketball clinic for ages 8-16"
+      },
+      {
+        id: 2,
+        name: "Soccer Skills Workshop",
+        date: "2025-10-22",
+        location: "Memorial Park",
+        description: "Learn fundamental soccer skills with experienced coaches"
+      },
+      {
+        id: 3,
+        name: "Track and Field Day",
+        date: "2025-10-29",
+        location: "High School Track",
+        description: "Fun track and field activities for all skill levels"
       }
-    };
-    
-    fetchEvents();
+    ];
+
+    // Simulate loading time
+    setTimeout(() => {
+      setUpcomingEvents(sampleEvents);
+      setIsLoading(false);
+    }, 500);
   }, []);
   
   // Auto-advance slideshow
