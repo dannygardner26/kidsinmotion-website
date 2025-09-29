@@ -1,38 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)",
-      "Bash(./gradlew build:*)",
-      "Bash(npm run build:*)",
-      "Bash(chmod:*)",
-      "Bash(ls:*)",
-      "Bash(dos2unix:*)",
-      "Bash(sed:*)",
-      "Bash(rm:*)",
-      "Bash(dir:*)",
-      "Bash(./gradlew:*)",
-      "Bash(npm start)",
-      "Bash(taskkill:*)",
-      "Bash(netstat:*)",
-      "Bash(findstr:*)",
-      "Bash(tasklist:*)",
-      "Bash(/bashes)",
-      "Bash(Stop-Process -Id 35812 -Force)",
-      "Bash(.gradlew:*)",
-      "Bash(Stop-Process -Name \"java\" -Force)",
-      "Bash(Stop-Process -Id 25152 -Force)",
-      "Bash(Stop-Process -Id 35460 -Force)",
-      "Bash(Stop-Process -Id 30260 -Force)",
-      "Bash(Stop-Process -Id 32996 -Force)",
-      "Bash(cmd /c:*)",
-      "Bash(curl:*)",
-      "Bash(wmic:*)",
-      "Bash(Stop-Process -Id 21132 -Force)",
-      "Bash(Stop-Process -Id 24928 -Force)",
-      "Bash(Stop-Process -Id 13608 -Force)",
-      "Bash(Stop-Process -Id 28884 -Force)",
-      "Bash(Stop-Process -Id 38624 -Force)"
+      "Bash(java:*)",
+      "Bash(./java17/jdk-17.0.2/bin/java:*)",
+      "Bash(firebase --version)",
+      "Bash(npm install:*)",
+      "Bash(firebase login:*)",
+      "Bash(firebase use:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase deploy:*)"
     ],
-    "deny": []
+    "deny": [],
+    "ask": []
   }
 }
