@@ -27,9 +27,11 @@ steps:
       - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_DEPLOY_REGION}'
       - '--allow-unauthenticated'
-      - '--set-env-vars=PORT=8080'
+      - '--set-env-vars=PORT=8080,SPRING_PROFILES_ACTIVE=development'
       - '--port=8080'
-      - '--timeout=600'
+      - '--timeout=900'
+      - '--memory=1Gi'
+      - '--cpu=1'
 
 # Specify which image will be pushed to registry
 images:
