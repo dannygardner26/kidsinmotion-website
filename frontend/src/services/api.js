@@ -275,6 +275,13 @@ class ApiService {
     });
   }
 
+  async broadcastMessage(broadcastPayload) {
+    return this.makeRequest('/messages/broadcast', {
+      method: 'POST',
+      body: JSON.stringify(broadcastPayload),
+    });
+  }
+
   async markMessageAsRead(messageId) {
     return this.makeRequest(`/messages/${messageId}/read`, {
       method: 'PUT',
