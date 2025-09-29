@@ -63,18 +63,34 @@ public class FirestoreService {
         }
     }
 
-    public void saveMessage(String userId, Map<String, Object> messageData) {
+    public boolean saveMessage(String userId, Map<String, Object> messageData) {
         if (!firebaseEnabled || firestore == null) {
-            return;
+            System.out.println("Firestore messaging disabled - skipping inbox write for user " + userId);
+            return false;
+        }
+
+        if (userId == null || userId.trim().isEmpty()) {
+            System.err.println("Cannot save message without a user identifier");
+            return false;
         }
 
         try {
+            Map<String, Object> payload = messageData != null ? new HashMap<>(messageData) : new HashMap<>();
+            payload.putIfAbsent("userId", userId);
+            payload.putIfAbsent("timestamp", java.time.LocalDateTime.now().toString());
+
             CollectionReference messagesRef = firestore.collection(MESSAGES_COLLECTION);
-            DocumentReference docRef = messagesRef.add(messageData).get();
+            DocumentReference docRef = messagesRef.add(payload).get();
 
             System.out.println("Saved message to Firestore: " + docRef.getId());
-        } catch (InterruptedException | ExecutionException e) {
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupted while saving message to Firestore: " + e.getMessage());
+            return false;
+        } catch (ExecutionException e) {
             System.err.println("Failed to save message to Firestore: " + e.getMessage());
+            return false;
         }
     }
 

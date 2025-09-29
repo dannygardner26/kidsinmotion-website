@@ -19,6 +19,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-security' // For authentication/authorization
 	implementation 'org.springframework.boot:spring-boot-starter-validation' // For validation annotations
 	implementation 'com.google.firebase:firebase-admin:9.2.0' // Firebase Admin SDK
+	implementation 'org.springframework.boot:spring-boot-starter-mail' // Email delivery
+	implementation 'com.twilio.sdk:twilio:9.3.0' // SMS delivery via Twilio
 	runtimeOnly 'com.h2database:h2' // In-memory database (will be replaced with PostgreSQL)
 	runtimeOnly 'org.postgresql:postgresql' // PostgreSQL driver for production
 	// --- End Added Dependencies ---
