@@ -20,7 +20,9 @@
       "Bash(npm run build:*)",
       "Bash(curl:*)",
       "WebFetch(domain:kidsinmotion-website-839796180413.us-east4.run.app)",
-      "WebFetch(domain:kidsinmotionpa.org)"
+      "WebFetch(domain:kidsinmotionpa.org)",
+      "Bash(firebase hosting:sites:get:*)",
+      "Bash(firebase hosting:channel:list:*)"
     ],
     "deny": [],
     "ask": []
