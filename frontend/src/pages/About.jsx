@@ -658,35 +658,42 @@ const About = () => {
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '1rem',
-                  padding: '1rem'
+                  gap: '1.5rem',
+                  padding: '1rem',
+                  alignItems: 'center'
                 }}>
-                  {['Baseball', 'Basketball', 'Soccer', 'Football', 'Tennis', 'Volleyball'].map((sport, index) => (
+                  {[
+                    { name: 'Baseball', icon: 'fas fa-baseball-ball' },
+                    { name: 'Basketball', icon: 'fas fa-basketball-ball' },
+                    { name: 'Soccer', icon: 'fas fa-futbol' },
+                    { name: 'Football', icon: 'fas fa-football-ball' },
+                    { name: 'Tennis', icon: 'fas fa-table-tennis' },
+                    { name: 'Volleyball', icon: 'fas fa-volleyball-ball' }
+                  ].map((sport, index) => (
                     <div
                       key={index}
                       style={{
-                        backgroundColor: '#f0f9ff',
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '8px',
-                        padding: '1rem 0.5rem',
-                        textAlign: 'center',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        color: '#2f506a',
-                        transition: 'all 0.3s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.borderColor = '#2f506a';
-                        e.target.style.backgroundColor = '#2f506a';
-                        e.target.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.borderColor = '#e5e7eb';
-                        e.target.style.backgroundColor = '#f0f9ff';
-                        e.target.style.color = '#2f506a';
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        textAlign: 'center'
                       }}
                     >
-                      {sport}
+                      <div style={{
+                        fontSize: '2rem',
+                        marginBottom: '0.25rem',
+                        color: '#2f506a'
+                      }}>
+                        <i className={sport.icon}></i>
+                      </div>
+                      <span style={{
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        color: '#2f506a'
+                      }}>
+                        {sport.name}
+                      </span>
                     </div>
                   ))}
                 </div>
