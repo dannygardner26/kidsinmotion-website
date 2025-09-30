@@ -26,12 +26,23 @@ steps:
       - '--platform=managed'
       - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_DEPLOY_REGION}'
-      - '--allow-unauthenticated'
       - '--set-env-vars=PORT=8080,SPRING_PROFILES_ACTIVE=development'
       - '--port=8080'
       - '--timeout=900'
       - '--memory=1Gi'
       - '--cpu=1'
+
+  # Set IAM policy to allow unauthenticated access
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'add-iam-policy-binding'
+      - '${_SERVICE_NAME}'
+      - '--region=${_DEPLOY_REGION}'
+      - '--member=allUsers'
+      - '--role=roles/run.invoker'
 
 # Specify which image will be pushed to registry
 images:
