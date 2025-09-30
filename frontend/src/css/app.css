@@ -549,6 +549,43 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   left: 50%;
 }
 
+/* Mobile navbar toggler styling when menu is open */
+@media (max-width: 768px) {
+  .navbar-toggler.open span {
+    background: var(--primary) !important; /* Make X button visible when menu is open */
+  }
+
+  /* Ensure the toggler is always visible and has good contrast */
+  .navbar-toggler {
+    background-color: rgba(47, 80, 106, 0.1);
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(47, 80, 106, 0.2);
+    transition: all 0.3s ease;
+  }
+
+  .navbar-toggler:hover {
+    background-color: rgba(47, 80, 106, 0.15);
+    border-color: rgba(47, 80, 106, 0.3);
+    transform: scale(1.05);
+  }
+
+  .navbar-toggler:hover span {
+    background: var(--primary) !important; /* Change color on hover */
+  }
+
+  /* Style for when navbar is scrolled */
+  .navbar.scrolled .navbar-toggler {
+    background-color: rgba(47, 80, 106, 0.08);
+    border-color: rgba(47, 80, 106, 0.15);
+  }
+
+  .navbar.scrolled .navbar-toggler:hover {
+    background-color: rgba(47, 80, 106, 0.12);
+    border-color: rgba(47, 80, 106, 0.25);
+  }
+}
+
 /* Dropdown Menu Styles */
 .dropdown {
   position: relative;
@@ -907,38 +944,258 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
     transition: right 0.3s ease;
     z-index: 101;
   }
-  
+
   .navbar-menu.open {
     right: 0;
   }
-  
+
+  /* Fix mobile navbar text visibility */
+  .navbar-menu .navbar-link {
+    color: var(--text) !important; /* Dark text on white mobile menu */
+    font-size: 1.1rem;
+    text-align: center;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .navbar-menu .navbar-link:hover {
+    color: var(--primary) !important;
+    background-color: var(--light-bg);
+  }
+
+  .navbar-menu .navbar-link.active {
+    color: var(--primary) !important;
+    background-color: var(--light-bg);
+  }
+
+  /* Style buttons in mobile menu */
+  .navbar-menu .btn {
+    margin: 0.5rem 0;
+    width: 80%;
+    text-align: center;
+  }
+
+  /* Dropdown styles for mobile */
+  .navbar-menu .dropdown {
+    width: 100%;
+  }
+
+  .navbar-menu .dropdown .navbar-link {
+    background-color: transparent;
+  }
+
+  .navbar-menu .dropdown-menu {
+    position: static;
+    box-shadow: none;
+    background-color: var(--light-bg);
+    margin-top: 0.5rem;
+    border-radius: 8px;
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .navbar-menu .dropdown-item {
+    color: var(--text);
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar-menu .dropdown-item:hover {
+    background-color: white;
+    color: var(--primary);
+  }
+
+  /* Inbox dropdown in mobile */
+  .navbar-menu .inbox-dropdown-menu {
+    width: 90%;
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .navbar-toggler {
     display: block;
   }
-  
+
   .navbar-item {
-    margin: 1rem 0;
+    margin: 0.5rem 0;
+    width: 100%;
   }
 
   .navbar-menu {
     gap: 0; /* Reset gap for mobile menu */
+    padding: 2rem 1rem;
   }
   
+  /* iPhone and mobile optimizations */
   .hero h1 {
     font-size: 2.5rem;
+    line-height: 1.2;
+    margin-bottom: 1rem;
   }
-  
+
+  .hero p {
+    font-size: 1.1rem;
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Improve button spacing on mobile */
+  .hero .btn {
+    margin: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  /* Better card layouts for mobile */
+  .card {
+    margin-bottom: 1.5rem;
+    border-radius: 12px;
+  }
+
+  .card-header h1,
+  .card-header h2,
+  .card-header h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+  }
+
+  /* Form improvements for mobile */
+  .form-control {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem;
+  }
+
+  /* Better spacing for mobile */
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
   .col-half, .col-third, .col-two-thirds, .col-fourth {
     flex: 0 0 100%;
     max-width: 100%;
+    margin-bottom: 2rem;
   }
-  
+
   .section {
     padding: 3rem 0;
   }
+
+  /* Slideshow optimizations for mobile */
+  .slideshow-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .slide img {
+    height: 250px !important;
+  }
+
+  .slide-nav {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+  }
+
+  .slide-nav.prev {
+    left: 10px !important;
+  }
+
+  .slide-nav.next {
+    right: 10px !important;
+  }
+
+  /* Footer improvements */
+  .footer-content .col-third {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+
+  .footer-links {
+    text-align: center;
+  }
+
+  /* Inbox improvements for mobile */
+  .guest-inbox-container,
+  .inbox-message {
+    padding: 1rem;
+  }
+
+  .message-item {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  /* Guest welcome message mobile styling */
+  .guest-welcome-message {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #0ea5e9;
+  }
+
+  .guest-welcome-message .message-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  .guest-welcome-message .message-content {
+    color: var(--text);
+  }
+
+  .guest-welcome-message .message-content ul {
+    list-style-type: disc;
+    color: var(--text);
+  }
+
+  .guest-welcome-message .btn {
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+  }
+
+  /* Unread badge mobile styling */
+  .unread-badge {
+    font-size: 0.7rem;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0 4px;
+    text-align: center;
+  }
+
+  /* Sports section mobile optimization */
+  .sports-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 1rem !important;
+  }
+
+  .sport-item {
+    padding: 1rem !important;
+  }
+
+  .sport-icon {
+    font-size: 2rem !important;
+    margin-bottom: 0.5rem !important;
+  }
 }
 
+/* Additional styles for smaller mobile devices */
 @media (max-width: 576px) {
+  /* Navbar optimizations for smaller screens */
+  .navbar-menu {
+    width: 280px;
+  }
+
+  .navbar-menu .navbar-link {
+    font-size: 1rem;
+    padding: 0.75rem;
+  }
+
+  /* Hero section for small screens */
   .hero h1 {
     font-size: 2rem;
   }

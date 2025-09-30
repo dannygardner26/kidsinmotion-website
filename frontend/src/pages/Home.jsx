@@ -27,36 +27,25 @@ const Home = () => {
   ];
   
   useEffect(() => {
-    // Sample events data for now
-    const sampleEvents = [
-      {
-        id: 1,
-        name: "Youth Basketball Clinic",
-        date: "2025-10-15",
-        location: "Community Center Gym",
-        description: "Free basketball clinic for ages 8-16"
-      },
-      {
-        id: 2,
-        name: "Soccer Skills Workshop",
-        date: "2025-10-22",
-        location: "Memorial Park",
-        description: "Learn fundamental soccer skills with experienced coaches"
-      },
-      {
-        id: 3,
-        name: "Track and Field Day",
-        date: "2025-10-29",
-        location: "High School Track",
-        description: "Fun track and field activities for all skill levels"
-      }
-    ];
+    // TODO: Fetch real events from backend API
+    // For now, show no events (remove sample data)
+    const fetchEvents = async () => {
+      try {
+        // This would be the real API call when ready:
+        // const events = await apiService.getUpcomingEvents();
+        // setUpcomingEvents(events);
 
-    // Simulate loading time
-    setTimeout(() => {
-      setUpcomingEvents(sampleEvents);
-      setIsLoading(false);
-    }, 500);
+        // For now, show no events
+        setUpcomingEvents([]);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        setUpcomingEvents([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
   }, []);
   
   // Auto-advance slideshow

@@ -6,13 +6,16 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin'); // Using this i
 // Load environment variables
 require('dotenv').config();
 
-module.exports = {
-  mode: 'development', // Set mode to development
+module.exports = (env, argv) => {
+  const isProduction = argv.mode === 'production';
+
+  return {
+  mode: argv.mode || 'development', // Use the mode from command line or default to development
   entry: './src/index.js', // Entry point of your application
   output: {
     path: path.resolve(__dirname, 'build'), // Output directory
-    filename: 'static/js/[name].js', // Output bundle file name without hash
-    chunkFilename: 'static/js/[name].chunk.js', // Chunk files for code splitting
+    filename: isProduction ? 'static/js/[name].[contenthash:8].js' : 'static/js/[name].js', // Add hash for cache busting in production
+    chunkFilename: isProduction ? 'static/js/[name].[contenthash:8].chunk.js' : 'static/js/[name].chunk.js', // Chunk files for code splitting
     publicPath: '/', // Ensures assets are served correctly
     clean: true, // Clean the output directory before each build
   },
@@ -86,7 +89,19 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env': JSON.stringify(process.env)
+      'process.env': JSON.stringify({
+        NODE_ENV: argv.mode || 'development',
+        REACT_APP_FIREBASE_API_KEY: process.env.REACT_APP_FIREBASE_API_KEY,
+        REACT_APP_FIREBASE_AUTH_DOMAIN: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+        REACT_APP_FIREBASE_PROJECT_ID: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+        REACT_APP_FIREBASE_STORAGE_BUCKET: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+        REACT_APP_FIREBASE_MESSAGING_SENDER_ID: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+        REACT_APP_FIREBASE_APP_ID: process.env.REACT_APP_FIREBASE_APP_ID,
+        REACT_APP_FIREBASE_MEASUREMENT_ID: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+        REACT_APP_ENVIRONMENT: process.env.REACT_APP_ENVIRONMENT,
+        REACT_APP_ENABLE_FIRESTORE_SYNC: process.env.REACT_APP_ENABLE_FIRESTORE_SYNC
+      })
     }),
     new HtmlWebpackPlugin({
       template: './public/index.html', // Use this file as a template
@@ -94,7 +109,18 @@ module.exports = {
       filename: 'index.html',
       cache: false, // Disable caching to ensure fresh builds
       hash: false, // Let contenthash handle versioning
-      minify: false // Disable minification in dev mode
+      minify: isProduction ? {
+        removeComments: true,
+        collapseWhitespace: true,
+        removeRedundantAttributes: true,
+        useShortDoctype: true,
+        removeEmptyAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        keepClosingSlash: true,
+        minifyJS: true,
+        minifyCSS: true,
+        minifyURLs: true,
+      } : false
     }),
     // Add other plugins if needed
   ],
@@ -128,4 +154,5 @@ module.exports = {
       name: 'runtime',
     },
   },
+  };
 };

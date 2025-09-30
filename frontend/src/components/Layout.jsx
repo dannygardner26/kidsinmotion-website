@@ -211,6 +211,56 @@ const Layout = ({ children }) => {
                 </>
               ) : (
                 <>
+                  {/* Inbox for unregistered users */}
+                  <li className="navbar-item">
+                    <div className={`dropdown inbox-dropdown ${inboxOpen ? 'open' : ''}`}>
+                      <button className="navbar-link inbox-trigger" onClick={() => setInboxOpen(!inboxOpen)}>
+                        <i className="fas fa-inbox mr-2"></i>
+                        Inbox
+                        <span className="unread-badge">1</span>
+                      </button>
+                      <div className={`dropdown-menu inbox-dropdown-menu ${inboxOpen ? 'show' : ''}`}>
+                        <div className="guest-inbox-container">
+                          <div className="inbox-header">
+                            <h5>Welcome to Kids in Motion!</h5>
+                          </div>
+                          <div className="inbox-message">
+                            <div className="message-item guest-welcome-message">
+                              <div className="message-header">
+                                <span className="message-title">🎉 Join Our Community</span>
+                                <span className="message-date">Now</span>
+                              </div>
+                              <div className="message-content">
+                                <p><strong>Welcome!</strong> Create an account to:</p>
+                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.2rem' }}>
+                                  <li>Register for sports clinics</li>
+                                  <li>Receive important updates</li>
+                                  <li>Track your participation</li>
+                                  <li>Connect with our community</li>
+                                </ul>
+                                <div style={{ marginTop: '1rem' }}>
+                                  <Link
+                                    to="/register"
+                                    className="btn btn-primary"
+                                    style={{
+                                      width: '100%',
+                                      textAlign: 'center',
+                                      textDecoration: 'none',
+                                      display: 'block',
+                                      padding: '0.75rem'
+                                    }}
+                                    onClick={() => setInboxOpen(false)}
+                                  >
+                                    Sign Up Today!
+                                  </Link>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
                   <li className="navbar-item">
                     <Link to="/login" className={`navbar-link ${location.pathname === '/login' ? 'active' : ''}`}>
                       Login

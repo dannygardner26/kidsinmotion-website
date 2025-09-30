@@ -569,51 +569,341 @@ const About = () => {
         </div>
       </section>
 
-      {/* Other Sports Section */}
-      <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
-        <div className="container">
-          <div className="section-head text-center">
-            <h2>Expanding Beyond Baseball</h2>
-            <p>Our mission extends beyond just baseball - we believe every sport has the power to transform lives.</p>
+      {/* Open to All Sports Section */}
+      <section className="section" style={{
+        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8f8f8 100%)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Background decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: '-100px',
+          right: '-100px',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(47, 80, 106, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          bottom: '-50px',
+          left: '-50px',
+          width: '200px',
+          height: '200px',
+          background: 'radial-gradient(circle, rgba(74, 124, 163, 0.1) 0%, transparent 70%)',
+          borderRadius: '50%'
+        }}></div>
+
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+          <div className="section-head text-center" style={{ marginBottom: '4rem' }}>
+            <div style={{
+              display: 'inline-block',
+              backgroundColor: 'rgba(47, 80, 106, 0.1)',
+              padding: '0.5rem 1.5rem',
+              borderRadius: '25px',
+              marginBottom: '1rem',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#2f506a'
+            }}>
+              All Sports Welcome
+            </div>
+            <h2 style={{
+              fontSize: '3rem',
+              fontWeight: '800',
+              color: '#2f506a',
+              marginBottom: '1rem',
+              background: 'linear-gradient(135deg, #2f506a 0%, #4a7ca3 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>
+              Open to All Sports
+            </h2>
+            <p style={{
+              fontSize: '1.2rem',
+              color: '#4a5568',
+              maxWidth: '600px',
+              margin: '0 auto',
+              lineHeight: '1.7'
+            }}>
+              From baseball diamonds to basketball courts, every sport has the power to transform young lives
+            </p>
           </div>
 
-          <div className="row items-center">
-            <div className="col-half">
-              <h3 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-                Open to All Sports
-              </h3>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                While we started with baseball, Kids in Motion welcomes directors and coaches from all sports backgrounds.
-                Whether it's basketball, soccer, football, tennis, or any other sport, we're excited to help you bring
-                your expertise to underserved communities.
-              </p>
-              <p style={{ fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                If you're passionate about your sport and want to make a difference in children's lives, we want to hear from you.
-                Together, we can expand our impact and give even more kids the chance to discover their potential through athletics.
-              </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '4rem',
+            alignItems: 'center',
+            '@media (max-width: 768px)': {
+              gridTemplateColumns: '1fr',
+              gap: '2rem'
+            }
+          }}>
+            {/* Content Side */}
+            <div style={{ order: 1 }}>
+              {/* Sports Icons Row */}
               <div style={{
-                padding: '1rem',
-                backgroundColor: 'rgba(47, 80, 106, 0.1)',
-                borderRadius: '8px',
-                borderLeft: '4px solid var(--primary)'
+                display: 'flex',
+                justifyContent: 'space-around',
+                marginBottom: '2.5rem',
+                padding: '1.5rem',
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                border: '2px solid rgba(47, 80, 106, 0.1)'
               }}>
-                <p style={{ margin: '0', fontWeight: '500' }}>
-                  <strong>Have a sport you'd like to teach?</strong> Contact us at kidsinmotion0@gmail.com or call (484) 885-6284
-                  to discuss bringing your sport to Kids in Motion.
-                </p>
+                {['⚾', '🏀', '⚽', '🏈', '🎾', '🏐'].map((sport, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      fontSize: '2.5rem',
+                      padding: '0.5rem',
+                      borderRadius: '50%',
+                      backgroundColor: '#f0f9ff',
+                      border: '2px solid #2f506a',
+                      width: '60px',
+                      height: '60px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.transform = 'scale(1.2) rotate(10deg)';
+                      e.target.style.backgroundColor = '#2f506a';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.transform = 'scale(1) rotate(0deg)';
+                      e.target.style.backgroundColor = '#f0f9ff';
+                    }}
+                  >
+                    {sport}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{
+                backgroundColor: 'white',
+                padding: '2.5rem',
+                borderRadius: '20px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.1)',
+                border: '2px solid rgba(47, 80, 106, 0.1)',
+                position: 'relative'
+              }}>
+                {/* Accent border */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '6px',
+                  background: 'linear-gradient(90deg, #2f506a 0%, #4a7ca3 50%, #e53e3e 100%)',
+                  borderRadius: '20px 20px 0 0'
+                }}></div>
+
+                <h3 style={{
+                  fontSize: '2.2rem',
+                  fontWeight: '800',
+                  marginBottom: '1.5rem',
+                  color: '#2f506a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <span style={{ fontSize: '2rem' }}>🌟</span>
+                  Beyond Baseball
+                </h3>
+
+                <div style={{ marginBottom: '2rem' }}>
+                  <p style={{
+                    fontSize: '1.1rem',
+                    lineHeight: '1.8',
+                    marginBottom: '1.5rem',
+                    color: '#4a5568'
+                  }}>
+                    While we started with <strong style={{ color: '#2f506a' }}>baseball</strong>, Kids in Motion welcomes directors and coaches from <strong style={{ color: '#e53e3e' }}>all sports backgrounds</strong>.
+                  </p>
+
+                  <p style={{
+                    fontSize: '1.1rem',
+                    lineHeight: '1.8',
+                    marginBottom: '1.5rem',
+                    color: '#4a5568'
+                  }}>
+                    Whether it's <em>basketball, soccer, football, tennis, volleyball, track & field,</em> or any other sport, we're excited to help you bring your expertise to underserved communities.
+                  </p>
+
+                  <p style={{
+                    fontSize: '1.1rem',
+                    lineHeight: '1.8',
+                    marginBottom: '2rem',
+                    color: '#4a5568',
+                    fontWeight: '500'
+                  }}>
+                    If you're passionate about your sport and want to make a difference in children's lives, <strong style={{ color: '#2f506a' }}>we want to hear from you!</strong>
+                  </p>
+                </div>
+
+                {/* Call to Action Box */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #2f506a 0%, #4a7ca3 100%)',
+                  color: 'white',
+                  padding: '2rem',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}>
+                  {/* Background pattern */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-50%',
+                    right: '-50%',
+                    width: '200%',
+                    height: '200%',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                    zIndex: 0
+                  }}></div>
+
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <h4 style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 'bold',
+                      marginBottom: '1rem',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <span style={{ fontSize: '1.8rem' }}>📞</span>
+                      Ready to Join Us?
+                    </h4>
+
+                    <p style={{
+                      marginBottom: '1.5rem',
+                      opacity: '0.95',
+                      fontSize: '1.1rem',
+                      lineHeight: '1.6'
+                    }}>
+                      Have a sport you'd like to teach? Let's talk about bringing your passion to Kids in Motion!
+                    </p>
+
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.75rem',
+                      fontSize: '1rem'
+                    }}>
+                      <div style={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '10px',
+                        fontWeight: '600'
+                      }}>
+                        📧 kidsinmotion0@gmail.com
+                      </div>
+                      <div style={{
+                        backgroundColor: 'rgba(255,255,255,0.2)',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '10px',
+                        fontWeight: '600'
+                      }}>
+                        📱 (484) 885-6284
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="col-half" style={{ textAlign: 'center' }}>
-              <DynamicImage
-                src={assetUrls['team-huddle.jpg']}
-                alt="Various sports activities"
-                style={{
-                  width: '100%',
-                  maxWidth: '400px',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
-                }}
-              />
+
+            {/* Image Side */}
+            <div style={{
+              textAlign: 'center',
+              order: 2
+            }}>
+              <div style={{
+                position: 'relative',
+                display: 'inline-block',
+                padding: '1.5rem',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,249,255,0.9) 100%)',
+                borderRadius: '30px',
+                boxShadow: '0 25px 60px rgba(0,0,0,0.15)',
+                border: '3px solid rgba(47, 80, 106, 0.2)'
+              }}>
+                {/* Decorative elements around image */}
+                <div style={{
+                  position: 'absolute',
+                  top: '-15px',
+                  left: '-15px',
+                  width: '30px',
+                  height: '30px',
+                  backgroundColor: '#e53e3e',
+                  borderRadius: '50%'
+                }}></div>
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  right: '-10px',
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#4a7ca3',
+                  borderRadius: '50%'
+                }}></div>
+                <div style={{
+                  position: 'absolute',
+                  bottom: '-10px',
+                  left: '-10px',
+                  width: '25px',
+                  height: '25px',
+                  backgroundColor: '#2f506a',
+                  borderRadius: '50%'
+                }}></div>
+
+                <DynamicImage
+                  src={assetUrls['team-huddle.jpg']}
+                  alt="Kids in Motion team building community through various sports"
+                  style={{
+                    width: '100%',
+                    maxWidth: '500px',
+                    borderRadius: '20px',
+                    boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
+                    transition: 'transform 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'scale(1.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                  }}
+                />
+
+                {/* Image caption */}
+                <div style={{
+                  marginTop: '1.5rem',
+                  padding: '1rem',
+                  backgroundColor: 'white',
+                  borderRadius: '15px',
+                  border: '2px solid rgba(47, 80, 106, 0.1)',
+                  boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
+                }}>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: '#2f506a',
+                    fontStyle: 'italic'
+                  }}>
+                    "Building community and teamwork through all sports"
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
