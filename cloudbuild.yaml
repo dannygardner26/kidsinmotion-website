@@ -28,9 +28,11 @@ steps:
       - '--region=${_DEPLOY_REGION}'
       - '--set-env-vars=SPRING_PROFILES_ACTIVE=development'
       - '--port=8080'
-      - '--timeout=900'
-      - '--memory=1Gi'
-      - '--cpu=1'
+      - '--timeout=1200'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--cpu-throttling'
+      - '--max-instances=10'
 
   # Set IAM policy to allow unauthenticated access
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
