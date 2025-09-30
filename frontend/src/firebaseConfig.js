@@ -6,13 +6,13 @@ import { getStorage } from "firebase/storage";
 import { getMessaging } from "firebase/messaging";
 
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCFe7YIJX_0VtKYDYA7GVTMoJDeTTAufeg",
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "kids-in-motion-website-b1c09.firebaseapp.com",
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "kids-in-motion-website-b1c09",
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "kids-in-motion-website-b1c09.appspot.com",
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "839796180413",
+  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:839796180413:web:b7a1f41253db31e8627ed4",
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-63BGEP6TCX"
 };
 
 // Debug: Check if Firebase config is loaded
