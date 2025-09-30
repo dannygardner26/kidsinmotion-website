@@ -5,6 +5,9 @@ import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/fires
 import { getStorage } from "firebase/storage";
 import { getMessaging } from "firebase/messaging";
 
+// Firebase config - These values are SAFE to be public per Firebase documentation
+// Firebase API keys are client-side config values, not secret keys
+// Security is enforced by Firebase Security Rules, not by hiding these values
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCFe7YIJX_0VtKYDYA7GVTMoJDeTTAufeg",
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "kids-in-motion-website-b1c09.firebaseapp.com",

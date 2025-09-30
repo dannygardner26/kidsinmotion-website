@@ -1,6 +1,6 @@
 import { auth } from '../firebaseConfig';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8082/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://kidsinmotion-website-839796180413.us-east4.run.app/api';
 
 class ApiService {
   constructor() {
