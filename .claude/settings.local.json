@@ -19,7 +19,8 @@
       "Bash(git rm:*)",
       "Bash(npm run build:*)",
       "Bash(curl:*)",
-      "WebFetch(domain:kidsinmotion-website-839796180413.us-east4.run.app)"
+      "WebFetch(domain:kidsinmotion-website-839796180413.us-east4.run.app)",
+      "WebFetch(domain:kidsinmotionpa.org)"
     ],
     "deny": [],
     "ask": []

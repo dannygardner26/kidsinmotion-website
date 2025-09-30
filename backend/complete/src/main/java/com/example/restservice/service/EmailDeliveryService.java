@@ -18,10 +18,10 @@ public class EmailDeliveryService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
-    @Value("")
+    @Value("${app.messaging.email.enabled:false}")
     private boolean emailEnabled;
 
-    @Value("")
+    @Value("${app.messaging.email.from:no-reply@kidsinmotion.org}")
     private String defaultFromAddress;
 
     public boolean isEnabled() {
