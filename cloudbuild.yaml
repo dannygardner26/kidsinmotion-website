@@ -26,7 +26,7 @@ steps:
       - '--platform=managed'
       - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_DEPLOY_REGION}'
-      - '--set-env-vars=PORT=8080,SPRING_PROFILES_ACTIVE=development'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=development'
       - '--port=8080'
       - '--timeout=900'
       - '--memory=1Gi'
