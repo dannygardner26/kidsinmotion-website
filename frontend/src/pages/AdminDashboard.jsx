@@ -8,7 +8,7 @@ import AdminMessaging from '../components/AdminMessaging';
 const AdminDashboard = () => {
   const { userProfile } = useAuth();
   const [events, setEvents] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
+  // const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('events');
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchEvents();
-    fetchAnnouncements();
+    // fetchAnnouncements();
   }, []);
 
   const fetchEvents = async () => {
@@ -53,15 +53,16 @@ const AdminDashboard = () => {
     }
   };
 
-  const fetchAnnouncements = async () => {
-    try {
-      const announcementsData = await apiService.getAllAnnouncements();
-      setAnnouncements(announcementsData);
-    } catch (error) {
-      console.error('Error fetching announcements:', error);
-      setError(error.message);
-    }
-  };
+  // Announcements feature disabled
+  // const fetchAnnouncements = async () => {
+  //   try {
+  //     const announcementsData = await apiService.getAllAnnouncements();
+  //     setAnnouncements(announcementsData);
+  //   } catch (error) {
+  //     console.error('Error fetching announcements:', error);
+  //     setError(error.message);
+  //   }
+  // };
 
   const handleAnnouncementFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -174,12 +175,13 @@ const AdminDashboard = () => {
           >
             Events Management
           </button>
-          <button
+          {/* Announcements feature disabled */}
+          {/* <button
             className={`tab-btn ${activeTab === 'announcements' ? 'active' : ''}`}
             onClick={() => setActiveTab('announcements')}
           >
             Announcements
-          </button>
+          </button> */}
           <button
             className={`tab-btn ${activeTab === 'messaging' ? 'active' : ''}`}
             onClick={() => setActiveTab('messaging')}
