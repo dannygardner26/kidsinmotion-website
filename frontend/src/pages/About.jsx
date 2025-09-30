@@ -657,30 +657,35 @@ const About = () => {
                 boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
                 border: '2px solid rgba(47, 80, 106, 0.1)'
               }}>
-                {['⚾', '🏀', '⚽', '🏈', '🎾', '🏐'].map((sport, index) => (
+                {['Baseball', 'Basketball', 'Soccer', 'Football', 'Tennis', 'Volleyball'].map((sport, index) => (
                   <div
                     key={index}
                     style={{
-                      fontSize: '2.5rem',
+                      fontSize: '0.8rem',
                       padding: '0.5rem',
-                      borderRadius: '50%',
+                      borderRadius: '12px',
                       backgroundColor: '#f0f9ff',
                       border: '2px solid #2f506a',
-                      width: '60px',
+                      minWidth: '80px',
                       height: '60px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       transition: 'all 0.3s ease',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      color: '#2f506a',
+                      fontWeight: 'bold',
+                      textAlign: 'center'
                     }}
                     onMouseEnter={(e) => {
-                      e.target.style.transform = 'scale(1.2) rotate(10deg)';
+                      e.target.style.transform = 'scale(1.05)';
                       e.target.style.backgroundColor = '#2f506a';
+                      e.target.style.color = 'white';
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.transform = 'scale(1) rotate(0deg)';
+                      e.target.style.transform = 'scale(1)';
                       e.target.style.backgroundColor = '#f0f9ff';
+                      e.target.style.color = '#2f506a';
                     }}
                   >
                     {sport}
@@ -690,132 +695,232 @@ const About = () => {
 
               <div style={{
                 backgroundColor: 'white',
-                padding: '2.5rem',
-                borderRadius: '20px',
-                boxShadow: '0 15px 40px rgba(0,0,0,0.1)',
-                border: '2px solid rgba(47, 80, 106, 0.1)',
-                position: 'relative'
+                padding: '3rem',
+                borderRadius: '24px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                border: '3px solid rgba(47, 80, 106, 0.15)',
+                position: 'relative',
+                overflow: 'hidden'
               }}>
-                {/* Accent border */}
+                {/* Dramatic accent border with animation effect */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: '6px',
-                  background: 'linear-gradient(90deg, #2f506a 0%, #4a7ca3 50%, #e53e3e 100%)',
-                  borderRadius: '20px 20px 0 0'
+                  height: '8px',
+                  background: 'linear-gradient(90deg, #e53e3e 0%, #2f506a 35%, #4a7ca3 65%, #e53e3e 100%)',
+                  borderRadius: '24px 24px 0 0'
                 }}></div>
 
-                <h3 style={{
-                  fontSize: '2.2rem',
-                  fontWeight: '800',
-                  marginBottom: '1.5rem',
-                  color: '#2f506a',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  <span style={{ fontSize: '2rem' }}>🌟</span>
-                  Beyond Baseball
-                </h3>
-
-                <div style={{ marginBottom: '2rem' }}>
-                  <p style={{
-                    fontSize: '1.1rem',
-                    lineHeight: '1.8',
-                    marginBottom: '1.5rem',
-                    color: '#4a5568'
-                  }}>
-                    While we started with <strong style={{ color: '#2f506a' }}>baseball</strong>, Kids in Motion welcomes directors and coaches from <strong style={{ color: '#e53e3e' }}>all sports backgrounds</strong>.
-                  </p>
-
-                  <p style={{
-                    fontSize: '1.1rem',
-                    lineHeight: '1.8',
-                    marginBottom: '1.5rem',
-                    color: '#4a5568'
-                  }}>
-                    Whether it's <em>basketball, soccer, football, tennis, volleyball, track & field,</em> or any other sport, we're excited to help you bring your expertise to underserved communities.
-                  </p>
-
-                  <p style={{
-                    fontSize: '1.1rem',
-                    lineHeight: '1.8',
-                    marginBottom: '2rem',
-                    color: '#4a5568',
-                    fontWeight: '500'
-                  }}>
-                    If you're passionate about your sport and want to make a difference in children's lives, <strong style={{ color: '#2f506a' }}>we want to hear from you!</strong>
-                  </p>
-                </div>
-
-                {/* Call to Action Box */}
+                {/* Background geometric pattern */}
                 <div style={{
-                  background: 'linear-gradient(135deg, #2f506a 0%, #4a7ca3 100%)',
-                  color: 'white',
-                  padding: '2rem',
-                  borderRadius: '16px',
-                  textAlign: 'center',
-                  position: 'relative',
-                  overflow: 'hidden'
-                }}>
-                  {/* Background pattern */}
+                  position: 'absolute',
+                  top: '-100px',
+                  right: '-100px',
+                  width: '300px',
+                  height: '300px',
+                  background: 'radial-gradient(circle, rgba(229, 62, 62, 0.08) 0%, transparent 70%)',
+                  borderRadius: '50%'
+                }}></div>
+
+                <div style={{ position: 'relative', zIndex: 2 }}>
+                  <h3 style={{
+                    fontSize: '2.8rem',
+                    fontWeight: '900',
+                    marginBottom: '2rem',
+                    color: '#2f506a',
+                    textAlign: 'center',
+                    textTransform: 'uppercase',
+                    letterSpacing: '2px',
+                    lineHeight: '1.2',
+                    textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    Beyond Baseball
+                  </h3>
+
+                  {/* Power statement section */}
                   <div style={{
-                    position: 'absolute',
-                    top: '-50%',
-                    right: '-50%',
-                    width: '200%',
-                    height: '200%',
-                    background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-                    zIndex: 0
-                  }}></div>
-
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <h4 style={{
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      marginBottom: '1rem',
-                      color: 'white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.5rem'
-                    }}>
-                      <span style={{ fontSize: '1.8rem' }}>📞</span>
-                      Ready to Join Us?
-                    </h4>
-
-                    <p style={{
-                      marginBottom: '1.5rem',
-                      opacity: '0.95',
-                      fontSize: '1.1rem',
-                      lineHeight: '1.6'
-                    }}>
-                      Have a sport you'd like to teach? Let's talk about bringing your passion to Kids in Motion!
-                    </p>
-
+                    backgroundColor: 'rgba(229, 62, 62, 0.05)',
+                    padding: '2.5rem',
+                    borderRadius: '20px',
+                    border: '2px solid rgba(229, 62, 62, 0.2)',
+                    marginBottom: '2.5rem',
+                    position: 'relative'
+                  }}>
                     <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem',
-                      fontSize: '1rem'
+                      position: 'absolute',
+                      top: '-15px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      backgroundColor: '#e53e3e',
+                      color: 'white',
+                      padding: '0.5rem 2rem',
+                      borderRadius: '20px',
+                      fontWeight: 'bold',
+                      fontSize: '0.9rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
                     }}>
-                      <div style={{
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        padding: '0.75rem 1rem',
-                        borderRadius: '10px',
-                        fontWeight: '600'
+                      ALL SPORTS WELCOME
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                      <p style={{
+                        fontSize: '1.4rem',
+                        lineHeight: '1.7',
+                        color: '#2d3748',
+                        fontWeight: '600',
+                        marginBottom: '1.5rem'
                       }}>
-                        📧 kidsinmotion0@gmail.com
-                      </div>
-                      <div style={{
-                        backgroundColor: 'rgba(255,255,255,0.2)',
-                        padding: '0.75rem 1rem',
-                        borderRadius: '10px',
-                        fontWeight: '600'
+                        Kids in Motion has <strong style={{ color: '#e53e3e' }}>evolved beyond our baseball roots</strong> to embrace coaches and directors from <strong style={{ color: '#2f506a' }}>every sport imaginable</strong>.
+                      </p>
+
+                      <p style={{
+                        fontSize: '1.2rem',
+                        lineHeight: '1.8',
+                        color: '#4a5568',
+                        fontStyle: 'italic'
                       }}>
-                        📱 (484) 885-6284
+                        From the basketball court to the soccer field, from tennis courts to track & field, every sport has the power to transform young lives and build stronger communities.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Impact statement */}
+                  <div style={{
+                    backgroundColor: 'rgba(47, 80, 106, 0.05)',
+                    padding: '2rem',
+                    borderRadius: '16px',
+                    border: '2px solid rgba(47, 80, 106, 0.2)',
+                    marginBottom: '2.5rem',
+                    textAlign: 'center'
+                  }}>
+                    <h4 style={{
+                      fontSize: '1.6rem',
+                      fontWeight: 'bold',
+                      color: '#2f506a',
+                      marginBottom: '1rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px'
+                    }}>
+                      Your Sport. Your Passion. Our Mission.
+                    </h4>
+                    <p style={{
+                      fontSize: '1.1rem',
+                      lineHeight: '1.7',
+                      color: '#2d3748',
+                      margin: 0,
+                      fontWeight: '500'
+                    }}>
+                      If you have expertise in any sport and a heart for serving underserved youth, we want you to lead the charge in bringing that sport to communities that need it most.
+                    </p>
+                  </div>
+
+                  {/* Call to Action Box - Redesigned */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #e53e3e 0%, #2f506a 100%)',
+                    color: 'white',
+                    padding: '3rem 2.5rem',
+                    borderRadius: '20px',
+                    textAlign: 'center',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    boxShadow: '0 15px 40px rgba(229, 62, 62, 0.3)'
+                  }}>
+                    {/* Dynamic background pattern */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '-50%',
+                      left: '-50%',
+                      width: '200%',
+                      height: '200%',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
+                      zIndex: 0
+                    }}></div>
+
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                      <h4 style={{
+                        fontSize: '2rem',
+                        fontWeight: '900',
+                        marginBottom: '1.5rem',
+                        color: 'white',
+                        textTransform: 'uppercase',
+                        letterSpacing: '2px',
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+                      }}>
+                        Ready to Lead a New Sport?
+                      </h4>
+
+                      <p style={{
+                        marginBottom: '2rem',
+                        opacity: '0.95',
+                        fontSize: '1.3rem',
+                        lineHeight: '1.6',
+                        fontWeight: '500'
+                      }}>
+                        Join our team of passionate sport directors and bring your expertise to kids who need it most.
+                      </p>
+
+                      {/* Primary CTA Button */}
+                      <button
+                        onClick={handleVolunteerClick}
+                        style={{
+                          backgroundColor: 'white',
+                          color: '#e53e3e',
+                          padding: '1.2rem 3rem',
+                          borderRadius: '12px',
+                          border: 'none',
+                          fontSize: '1.1rem',
+                          fontWeight: 'bold',
+                          textTransform: 'uppercase',
+                          letterSpacing: '1px',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                          marginBottom: '2rem',
+                          width: '100%',
+                          maxWidth: '350px'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.transform = 'translateY(-3px)';
+                          e.target.style.boxShadow = '0 12px 30px rgba(0,0,0,0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                        }}
+                      >
+                        Apply to Lead a Sport
+                      </button>
+
+                      {/* Contact info with modern styling */}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                        gap: '1rem',
+                        marginTop: '1.5rem'
+                      }}>
+                        <div style={{
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          padding: '1rem 1.5rem',
+                          borderRadius: '12px',
+                          fontWeight: '600',
+                          fontSize: '1rem',
+                          border: '1px solid rgba(255,255,255,0.3)'
+                        }}>
+                          kidsinmotion0@gmail.com
+                        </div>
+                        <div style={{
+                          backgroundColor: 'rgba(255,255,255,0.2)',
+                          padding: '1rem 1.5rem',
+                          borderRadius: '12px',
+                          fontWeight: '600',
+                          fontSize: '1rem',
+                          border: '1px solid rgba(255,255,255,0.3)'
+                        }}>
+                          (484) 885-6284
+                        </div>
                       </div>
                     </div>
                   </div>
