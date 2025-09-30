@@ -49,8 +49,10 @@ public class AuthController {
     @PostMapping("/sync-user")
     public ResponseEntity<?> syncUser(HttpServletRequest request) {
         try {
+            logger.info("AuthController: sync-user endpoint called");
             String firebaseUid = (String) request.getAttribute("firebaseUid");
             String email = (String) request.getAttribute("firebaseEmail");
+            logger.info("AuthController: firebaseUid={}, email={}", firebaseUid, email);
             
             if (firebaseUid == null || email == null) {
                 return ResponseEntity.badRequest()
