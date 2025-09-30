@@ -119,8 +119,9 @@ const InboxModal = ({ isOpen, onClose }) => {
             padding: '1rem 1.5rem',
             borderBottom: '1px solid #e5e7eb',
             display: 'flex',
-            gap: '1rem',
-            backgroundColor: '#f8f9fa'
+            gap: '0.5rem',
+            backgroundColor: '#f8f9fa',
+            flexWrap: 'wrap'
           }}>
             {unreadCount > 0 && (
               <button
@@ -129,12 +130,15 @@ const InboxModal = ({ isOpen, onClose }) => {
                   background: 'none',
                   border: '1px solid #2f506a',
                   color: '#2f506a',
-                  padding: '0.5rem 1rem',
+                  padding: '0.5rem 0.75rem',
                   borderRadius: '6px',
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
                   fontWeight: '500',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  flex: '1',
+                  minWidth: 'fit-content',
+                  whiteSpace: 'nowrap'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#2f506a';
@@ -145,7 +149,7 @@ const InboxModal = ({ isOpen, onClose }) => {
                   e.target.style.color = '#2f506a';
                 }}
               >
-                Mark all as read
+                Mark all read
               </button>
             )}
             {currentUser && (
@@ -155,12 +159,15 @@ const InboxModal = ({ isOpen, onClose }) => {
                   background: 'none',
                   border: '1px solid #dc2626',
                   color: '#dc2626',
-                  padding: '0.5rem 1rem',
+                  padding: '0.5rem 0.75rem',
                   borderRadius: '6px',
-                  fontSize: '0.9rem',
+                  fontSize: '0.85rem',
                   cursor: 'pointer',
                   fontWeight: '500',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  flex: '1',
+                  minWidth: 'fit-content',
+                  whiteSpace: 'nowrap'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#dc2626';
@@ -211,30 +218,32 @@ const InboxModal = ({ isOpen, onClose }) => {
                   e.currentTarget.style.backgroundColor = notification.isRead ? 'transparent' : '#f0f9ff';
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <div style={{ fontSize: '1.25rem', flexShrink: 0, marginTop: '0.125rem' }}>
                     {getNotificationIcon(notification.type)}
                   </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                       <h4 style={{
                         margin: 0,
-                        fontSize: '1rem',
+                        fontSize: '0.95rem',
                         fontWeight: notification.isRead ? '500' : '700',
                         color: notification.isRead ? '#374151' : '#1f2937',
-                        lineHeight: '1.4'
+                        lineHeight: '1.4',
+                        wordBreak: 'break-word',
+                        flex: 1,
+                        paddingRight: '0.5rem'
                       }}>
                         {notification.title}
                       </h4>
                       {!notification.isRead && (
                         <div style={{
-                          width: '8px',
-                          height: '8px',
+                          width: '6px',
+                          height: '6px',
                           backgroundColor: '#dc2626',
                           borderRadius: '50%',
                           flexShrink: 0,
-                          marginLeft: '0.5rem',
                           marginTop: '0.5rem'
                         }} />
                       )}
@@ -242,15 +251,28 @@ const InboxModal = ({ isOpen, onClose }) => {
 
                     <p style={{
                       margin: '0 0 0.75rem 0',
-                      fontSize: '0.95rem',
+                      fontSize: '0.9rem',
                       color: '#6b7280',
-                      lineHeight: '1.5'
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word',
+                      overflow: 'hidden'
                     }}>
                       {notification.message}
                     </p>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem'
+                    }}>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#9ca3af',
+                        wordBreak: 'break-word',
+                        flex: '1 1 auto'
+                      }}>
                         {notification.from && <span>{notification.from} • </span>}
                         {formatDate(notification.createdAt)}
                       </div>
@@ -266,10 +288,11 @@ const InboxModal = ({ isOpen, onClose }) => {
                             border: 'none',
                             color: '#9ca3af',
                             cursor: 'pointer',
-                            padding: '0.25rem',
+                            padding: '0.25rem 0.5rem',
                             borderRadius: '4px',
-                            fontSize: '0.8rem',
-                            transition: 'color 0.2s'
+                            fontSize: '0.75rem',
+                            transition: 'color 0.2s',
+                            flexShrink: 0
                           }}
                           onMouseEnter={(e) => e.target.style.color = '#dc2626'}
                           onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
@@ -284,7 +307,11 @@ const InboxModal = ({ isOpen, onClose }) => {
                 {/* Special handling for sign-in message */}
                 {notification.id === 'signin-prompt' && (
                   <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
+                    }}>
                       <Link
                         to="/login"
                         onClick={() => {
@@ -293,12 +320,15 @@ const InboxModal = ({ isOpen, onClose }) => {
                         style={{
                           backgroundColor: '#2f506a',
                           color: 'white',
-                          padding: '0.5rem 1rem',
+                          padding: '0.5rem 0.75rem',
                           borderRadius: '6px',
                           textDecoration: 'none',
-                          fontSize: '0.9rem',
+                          fontSize: '0.85rem',
                           fontWeight: '500',
-                          transition: 'background-color 0.2s'
+                          transition: 'background-color 0.2s',
+                          flex: '1',
+                          textAlign: 'center',
+                          minWidth: 'fit-content'
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#1e3a52'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = '#2f506a'}
@@ -311,12 +341,15 @@ const InboxModal = ({ isOpen, onClose }) => {
                         style={{
                           backgroundColor: '#e53e3e',
                           color: 'white',
-                          padding: '0.5rem 1rem',
+                          padding: '0.5rem 0.75rem',
                           borderRadius: '6px',
                           textDecoration: 'none',
-                          fontSize: '0.9rem',
+                          fontSize: '0.85rem',
                           fontWeight: '500',
-                          transition: 'background-color 0.2s'
+                          transition: 'background-color 0.2s',
+                          flex: '1',
+                          textAlign: 'center',
+                          minWidth: 'fit-content'
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#c53030'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = '#e53e3e'}

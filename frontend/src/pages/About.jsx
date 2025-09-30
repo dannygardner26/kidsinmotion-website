@@ -569,444 +569,164 @@ const About = () => {
         </div>
       </section>
 
-      {/* Open to All Sports Section */}
-      <section className="section" style={{
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8f8f8 100%)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Background decorative elements */}
-        <div style={{
-          position: 'absolute',
-          top: '-100px',
-          right: '-100px',
-          width: '300px',
-          height: '300px',
-          background: 'radial-gradient(circle, rgba(47, 80, 106, 0.1) 0%, transparent 70%)',
-          borderRadius: '50%'
-        }}></div>
-        <div style={{
-          position: 'absolute',
-          bottom: '-50px',
-          left: '-50px',
-          width: '200px',
-          height: '200px',
-          background: 'radial-gradient(circle, rgba(74, 124, 163, 0.1) 0%, transparent 70%)',
-          borderRadius: '50%'
-        }}></div>
-
-        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
-          <div className="section-head text-center" style={{ marginBottom: '4rem' }}>
-            <div style={{
-              display: 'inline-block',
-              backgroundColor: 'rgba(47, 80, 106, 0.1)',
-              padding: '0.5rem 1.5rem',
-              borderRadius: '25px',
-              marginBottom: '1rem',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#2f506a'
-            }}>
-              All Sports Welcome
-            </div>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '800',
-              color: '#2f506a',
-              marginBottom: '1rem',
-              background: 'linear-gradient(135deg, #2f506a 0%, #4a7ca3 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              Open to All Sports
-            </h2>
-            <p style={{
-              fontSize: '1.2rem',
-              color: '#4a5568',
-              maxWidth: '600px',
-              margin: '0 auto',
-              lineHeight: '1.7'
-            }}>
-              From baseball diamonds to basketball courts, every sport has the power to transform young lives
-            </p>
+      {/* Beyond Baseball Section */}
+      <section className="section" style={{ backgroundColor: '#f8f8f8' }}>
+        <div className="container">
+          <div className="section-head text-center">
+            <h2>Beyond Baseball</h2>
+            <p>Expanding our mission to embrace all sports and reach more communities</p>
           </div>
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '4rem',
-            alignItems: 'center',
-            '@media (max-width: 768px)': {
-              gridTemplateColumns: '1fr',
-              gap: '2rem'
-            }
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '2rem',
+            marginTop: '2rem'
           }}>
-            {/* Content Side */}
-            <div style={{ order: 1 }}>
-              {/* Sports Icons Row */}
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-around',
-                marginBottom: '2.5rem',
-                padding: '1.5rem',
-                backgroundColor: 'white',
-                borderRadius: '20px',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-                border: '2px solid rgba(47, 80, 106, 0.1)'
+            {/* Main Content */}
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              boxShadow: '0 5px 15px rgba(0,0,0,0.1)',
+              gridColumn: '1 / -1'
+            }}>
+              <h3 style={{
+                fontSize: '1.8rem',
+                fontWeight: 'bold',
+                marginBottom: '1.5rem',
+                color: '#2f506a',
+                textAlign: 'center'
               }}>
-                {['Baseball', 'Basketball', 'Soccer', 'Football', 'Tennis', 'Volleyball'].map((sport, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      fontSize: '0.8rem',
-                      padding: '0.5rem',
-                      borderRadius: '12px',
-                      backgroundColor: '#f0f9ff',
-                      border: '2px solid #2f506a',
-                      minWidth: '80px',
-                      height: '60px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
-                      color: '#2f506a',
-                      fontWeight: 'bold',
-                      textAlign: 'center'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.transform = 'scale(1.05)';
-                      e.target.style.backgroundColor = '#2f506a';
-                      e.target.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.transform = 'scale(1)';
-                      e.target.style.backgroundColor = '#f0f9ff';
-                      e.target.style.color = '#2f506a';
-                    }}
-                  >
-                    {sport}
-                  </div>
-                ))}
-              </div>
+                All Sports Welcome
+              </h3>
 
               <div style={{
-                backgroundColor: 'white',
-                padding: '3rem',
-                borderRadius: '24px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-                border: '3px solid rgba(47, 80, 106, 0.15)',
-                position: 'relative',
-                overflow: 'hidden'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '2rem',
+                alignItems: 'center'
               }}>
-                {/* Dramatic accent border with animation effect */}
-                <div style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: '8px',
-                  background: 'linear-gradient(90deg, #e53e3e 0%, #2f506a 35%, #4a7ca3 65%, #e53e3e 100%)',
-                  borderRadius: '24px 24px 0 0'
-                }}></div>
-
-                {/* Background geometric pattern */}
-                <div style={{
-                  position: 'absolute',
-                  top: '-100px',
-                  right: '-100px',
-                  width: '300px',
-                  height: '300px',
-                  background: 'radial-gradient(circle, rgba(229, 62, 62, 0.08) 0%, transparent 70%)',
-                  borderRadius: '50%'
-                }}></div>
-
-                <div style={{ position: 'relative', zIndex: 2 }}>
-                  <h3 style={{
-                    fontSize: '2.8rem',
-                    fontWeight: '900',
-                    marginBottom: '2rem',
-                    color: '#2f506a',
-                    textAlign: 'center',
-                    textTransform: 'uppercase',
-                    letterSpacing: '2px',
-                    lineHeight: '1.2',
-                    textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
+                <div>
+                  <p style={{
+                    color: '#6b7280',
+                    lineHeight: '1.6',
+                    fontSize: '1.1rem',
+                    marginBottom: '1.5rem'
                   }}>
-                    Beyond Baseball
-                  </h3>
+                    While Kids in Motion started with <strong style={{ color: '#2f506a' }}>baseball</strong>, we now welcome coaches and directors from <strong style={{ color: '#e53e3e' }}>all sports backgrounds</strong>.
+                  </p>
 
-                  {/* Power statement section */}
-                  <div style={{
-                    backgroundColor: 'rgba(229, 62, 62, 0.05)',
-                    padding: '2.5rem',
-                    borderRadius: '20px',
-                    border: '2px solid rgba(229, 62, 62, 0.2)',
-                    marginBottom: '2.5rem',
-                    position: 'relative'
+                  <p style={{
+                    color: '#6b7280',
+                    lineHeight: '1.6',
+                    fontSize: '1.1rem',
+                    marginBottom: '2rem'
                   }}>
-                    <div style={{
-                      position: 'absolute',
-                      top: '-15px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      backgroundColor: '#e53e3e',
-                      color: 'white',
-                      padding: '0.5rem 2rem',
-                      borderRadius: '20px',
-                      fontWeight: 'bold',
-                      fontSize: '0.9rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px'
-                    }}>
-                      ALL SPORTS WELCOME
-                    </div>
+                    Whether it's basketball, soccer, football, tennis, volleyball, track & field, or any other sport, we're excited to help you bring your expertise to underserved communities.
+                  </p>
 
-                    <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                      <p style={{
-                        fontSize: '1.4rem',
-                        lineHeight: '1.7',
-                        color: '#2d3748',
-                        fontWeight: '600',
-                        marginBottom: '1.5rem'
-                      }}>
-                        Kids in Motion has <strong style={{ color: '#e53e3e' }}>evolved beyond our baseball roots</strong> to embrace coaches and directors from <strong style={{ color: '#2f506a' }}>every sport imaginable</strong>.
-                      </p>
-
-                      <p style={{
-                        fontSize: '1.2rem',
-                        lineHeight: '1.8',
-                        color: '#4a5568',
-                        fontStyle: 'italic'
-                      }}>
-                        From the basketball court to the soccer field, from tennis courts to track & field, every sport has the power to transform young lives and build stronger communities.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Impact statement */}
-                  <div style={{
-                    backgroundColor: 'rgba(47, 80, 106, 0.05)',
-                    padding: '2rem',
-                    borderRadius: '16px',
-                    border: '2px solid rgba(47, 80, 106, 0.2)',
-                    marginBottom: '2.5rem',
-                    textAlign: 'center'
-                  }}>
-                    <h4 style={{
-                      fontSize: '1.6rem',
-                      fontWeight: 'bold',
-                      color: '#2f506a',
-                      marginBottom: '1rem',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px'
-                    }}>
-                      Your Sport. Your Passion. Our Mission.
-                    </h4>
-                    <p style={{
-                      fontSize: '1.1rem',
-                      lineHeight: '1.7',
-                      color: '#2d3748',
-                      margin: 0,
-                      fontWeight: '500'
-                    }}>
-                      If you have expertise in any sport and a heart for serving underserved youth, we want you to lead the charge in bringing that sport to communities that need it most.
-                    </p>
-                  </div>
-
-                  {/* Call to Action Box - Redesigned */}
-                  <div style={{
-                    background: 'linear-gradient(135deg, #e53e3e 0%, #2f506a 100%)',
-                    color: 'white',
-                    padding: '3rem 2.5rem',
-                    borderRadius: '20px',
-                    textAlign: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    boxShadow: '0 15px 40px rgba(229, 62, 62, 0.3)'
-                  }}>
-                    {/* Dynamic background pattern */}
-                    <div style={{
-                      position: 'absolute',
-                      top: '-50%',
-                      left: '-50%',
-                      width: '200%',
-                      height: '200%',
-                      background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
-                      zIndex: 0
-                    }}></div>
-
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                      <h4 style={{
-                        fontSize: '2rem',
-                        fontWeight: '900',
-                        marginBottom: '1.5rem',
+                  <div style={{ textAlign: 'center' }}>
+                    <button
+                      onClick={handleVolunteerClick}
+                      style={{
+                        backgroundColor: '#e53e3e',
                         color: 'white',
-                        textTransform: 'uppercase',
-                        letterSpacing: '2px',
-                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
-                      }}>
-                        Ready to Lead a New Sport?
-                      </h4>
-
-                      <p style={{
-                        marginBottom: '2rem',
-                        opacity: '0.95',
-                        fontSize: '1.3rem',
-                        lineHeight: '1.6',
-                        fontWeight: '500'
-                      }}>
-                        Join our team of passionate sport directors and bring your expertise to kids who need it most.
-                      </p>
-
-                      {/* Primary CTA Button */}
-                      <button
-                        onClick={handleVolunteerClick}
-                        style={{
-                          backgroundColor: 'white',
-                          color: '#e53e3e',
-                          padding: '1.2rem 3rem',
-                          borderRadius: '12px',
-                          border: 'none',
-                          fontSize: '1.1rem',
-                          fontWeight: 'bold',
-                          textTransform: 'uppercase',
-                          letterSpacing: '1px',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease',
-                          boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
-                          marginBottom: '2rem',
-                          width: '100%',
-                          maxWidth: '350px'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.transform = 'translateY(-3px)';
-                          e.target.style.boxShadow = '0 12px 30px rgba(0,0,0,0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.transform = 'translateY(0)';
-                          e.target.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
-                        }}
-                      >
-                        Apply to Lead a Sport
-                      </button>
-
-                      {/* Contact info with modern styling */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: '1rem',
-                        marginTop: '1.5rem'
-                      }}>
-                        <div style={{
-                          backgroundColor: 'rgba(255,255,255,0.2)',
-                          padding: '1rem 1.5rem',
-                          borderRadius: '12px',
-                          fontWeight: '600',
-                          fontSize: '1rem',
-                          border: '1px solid rgba(255,255,255,0.3)'
-                        }}>
-                          kidsinmotion0@gmail.com
-                        </div>
-                        <div style={{
-                          backgroundColor: 'rgba(255,255,255,0.2)',
-                          padding: '1rem 1.5rem',
-                          borderRadius: '12px',
-                          fontWeight: '600',
-                          fontSize: '1rem',
-                          border: '1px solid rgba(255,255,255,0.3)'
-                        }}>
-                          (484) 885-6284
-                        </div>
-                      </div>
-                    </div>
+                        padding: '1rem 2rem',
+                        borderRadius: '8px',
+                        border: 'none',
+                        fontSize: '1.1rem',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = '#c53030';
+                        e.target.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = '#e53e3e';
+                        e.target.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      Apply to Lead a Sport
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Image Side */}
-            <div style={{
-              textAlign: 'center',
-              order: 2
-            }}>
-              <div style={{
-                position: 'relative',
-                display: 'inline-block',
-                padding: '1.5rem',
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,249,255,0.9) 100%)',
-                borderRadius: '30px',
-                boxShadow: '0 25px 60px rgba(0,0,0,0.15)',
-                border: '3px solid rgba(47, 80, 106, 0.2)'
-              }}>
-                {/* Decorative elements around image */}
                 <div style={{
-                  position: 'absolute',
-                  top: '-15px',
-                  left: '-15px',
-                  width: '30px',
-                  height: '30px',
-                  backgroundColor: '#e53e3e',
-                  borderRadius: '50%'
-                }}></div>
-                <div style={{
-                  position: 'absolute',
-                  top: '-10px',
-                  right: '-10px',
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#4a7ca3',
-                  borderRadius: '50%'
-                }}></div>
-                <div style={{
-                  position: 'absolute',
-                  bottom: '-10px',
-                  left: '-10px',
-                  width: '25px',
-                  height: '25px',
-                  backgroundColor: '#2f506a',
-                  borderRadius: '50%'
-                }}></div>
-
-                <DynamicImage
-                  src={assetUrls['team-huddle.jpg']}
-                  alt="Kids in Motion team building community through various sports"
-                  style={{
-                    width: '100%',
-                    maxWidth: '500px',
-                    borderRadius: '20px',
-                    boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
-                    transition: 'transform 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.transform = 'scale(1.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                  }}
-                />
-
-                {/* Image caption */}
-                <div style={{
-                  marginTop: '1.5rem',
-                  padding: '1rem',
-                  backgroundColor: 'white',
-                  borderRadius: '15px',
-                  border: '2px solid rgba(47, 80, 106, 0.1)',
-                  boxShadow: '0 5px 15px rgba(0,0,0,0.1)'
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '1rem',
+                  padding: '1rem'
                 }}>
-                  <p style={{
-                    margin: 0,
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    color: '#2f506a',
-                    fontStyle: 'italic'
-                  }}>
-                    "Building community and teamwork through all sports"
-                  </p>
+                  {['Baseball', 'Basketball', 'Soccer', 'Football', 'Tennis', 'Volleyball'].map((sport, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        backgroundColor: '#f0f9ff',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        padding: '1rem 0.5rem',
+                        textAlign: 'center',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        color: '#2f506a',
+                        transition: 'all 0.3s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.borderColor = '#2f506a';
+                        e.target.style.backgroundColor = '#2f506a';
+                        e.target.style.color = 'white';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.backgroundColor = '#f0f9ff';
+                        e.target.style.color = '#2f506a';
+                      }}
+                    >
+                      {sport}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{
+                marginTop: '2rem',
+                padding: '1.5rem',
+                backgroundColor: '#f0f9ff',
+                borderRadius: '8px',
+                border: '2px solid #e5e7eb',
+                textAlign: 'center'
+              }}>
+                <h4 style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 'bold',
+                  color: '#2f506a',
+                  marginBottom: '1rem'
+                }}>
+                  Ready to Get Started?
+                </h4>
+                <p style={{
+                  color: '#6b7280',
+                  marginBottom: '1rem',
+                  fontSize: '1rem'
+                }}>
+                  Contact us to discuss bringing your sport to Kids in Motion
+                </p>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '2rem',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ color: '#2f506a', fontWeight: '600' }}>
+                    kidsinmotion0@gmail.com
+                  </div>
+                  <div style={{ color: '#2f506a', fontWeight: '600' }}>
+                    (484) 885-6284
+                  </div>
                 </div>
               </div>
             </div>
