@@ -551,8 +551,15 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
 
 /* Mobile navbar toggler styling when menu is open */
 @media (max-width: 768px) {
+  /* Default state - white lines for hamburger */
+  .navbar-toggler span {
+    background: white !important; /* Start as white */
+    transition: background-color 0.3s ease;
+  }
+
+  /* When menu is open - blue X */
   .navbar-toggler.open span {
-    background: var(--primary) !important; /* Make X button visible when menu is open */
+    background: var(--primary) !important; /* Turn blue when menu is open (X state) */
   }
 
   /* Ensure the toggler is always visible and has good contrast */
@@ -570,8 +577,9 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
     transform: scale(1.05);
   }
 
-  .navbar-toggler:hover span {
-    background: var(--primary) !important; /* Change color on hover */
+  /* Hover effect - only change if not already open */
+  .navbar-toggler:hover:not(.open) span {
+    background: rgba(255, 255, 255, 0.8) !important; /* Slightly transparent white on hover */
   }
 
   /* Style for when navbar is scrolled */
@@ -583,6 +591,16 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   .navbar.scrolled .navbar-toggler:hover {
     background-color: rgba(47, 80, 106, 0.12);
     border-color: rgba(47, 80, 106, 0.25);
+  }
+
+  /* When scrolled, make default state slightly darker for better visibility */
+  .navbar.scrolled .navbar-toggler span {
+    background: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Keep blue when open, even when scrolled */
+  .navbar.scrolled .navbar-toggler.open span {
+    background: var(--primary) !important;
   }
 }
 
@@ -1589,6 +1607,218 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
 
 .inbox-view-all:hover {
   background: #f1f5f9;
+}
+
+/* iPhone mobile layout optimizations */
+@media only screen and (max-width: 414px) {
+  /* iPhone SE, 6, 7, 8, X, 11 Pro, 12 mini, 13 mini */
+
+  /* Application Status Card - Mobile Optimizations */
+  .application-status-card {
+    margin: 0 !important;
+    padding: 1rem !important;
+    border-radius: 8px !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .status-header {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+
+  .status-icon {
+    margin-bottom: 0.5rem !important;
+    font-size: 2rem !important;
+  }
+
+  .status-text h3 {
+    font-size: 1.2rem !important;
+    margin-bottom: 0.5rem !important;
+    word-wrap: break-word !important;
+  }
+
+  .status-title-container {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+  }
+
+  .pending-status-badge,
+  .update-status-badge {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+    margin-top: 0.25rem !important;
+  }
+
+  .teams-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    margin-top: 1rem !important;
+  }
+
+  .team-badge {
+    padding: 0.75rem !important;
+    font-size: 0.9rem !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    word-wrap: break-word !important;
+  }
+
+  .team-badge-name {
+    font-weight: 600 !important;
+    flex: 1 !important;
+  }
+
+  .team-badge-status {
+    font-size: 0.8rem !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 4px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+  }
+
+  .application-actions {
+    margin-top: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .application-actions .btn {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Volunteer Application Form - Team selection buttons */
+  .team-selection-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .team-selection-container > label {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.5rem !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    word-wrap: break-word !important;
+    font-size: 0.85rem !important;
+    border-radius: 4px !important;
+  }
+
+  /* Volunteer Dashboard View - Application details */
+  .application-details-container {
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .application-detail-item {
+    margin-bottom: 1rem !important;
+    padding: 0.75rem !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  .application-detail-label {
+    font-size: 0.9rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .application-detail-value {
+    font-size: 0.85rem !important;
+    line-height: 1.4 !important;
+    word-wrap: break-word !important;
+  }
+
+  /* Events page optimizations */
+  .events-container {
+    padding: 0.5rem !important;
+    margin: 0 !important;
+  }
+
+  .event-card {
+    margin-bottom: 1rem !important;
+    padding: 1rem !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  .event-title {
+    font-size: 1.1rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .event-description {
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .event-details {
+    font-size: 0.85rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Form inputs and buttons on iPhone */
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.75rem !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .btn {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+    padding: 0.75rem 1rem !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Navigation and header adjustments */
+  .navbar-menu {
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  .navbar-item {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  /* Container and layout fixes */
+  .container {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden !important;
+  }
+
+  * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
 }
 
 /* Inbox icon in navbar (legacy support) */

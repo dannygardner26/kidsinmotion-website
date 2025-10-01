@@ -116,6 +116,10 @@ const Layout = ({ children }) => {
     setMenuOpen(!menuOpen);
   };
 
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
@@ -147,30 +151,30 @@ const Layout = ({ children }) => {
           
           <ul className={`navbar-menu ${menuOpen ? 'open' : ''}`}>
             <li className="navbar-item">
-              <Link to="/" className={`navbar-link ${location.pathname === '/' ? 'active' : ''}`}>
+              <Link to="/" className={`navbar-link ${location.pathname === '/' ? 'active' : ''}`} onClick={closeMenu}>
                 Home
               </Link>
             </li>
             <li className="navbar-item">
-              <Link to="/events" className={`navbar-link ${location.pathname.includes('/events') ? 'active' : ''}`}>
+              <Link to="/events" className={`navbar-link ${location.pathname.includes('/events') ? 'active' : ''}`} onClick={closeMenu}>
                 Events
               </Link>
             </li>
             <li className="navbar-item">
-              <Link to="/about" className={`navbar-link ${location.pathname === '/about' ? 'active' : ''}`}>
+              <Link to="/about" className={`navbar-link ${location.pathname === '/about' ? 'active' : ''}`} onClick={closeMenu}>
                 About Us
               </Link>
             </li>
             {currentUser && (
               <li className="navbar-item">
-                <Link to="/dashboard" className={`navbar-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+                <Link to="/dashboard" className={`navbar-link ${location.pathname === '/dashboard' ? 'active' : ''}`} onClick={closeMenu}>
                   Dashboard
                 </Link>
               </li>
             )}
             {currentUser && userProfile?.roles?.includes('ROLE_ADMIN') && (
               <li className="navbar-item">
-                <Link to="/admin" className={`navbar-link ${location.pathname === '/admin' ? 'active' : ''}`}>
+                <Link to="/admin" className={`navbar-link ${location.pathname === '/admin' ? 'active' : ''}`} onClick={closeMenu}>
                   Admin
                 </Link>
               </li>
@@ -227,7 +231,7 @@ const Layout = ({ children }) => {
                           <div className="inbox-message">
                             <div className="message-item guest-welcome-message">
                               <div className="message-header">
-                                <span className="message-title">🎉 Join Our Community</span>
+                                <span className="message-title">Join Our Community</span>
                                 <span className="message-date">Now</span>
                               </div>
                               <div className="message-content">
@@ -262,12 +266,12 @@ const Layout = ({ children }) => {
                     </div>
                   </li>
                   <li className="navbar-item">
-                    <Link to="/login" className={`navbar-link ${location.pathname === '/login' ? 'active' : ''}`}>
+                    <Link to="/login" className={`navbar-link ${location.pathname === '/login' ? 'active' : ''}`} onClick={closeMenu}>
                       Login
                     </Link>
                   </li>
                   <li className="navbar-item">
-                    <Link to="/register" className="btn btn-secondary">Register</Link>
+                    <Link to="/register" className="btn btn-secondary" onClick={closeMenu}>Register</Link>
                   </li>
                 </>
               )

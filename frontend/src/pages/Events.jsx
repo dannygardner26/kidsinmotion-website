@@ -147,19 +147,19 @@ const Events = () => {
               <p>Loading events...</p>
             </div>
           ) : events.length > 0 ? (
-            <div className="row">
+            <div className="row events-container">
               {events.map((event, index) => (
-                <div 
-                  className="col-half mb-3 fade-in" 
-                  key={event.id} 
+                <div
+                  className="col-half mb-3 fade-in"
+                  key={event.id}
                   style={{ animationDelay: `${0.1 * index}s` }}
                 >
                   <div className="card event-card">
                     <div className="card-header">
-                      <h3>{event.name}</h3>
+                      <h3 className="event-title">{event.name}</h3>
                     </div>
                     <div className="card-body">
-                      <div className="event-meta">
+                      <div className="event-meta event-details">
                         <p><i className="far fa-calendar"></i> {formatDate(event.date)}</p>
                         <p><i className="fas fa-map-marker-alt"></i> {event.location || 'TBD'}</p>
                         {event.ageGroup && (
@@ -172,7 +172,7 @@ const Events = () => {
                           <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
                         )}
                       </div>
-                      <p>{event.description}</p>
+                      <p className="event-description">{event.description}</p>
                     </div>
                     <div className="card-footer">
                       <Link to={`/events/${event.id}`} className="btn btn-primary">View Details</Link>

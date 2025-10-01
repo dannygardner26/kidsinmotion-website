@@ -30,26 +30,22 @@ const Dashboard = () => {
 
   // Determine user type based on email or role
   const isVolunteer = () => {
-    if (!userProfile) return false;
-
-    // Check if user has volunteer role or email suggests volunteer account
-    const email = userProfile.email || currentUser?.email || '';
+    // Check email from userProfile or current user
+    const email = userProfile?.email || currentUser?.email || '';
 
     return email.toLowerCase().includes('volunteer') ||
-           userProfile.roles?.includes('ROLE_VOLUNTEER') ||
-           userProfile.accountType === 'volunteer';
+           userProfile?.roles?.includes('ROLE_VOLUNTEER') ||
+           userProfile?.accountType === 'volunteer';
   };
 
   // Determine if user is Kids in Motion admin
   const isAdmin = () => {
-    if (!userProfile) return false;
-
-    const email = userProfile.email || currentUser?.email || '';
+    const email = userProfile?.email || currentUser?.email || '';
 
     // Admin detection: kidsinmotion emails or specific admin roles
     return email.toLowerCase().includes('kidsinmotion') ||
-           userProfile.roles?.includes('ROLE_ADMIN') ||
-           userProfile.accountType === 'admin';
+           userProfile?.roles?.includes('ROLE_ADMIN') ||
+           userProfile?.accountType === 'admin';
   };
 
   // Format team names properly (remove dashes, capitalize)
@@ -254,12 +250,12 @@ const Dashboard = () => {
       navigate('/login');
       return;
     }
-    
-    // Fetch user data and registrations when user is available
-    if (currentUser && userProfile) {
+
+    // Fetch user data when user is available (don't wait for userProfile from backend)
+    if (currentUser && !authLoading) {
       fetchUserData();
     }
-  }, [currentUser, userProfile, authLoading, navigate]);
+  }, [currentUser, authLoading, navigate]);
   
   const fetchUserData = async () => {
     try {
@@ -449,7 +445,15 @@ const Dashboard = () => {
             };
           });
 
-          setVolunteerApplications(convertedApplications);
+          // If backend returns empty results, also fall back to Firestore to check for applications
+          if (convertedApplications.length === 0) {
+            console.log('Backend returned empty results, checking Firestore...');
+            const firestoreApplications = await loadAllVolunteerApplications();
+            console.log('Firestore applications found:', firestoreApplications.length);
+            setVolunteerApplications(firestoreApplications);
+          } else {
+            setVolunteerApplications(convertedApplications);
+          }
         } catch (backendError) {
           console.error('Failed to load from backend, falling back to localStorage:', backendError);
           // Fall back to localStorage if backend fails
@@ -1302,8 +1306,8 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        <div className="application-details">
-                          <h4>Applied Teams:</h4>
+                        <div className="application-details application-details-container">
+                          <h4 className="application-detail-label">Applied Teams:</h4>
                           <div className="teams-list">
                             {volunteerTeamSlugs.length === 0 ? (
                               <span className="team-badge status-pending">
@@ -1513,10 +1517,10 @@ const Dashboard = () => {
                                 {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                               </span>
                             </div>
-                            <div className="application-details">
-                              <p><strong>Email:</strong> {application.email}</p>
-                              <p><strong>Phone:</strong> {application.phone}</p>
-                              <p><strong>Applied Teams:</strong></p>
+                            <div className="application-details application-details-container">
+                              <p className="application-detail-item"><span className="application-detail-label">Email:</span> <span className="application-detail-value">{application.email}</span></p>
+                              <p className="application-detail-item"><span className="application-detail-label">Phone:</span> <span className="application-detail-value">{application.phone}</span></p>
+                              <p className="application-detail-item"><span className="application-detail-label">Applied Teams:</span></p>
                               <div className="teams-list">
                                 {application.selectedCategories?.map((team, idx) => {
                                   const decision = application.decisionsByRole?.[team] || (application.status === 'approved' ? 'approved' : application.status === 'denied' ? 'denied' : 'pending');
