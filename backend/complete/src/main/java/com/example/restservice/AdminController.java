@@ -76,8 +76,8 @@ public class AdminController {
             User user = userOpt.get();
 
             // Get user's registrations and volunteer activities
-            List<Participant> registrations = participantRepository.findByUserId(userId);
-            List<Volunteer> volunteerActivities = volunteerRepository.findByUserId(userId);
+            List<Participant> registrations = participantRepository.findByParentUser_Id(userId);
+            List<Volunteer> volunteerActivities = volunteerRepository.findByUser_Id(userId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("user", user);
@@ -166,7 +166,7 @@ public class AdminController {
         try {
             List<Participant> registrations;
             if (eventId != null) {
-                registrations = participantRepository.findByEventId(eventId);
+                registrations = participantRepository.findByEvent_Id(eventId);
             } else {
                 registrations = participantRepository.findAll();
             }
@@ -182,3 +182,4 @@ public class AdminController {
         }
     }
 }
+

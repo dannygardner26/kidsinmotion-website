@@ -10,7 +10,7 @@ import java.util.List;
 @Repository
 public interface VolunteerEmployeeRepository extends JpaRepository<VolunteerEmployee, Long> {
     Optional<VolunteerEmployee> findByUser(User user);
-    Optional<VolunteerEmployee> findByUserId(Long userId);
+    Optional<VolunteerEmployee> findByUser_Id(Long userId);
     List<VolunteerEmployee> findByStatus(VolunteerEmployee.EmployeeStatus status);
     List<VolunteerEmployee> findByStatusOrderByRegistrationDateDesc(VolunteerEmployee.EmployeeStatus status);
     boolean existsByUser(User user);

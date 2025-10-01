@@ -21,5 +21,5 @@ public interface VolunteerRepository extends JpaRepository<Volunteer, Long> {
     List<Volunteer> findByUserAndEvent(User user, Event event);
 
     // Admin methods
-    List<Volunteer> findByUserId(Long userId);
+    List<Volunteer> findByUser_Id(Long userId);
 }
