@@ -78,7 +78,10 @@ public class EventController {
             if (eventRequest.getPrice() != null) {
                 event.setPrice(eventRequest.getPrice());
             }
-            
+            if (eventRequest.getTargetAudience() != null) {
+                event.setTargetAudience(eventRequest.getTargetAudience());
+            }
+
             Event savedEvent = eventRepository.save(event);
             return ResponseEntity.ok(savedEvent);
             
@@ -116,7 +119,10 @@ public class EventController {
             if (eventRequest.getPrice() != null) {
                 event.setPrice(eventRequest.getPrice());
             }
-            
+            if (eventRequest.getTargetAudience() != null) {
+                event.setTargetAudience(eventRequest.getTargetAudience());
+            }
+
             Event savedEvent = eventRepository.save(event);
             return ResponseEntity.ok(savedEvent);
             
@@ -153,6 +159,7 @@ public class EventController {
         private Integer capacity;
         private String ageGroup;
         private Double price;
+        private String targetAudience;
 
         // Getters and setters
         public String getName() { return name; }
@@ -175,5 +182,8 @@ public class EventController {
         
         public Double getPrice() { return price; }
         public void setPrice(Double price) { this.price = price; }
+
+        public String getTargetAudience() { return targetAudience; }
+        public void setTargetAudience(String targetAudience) { this.targetAudience = targetAudience; }
     }
 }

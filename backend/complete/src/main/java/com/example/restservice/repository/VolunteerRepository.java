@@ -19,4 +19,7 @@ public interface VolunteerRepository extends JpaRepository<Volunteer, Long> {
 
     // Find volunteers signed up by a specific user for a specific event
     List<Volunteer> findByUserAndEvent(User user, Event event);
+
+    // Admin methods
+    List<Volunteer> findByUserId(Long userId);
 }

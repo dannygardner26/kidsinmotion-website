@@ -22,4 +22,9 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     // Count participants for a specific event
     long countByEvent(Event event);
+
+    // Admin methods
+    List<Participant> findByEventId(Long eventId);
+    List<Participant> findByUserId(Long userId);
+    List<Participant> findTop10ByOrderByIdDesc();
 }

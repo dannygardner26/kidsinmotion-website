@@ -19,6 +19,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminWebsiteStatistics = lazy(() => import('./pages/AdminWebsiteStatistics'));
 const CreateEvent = lazy(() => import('./pages/CreateEvent'));
 
 // CSS
@@ -126,6 +127,14 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <CreateEvent />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin/statistics"
+                  element={
+                    <ProtectedRoute>
+                      <AdminWebsiteStatistics />
                     </ProtectedRoute>
                   }
                 />

@@ -1,6 +1,6 @@
 import { auth } from '../firebaseConfig';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://kidsinmotion-website-839796180413.us-east4.run.app/api';
+const API_BASE_URL = 'https://kidsinmotion-website-839796180413.us-east4.run.app/api';
 
 class ApiService {
   constructor() {
@@ -345,6 +345,38 @@ class ApiService {
         adminNotes
       }),
     });
+  }
+
+  // Admin user management endpoints
+  async adminGetUsers(page = 0, size = 25, search = '') {
+    const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+    if (search.trim()) {
+      params.append('search', search.trim());
+    }
+    return this.makeRequest(`/admin/users?${params.toString()}`);
+  }
+
+  async adminGetUserDetails(userId) {
+    return this.makeRequest(`/admin/users/${userId}`);
+  }
+
+  async adminUpdateUser(userId, updates) {
+    return this.makeRequest(`/admin/users/${userId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async adminGetStats() {
+    return this.makeRequest('/admin/stats');
+  }
+
+  async adminGetRegistrations(eventId = null, page = 0, size = 25) {
+    const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+    if (eventId) {
+      params.append('eventId', eventId.toString());
+    }
+    return this.makeRequest(`/admin/registrations?${params.toString()}`);
   }
 }
 

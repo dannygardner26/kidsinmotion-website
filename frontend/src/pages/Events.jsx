@@ -71,6 +71,29 @@ const Events = () => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  // Format target audience for display
+  const formatTargetAudience = (targetAudienceJson) => {
+    if (!targetAudienceJson) return null;
+
+    try {
+      const audiences = JSON.parse(targetAudienceJson);
+      const audienceLabels = {
+        'all': 'All Users',
+        'parents': 'Parents',
+        'volunteers': 'Volunteers',
+        'approved': 'Approved Volunteers',
+        'pending': 'Pending Applications',
+        'coaches': 'Coaches',
+        'event-coordinators': 'Event Coordinators',
+        'social-media': 'Social Media Team'
+      };
+
+      return audiences.map(id => audienceLabels[id] || id).join(', ');
+    } catch (e) {
+      return null;
+    }
+  };
   
   return (
     <>
@@ -170,6 +193,9 @@ const Events = () => {
                         )}
                         {event.price && event.price > 0 && (
                           <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
+                        )}
+                        {formatTargetAudience(event.targetAudience) && (
+                          <p><i className="fas fa-user-tag"></i> For: {formatTargetAudience(event.targetAudience)}</p>
                         )}
                       </div>
                       <p className="event-description">{event.description}</p>

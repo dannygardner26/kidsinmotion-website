@@ -194,12 +194,9 @@ const AdminDashboard = () => {
           >
             Users & Registrations
           </button>
-          <button
-            className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reports')}
-          >
-            Reports
-          </button>
+          <Link to="/admin/statistics" className="tab-btn">
+            Website Statistics
+          </Link>
         </div>
 
         {activeTab === 'events' && (
@@ -553,17 +550,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'reports' && (
-          <div className="admin-section">
-            <div className="section-header">
-              <h2>Reports & Analytics</h2>
-            </div>
-            <div className="coming-soon">
-              <h3>Coming Soon</h3>
-              <p>Comprehensive reporting and analytics features will be available in the next update.</p>
-            </div>
-          </div>
-        )}
       </div>
 
       <style>{`

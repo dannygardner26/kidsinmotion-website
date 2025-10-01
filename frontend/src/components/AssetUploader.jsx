@@ -42,10 +42,10 @@ const AssetUploader = () => {
         [fileName]: url
       }));
 
-      setProgress(`✅ ${fileName} uploaded successfully!`);
+      setProgress(`${fileName} uploaded successfully!`);
       console.log(`${fileName}: ${url}`);
     } catch (error) {
-      setProgress(`❌ Error uploading ${fileName}: ${error.message}`);
+      setProgress(`Error uploading ${fileName}: ${error.message}`);
       console.error('Upload error:', error);
     }
   };
@@ -56,7 +56,7 @@ const AssetUploader = () => {
       .join('\n');
 
     navigator.clipboard.writeText(urlsText);
-    setProgress('📋 URLs copied to clipboard!');
+    setProgress('URLs copied to clipboard!');
   };
 
   return (
@@ -76,7 +76,7 @@ const AssetUploader = () => {
             />
             {uploadedUrls[fileName] && (
               <div className="mt-2">
-                <span className="text-green-600 text-xs">✅ Uploaded</span>
+                <span className="text-green-600 text-xs">Uploaded</span>
                 <img
                   src={uploadedUrls[fileName]}
                   alt={fileName}

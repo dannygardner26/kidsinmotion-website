@@ -22,7 +22,16 @@
       "WebFetch(domain:kidsinmotion-website-839796180413.us-east4.run.app)",
       "WebFetch(domain:kidsinmotionpa.org)",
       "Bash(firebase hosting:sites:get:*)",
-      "Bash(firebase hosting:channel:list:*)"
+      "Bash(firebase hosting:channel:list:*)",
+      "Bash(env)",
+      "Bash(./gradlew:*)",
+      "Bash(gcloud run services describe:*)",
+      "Bash(find:*)",
+      "Bash(NODE_ENV=development npm run build)",
+      "Bash(gcloud run deploy:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

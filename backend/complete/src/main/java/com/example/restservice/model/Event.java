@@ -34,6 +34,9 @@ public class Event {
 
     private Double price;
 
+    @Lob
+    private String targetAudience; // JSON array of category IDs for target audience
+
     public Event() {
     }
 
@@ -106,5 +109,13 @@ public class Event {
 
     public void setPrice(Double price) {
         this.price = price;
+    }
+
+    public String getTargetAudience() {
+        return targetAudience;
+    }
+
+    public void setTargetAudience(String targetAudience) {
+        this.targetAudience = targetAudience;
     }
 }

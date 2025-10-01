@@ -26,10 +26,10 @@ export const uploadAssetToFirebase = async (fileName, fileBuffer) => {
     const snapshot = await uploadBytes(storageRef, fileBuffer);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
-    console.log(`✅ Uploaded ${fileName}: ${downloadURL}`);
+    console.log(`Uploaded ${fileName}: ${downloadURL}`);
     return downloadURL;
   } catch (error) {
-    console.error(`❌ Error uploading ${fileName}:`, error);
+    console.error(`Error uploading ${fileName}:`, error);
     throw error;
   }
 };

@@ -16,7 +16,8 @@ const CreateEvent = () => {
     location: '',
     ageGroup: [],
     capacity: '',
-    price: ''
+    price: '',
+    targetAudience: []
   });
 
   // Check if user is admin
@@ -65,6 +66,35 @@ const CreateEvent = () => {
     });
   };
 
+  const handleTargetAudienceChange = (audience) => {
+    setFormData(prev => {
+      const currentAudiences = prev.targetAudience || [];
+      if (currentAudiences.includes(audience)) {
+        return {
+          ...prev,
+          targetAudience: currentAudiences.filter(a => a !== audience)
+        };
+      } else {
+        return {
+          ...prev,
+          targetAudience: [...currentAudiences, audience]
+        };
+      }
+    });
+  };
+
+  // Define available audience categories
+  const audienceCategories = [
+    { id: 'all', label: 'All Users' },
+    { id: 'parents', label: 'Parents' },
+    { id: 'volunteers', label: 'Volunteers' },
+    { id: 'approved', label: 'Approved Volunteers' },
+    { id: 'pending', label: 'Pending Applications' },
+    { id: 'coaches', label: 'Coaches' },
+    { id: 'event-coordinators', label: 'Event Coordinators' },
+    { id: 'social-media', label: 'Social Media Team' }
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -76,7 +106,8 @@ const CreateEvent = () => {
         ...formData,
         ageGroup: formData.ageGroup.length > 0 ? formData.ageGroup.join(', ') : '',
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
-        price: formData.price ? parseFloat(formData.price) : 0.0
+        price: formData.price ? parseFloat(formData.price) : 0.0,
+        targetAudience: formData.targetAudience.length > 0 ? JSON.stringify(formData.targetAudience) : null
       };
 
       await apiService.createEvent(eventData);
@@ -102,7 +133,7 @@ const CreateEvent = () => {
           <div className="col-md-8">
             <div className="card">
               <div className="card-header">
-                <p className="subtitle-fancy" style={{ color: 'white' }}>🏃‍♂️ Add a New Sports Event or Clinic for Kids! 🌟</p>
+                <p className="subtitle-fancy" style={{ color: 'white' }}>Add a New Sports Event or Clinic for Kids!</p>
               </div>
               <div className="card-body">
                 {error && (
@@ -223,6 +254,26 @@ const CreateEvent = () => {
                     </div>
                   </div>
 
+                  <div className="form-group">
+                    <label>Target Audience</label>
+                    <div className="audience-multiselect">
+                      <p className="text-muted small mb-2">Select who this event is intended for:</p>
+                      <div className="audience-grid">
+                        {audienceCategories.map(category => (
+                          <label key={category.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={formData.targetAudience.includes(category.id)}
+                              onChange={() => handleTargetAudienceChange(category.id)}
+                            />
+                            <span className="checkmark"></span>
+                            {category.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="form-actions">
                     <button
                       type="submit"
@@ -276,6 +327,20 @@ const CreateEvent = () => {
           background: white;
           max-height: 200px;
           overflow-y: auto;
+        }
+
+        .audience-multiselect {
+          border: 2px solid #e1e5e9;
+          border-radius: 4px;
+          padding: 0.75rem;
+          background: white;
+        }
+
+        .audience-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 0.5rem;
+          margin-top: 0.5rem;
         }
 
         .checkbox-label {

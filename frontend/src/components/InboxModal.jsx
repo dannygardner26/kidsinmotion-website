@@ -28,17 +28,17 @@ const InboxModal = ({ isOpen, onClose }) => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'announcement':
-        return '📢';
+        return 'Announcement';
       case 'info':
-        return 'ℹ️';
+        return 'Info';
       case 'success':
-        return '✅';
+        return 'Success';
       case 'warning':
-        return '⚠️';
+        return 'Warning';
       case 'error':
-        return '❌';
+        return 'Error';
       default:
-        return '📬';
+        return 'Message';
     }
   };
 
