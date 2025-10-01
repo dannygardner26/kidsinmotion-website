@@ -26,13 +26,14 @@ steps:
       - '--platform=managed'
       - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_DEPLOY_REGION}'
-      - '--set-env-vars=SPRING_PROFILES_ACTIVE=development'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=${PROJECT_ID}'
       - '--port=8080'
       - '--timeout=1200'
       - '--memory=2Gi'
       - '--cpu=2'
       - '--cpu-throttling'
       - '--max-instances=10'
+      - '--service-account=${PROJECT_ID}@appspot.gserviceaccount.com'
 
   # Set IAM policy to allow unauthenticated access
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'

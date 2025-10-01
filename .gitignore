@@ -18,6 +18,7 @@ target/
 # Firebase service account keys
 **/firebase-service-account.json
 **/firebase-adminsdk-*.json
+**/serviceAccountKey.json
 
 # Database files
 *.db
