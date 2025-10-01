@@ -24,7 +24,8 @@ public class FirebaseConfig {
     public FirebaseApp firebaseApp() throws IOException {
         if (FirebaseApp.getApps().isEmpty()) {
             try {
-                InputStream serviceAccount = new ClassPathResource("firebase-service-account.json").getInputStream();
+                // Try serviceAccountKey.json first (for local development)
+                InputStream serviceAccount = new ClassPathResource("serviceAccountKey.json").getInputStream();
                 GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
                 String projectId = resolveProjectId(credentials);
 
@@ -33,9 +34,10 @@ public class FirebaseConfig {
                         .setProjectId(projectId)
                         .build();
 
+                logger.info("Initializing Firebase with serviceAccountKey.json");
                 return FirebaseApp.initializeApp(options);
             } catch (Exception e) {
-                System.out.println("Using default Firebase credentials. Make sure GOOGLE_APPLICATION_CREDENTIALS is set.");
+                logger.info("serviceAccountKey.json not found, using Application Default Credentials");
 
                 GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
                 String projectId = resolveProjectId(credentials);

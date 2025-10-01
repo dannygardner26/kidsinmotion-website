@@ -5,9 +5,6 @@ import com.example.restservice.model.Role.ERole;
 import com.example.restservice.model.User;
 import com.example.restservice.repository.RoleRepository;
 import com.example.restservice.repository.UserRepository;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -15,9 +12,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import javax.annotation.PostConstruct;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,36 +22,6 @@ public class RestServiceApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(RestServiceApplication.class, args);
-    }
-
-    @PostConstruct
-    public void initializeFirebase() {
-        try {
-            if (FirebaseApp.getApps().isEmpty()) {
-                String serviceAccountPath = "src/main/resources/serviceAccountKey.json";
-                java.io.File serviceAccountFile = new java.io.File(serviceAccountPath);
-
-                FirebaseOptions options;
-                if (serviceAccountFile.exists()) {
-                    log.info("Initializing Firebase with service account key");
-                    FileInputStream serviceAccount = new FileInputStream(serviceAccountPath);
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .build();
-                } else {
-                    log.info("Initializing Firebase with Application Default Credentials");
-                    options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.getApplicationDefault())
-                            .build();
-                }
-
-                FirebaseApp.initializeApp(options);
-                log.info("Firebase Admin SDK initialized successfully!");
-            }
-        } catch (IOException e) {
-            log.error("Failed to initialize Firebase Admin SDK", e);
-            throw new RuntimeException("Firebase initialization failed", e);
-        }
     }
 
     // This bean runs once on application startup
