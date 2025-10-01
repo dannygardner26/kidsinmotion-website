@@ -53,16 +53,13 @@ public class FirebaseConfig {
     }
 
     private String resolveProjectId(GoogleCredentials credentials) {
+        String projectId = null;
+
         if (credentials instanceof ServiceAccountCredentials sac) {
-            String projectId = sac.getProjectId();
+            projectId = sac.getProjectId();
             if (hasText(projectId)) {
                 return projectId;
             }
-        }
-
-        String projectId = credentials.getProjectId();
-        if (hasText(projectId)) {
-            return projectId;
         }
 
         projectId = System.getenv("FIREBASE_PROJECT_ID");
@@ -88,3 +85,7 @@ public class FirebaseConfig {
         return value != null && !value.trim().isEmpty();
     }
 }
+
+
+
+
