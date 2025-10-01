@@ -10,5 +10,9 @@ COPY build/libs/*.jar app.jar
 # Expose the port your app runs on
 EXPOSE 8080
 
+# Set environment variables
+ENV PORT=8080
+ENV SPRING_PROFILES_ACTIVE=development
+
 # Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
