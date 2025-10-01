@@ -26,7 +26,7 @@ steps:
       - '--platform=managed'
       - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_DEPLOY_REGION}'
-      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=${PROJECT_ID}'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09'
       - '--port=8080'
       - '--timeout=1200'
       - '--memory=2Gi'

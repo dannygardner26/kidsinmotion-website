@@ -60,27 +60,33 @@ public class FirebaseConfig {
         if (credentials instanceof ServiceAccountCredentials sac) {
             projectId = sac.getProjectId();
             if (hasText(projectId)) {
+                logger.info("Resolved project ID from service account: {}", projectId);
                 return projectId;
             }
         }
 
         projectId = System.getenv("FIREBASE_PROJECT_ID");
         if (hasText(projectId)) {
+            logger.info("Resolved project ID from FIREBASE_PROJECT_ID: {}", projectId);
             return projectId;
         }
 
         projectId = System.getenv("GOOGLE_CLOUD_PROJECT");
         if (hasText(projectId)) {
+            logger.info("Resolved project ID from GOOGLE_CLOUD_PROJECT: {}", projectId);
             return projectId;
         }
 
         projectId = System.getenv("GCLOUD_PROJECT");
         if (hasText(projectId)) {
+            logger.info("Resolved project ID from GCLOUD_PROJECT: {}", projectId);
             return projectId;
         }
 
-        logger.error("Firebase project ID could not be determined. Set FIREBASE_PROJECT_ID or ensure credentials include projectId.");
-        throw new IllegalStateException("Missing Firebase project ID configuration");
+        // Hardcode as fallback for Cloud Run
+        projectId = "kids-in-motion-website-b1c09";
+        logger.warn("Could not resolve project ID from credentials or environment. Using hardcoded fallback: {}", projectId);
+        return projectId;
     }
 
     private boolean hasText(String value) {
