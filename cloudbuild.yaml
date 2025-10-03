@@ -15,7 +15,7 @@ steps:
       - 'push'
       - '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
 
-  # Deploy to Cloud Run
+    # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: 'gcloud'
     args:
@@ -26,7 +26,8 @@ steps:
       - '--platform=managed'
       - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
       - '--region=${_DEPLOY_REGION}'
-      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09,FIREBASE_ENABLED=true'
+      - '--update-secrets=GOOGLE_APPLICATION_CREDENTIALS=firebase-key:latest'
       - '--port=8080'
       - '--timeout=1200'
       - '--memory=2Gi'
@@ -34,6 +35,7 @@ steps:
       - '--cpu-throttling'
       - '--max-instances=10'
       - '--service-account=${PROJECT_ID}@appspot.gserviceaccount.com'
+
 
   # Set IAM policy to allow unauthenticated access
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
