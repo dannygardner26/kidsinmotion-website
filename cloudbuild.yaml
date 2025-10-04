@@ -9,6 +9,8 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
+      - '-f'
+      - 'Dockerfile'
       - '-t'
       - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
       - '-t'
