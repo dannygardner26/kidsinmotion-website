@@ -31,7 +31,11 @@
       "Bash(gcloud run deploy:*)",
       "Bash(tasklist)",
       "Bash(findstr:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Read(//c/Users/danny/documents/github/portfolio/**)",
+      "Read(//c/Users/danny/OneDrive/Pictures/Portfolio/**)",
+      "Bash(git checkout:*)",
+      "Bash(start index.html)"
     ],
     "deny": [],
     "ask": []

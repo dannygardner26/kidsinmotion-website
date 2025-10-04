@@ -1,8 +1,10 @@
 steps:
-  # Build the Spring Boot application with Gradle
-  - name: 'gcr.io/cloud-builders/gradle'
-    entrypoint: 'gradle'
-    args: ['build']
+  # Build the Spring Boot application with Gradle using Java 17
+  - name: 'openjdk:17-jdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'chmod +x ./gradlew && ./gradlew build'
     dir: 'backend/complete'
 
   # Build and push the container image
