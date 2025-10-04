@@ -1,19 +1,32 @@
 steps:
-  # Build the Spring Boot application using buildpacks
-  - name: 'gcr.io/k8s-skaffold/pack'
-    entrypoint: 'pack'
+  # Build the Spring Boot application with Gradle
+  - name: 'gcr.io/cloud-builders/gradle'
+    entrypoint: 'gradle'
+    args: ['build']
+    dir: 'backend/complete'
+
+  # Build and push the container image
+  - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
-      - '--builder=gcr.io/buildpacks/builder:v1'
-      - '--path=backend/complete'
-      - '--env=GOOGLE_RUNTIME_VERSION=17'
+      - '-t'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+      - '-t'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+      - '.'
+    dir: 'backend/complete'
 
   # Push the container image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+
+  # Push latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
 
   # Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
@@ -22,10 +35,10 @@ steps:
       - 'run'
       - 'services'
       - 'update'
-      - '${_SERVICE_NAME}'
+      - 'kidsinmotion-website'
       - '--platform=managed'
-      - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
-      - '--region=${_DEPLOY_REGION}'
+      - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+      - '--region=us-east4'
       - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09'
       - '--port=8080'
       - '--timeout=1200'
@@ -33,23 +46,12 @@ steps:
       - '--cpu=2'
       - '--cpu-throttling'
       - '--max-instances=10'
-      - '--service-account=${PROJECT_ID}@appspot.gserviceaccount.com'
+      - '--allow-unauthenticated'
 
-  # Set IAM policy to allow unauthenticated access
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    entrypoint: 'gcloud'
-    args:
-      - 'run'
-      - 'services'
-      - 'add-iam-policy-binding'
-      - '${_SERVICE_NAME}'
-      - '--region=${_DEPLOY_REGION}'
-      - '--member=allUsers'
-      - '--role=roles/run.invoker'
-
-# Specify which image will be pushed to registry
+# Specify which images will be pushed to registry
 images:
-  - '${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
+  - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+  - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
 
 # Build options
 options:
