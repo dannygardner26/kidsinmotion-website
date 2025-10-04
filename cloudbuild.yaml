@@ -37,9 +37,10 @@ steps:
       - 'update'
       - 'kidsinmotion-website'
       - '--platform=managed'
-      - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
-      - '--region=us-east4'
-      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09'
+      - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
+      - '--region=${_DEPLOY_REGION}'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09,FIREBASE_ENABLED=true'
+      - '--update-secrets=GOOGLE_APPLICATION_CREDENTIALS=firebase-key:latest'
       - '--port=8080'
       - '--timeout=1200'
       - '--memory=2Gi'
@@ -48,7 +49,19 @@ steps:
       - '--max-instances=10'
       - '--allow-unauthenticated'
 
-# Specify which images will be pushed to registry
+  # Set IAM policy to allow unauthenticated access
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'add-iam-policy-binding'
+      - '${_SERVICE_NAME}'
+      - '--region=${_DEPLOY_REGION}'
+      - '--member=allUsers'
+      - '--role=roles/run.invoker'
+
+# Specify which image will be pushed to registry
 images:
   - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
   - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
