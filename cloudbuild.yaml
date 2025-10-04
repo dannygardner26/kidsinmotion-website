@@ -1,13 +1,11 @@
 steps:
-  # Build the Spring Boot application with Gradle using Java 17
-  - name: 'openjdk:17-jdk'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - 'chmod +x ./gradlew && ./gradlew build'
+  # Step 1: Build the Spring Boot application with Gradle (Java 17)
+  - name: 'gradle:jdk17'
+    entrypoint: 'gradle'
+    args: ['clean', 'build']
     dir: 'backend/complete'
 
-  # Build and push the container image
+  # Step 2: Build Docker image with proper tagging
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
@@ -18,19 +16,18 @@ steps:
       - '.'
     dir: 'backend/complete'
 
-  # Push the container image
+  # Step 3: Push both tags to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
 
-  # Push latest tag
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
 
-  # Deploy to Cloud Run
+  # Step 4: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: 'gcloud'
     args:
@@ -39,8 +36,8 @@ steps:
       - 'update'
       - 'kidsinmotion-website'
       - '--platform=managed'
-      - '--image=${_AR_HOSTNAME}/${_AR_PROJECT_ID}/${_AR_REPOSITORY}/${_SERVICE_NAME}/${_SERVICE_NAME}:$COMMIT_SHA'
-      - '--region=${_DEPLOY_REGION}'
+      - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+      - '--region=us-east4'
       - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09,FIREBASE_ENABLED=true'
       - '--update-secrets=GOOGLE_APPLICATION_CREDENTIALS=firebase-key:latest'
       - '--port=8080'
@@ -50,18 +47,6 @@ steps:
       - '--cpu-throttling'
       - '--max-instances=10'
       - '--allow-unauthenticated'
-
-  # Set IAM policy to allow unauthenticated access
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    entrypoint: 'gcloud'
-    args:
-      - 'run'
-      - 'services'
-      - 'add-iam-policy-binding'
-      - '${_SERVICE_NAME}'
-      - '--region=${_DEPLOY_REGION}'
-      - '--member=allUsers'
-      - '--role=roles/run.invoker'
 
 # Specify which image will be pushed to registry
 images:
