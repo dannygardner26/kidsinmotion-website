@@ -30,6 +30,15 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test' // For testing security aspects
 }
 
+bootJar {
+	archiveFileName = 'app.jar'
+}
+
+// Only publish the Boot fat JAR for container builds
+tasks.named('jar') {
+	enabled = false
+}
+
 test {
 	useJUnitPlatform()
 }
