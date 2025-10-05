@@ -1,6 +1,6 @@
 steps:
   # Step 1: Build the Spring Boot application with Gradle (Java 17)
-  - name: 'openjdk:17-jdk'
+  - name: 'eclipse-temurin:17-jdk'
     entrypoint: 'bash'
     args:
       - '-c'
