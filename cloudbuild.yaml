@@ -31,19 +31,18 @@ steps:
       - 'push'
       - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
 
-  # Step 4: Deploy to Cloud Run
+  # Step 4: Deploy to Cloud Run (use 'deploy' so --allow-unauthenticated works)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: 'gcloud'
     args:
       - 'run'
-      - 'services'
-      - 'update'
+      - 'deploy'
       - 'kidsinmotion-website'
       - '--platform=managed'
       - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
       - '--region=us-east4'
       - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09,FIREBASE_ENABLED=true'
-      - '--update-secrets=GOOGLE_APPLICATION_CREDENTIALS=firebase-key:latest'
+      - '--set-secrets=GOOGLE_APPLICATION_CREDENTIALS=firebase-key:latest'
       - '--port=8080'
       - '--timeout=1200'
       - '--memory=2Gi'
