@@ -30,7 +30,6 @@ const Dashboard = () => {
 
   // Determine user type based on email or role
   const isVolunteer = () => {
-<<<<<<< HEAD
     if (!userProfile) return false;
 
     // Check if user has volunteer role or email suggests volunteer account
@@ -39,19 +38,10 @@ const Dashboard = () => {
     return email.toLowerCase().includes('volunteer') ||
            userProfile.roles?.includes('ROLE_VOLUNTEER') ||
            userProfile.accountType === 'volunteer';
-=======
-    // Check email from userProfile or current user
-    const email = userProfile?.email || currentUser?.email || '';
-
-    return email.toLowerCase().includes('volunteer') ||
-           userProfile?.roles?.includes('ROLE_VOLUNTEER') ||
-           userProfile?.accountType === 'volunteer';
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   };
 
   // Determine if user is Kids in Motion admin
   const isAdmin = () => {
-<<<<<<< HEAD
     if (!userProfile) return false;
 
     const email = userProfile.email || currentUser?.email || '';
@@ -60,14 +50,6 @@ const Dashboard = () => {
     return email.toLowerCase().includes('kidsinmotion') ||
            userProfile.roles?.includes('ROLE_ADMIN') ||
            userProfile.accountType === 'admin';
-=======
-    const email = userProfile?.email || currentUser?.email || '';
-
-    // Admin detection: kidsinmotion emails or specific admin roles
-    return email.toLowerCase().includes('kidsinmotion') ||
-           userProfile?.roles?.includes('ROLE_ADMIN') ||
-           userProfile?.accountType === 'admin';
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   };
 
   // Format team names properly (remove dashes, capitalize)
@@ -272,21 +254,12 @@ const Dashboard = () => {
       navigate('/login');
       return;
     }
-<<<<<<< HEAD
     
     // Fetch user data and registrations when user is available
     if (currentUser && userProfile) {
       fetchUserData();
     }
   }, [currentUser, userProfile, authLoading, navigate]);
-=======
-
-    // Fetch user data when user is available (don't wait for userProfile from backend)
-    if (currentUser && !authLoading) {
-      fetchUserData();
-    }
-  }, [currentUser, authLoading, navigate]);
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   
   const fetchUserData = async () => {
     try {
@@ -476,19 +449,7 @@ const Dashboard = () => {
             };
           });
 
-<<<<<<< HEAD
           setVolunteerApplications(convertedApplications);
-=======
-          // If backend returns empty results, also fall back to Firestore to check for applications
-          if (convertedApplications.length === 0) {
-            console.log('Backend returned empty results, checking Firestore...');
-            const firestoreApplications = await loadAllVolunteerApplications();
-            console.log('Firestore applications found:', firestoreApplications.length);
-            setVolunteerApplications(firestoreApplications);
-          } else {
-            setVolunteerApplications(convertedApplications);
-          }
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
         } catch (backendError) {
           console.error('Failed to load from backend, falling back to localStorage:', backendError);
           // Fall back to localStorage if backend fails
@@ -1341,13 +1302,8 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-<<<<<<< HEAD
                         <div className="application-details">
                           <h4>Applied Teams:</h4>
-=======
-                        <div className="application-details application-details-container">
-                          <h4 className="application-detail-label">Applied Teams:</h4>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                           <div className="teams-list">
                             {volunteerTeamSlugs.length === 0 ? (
                               <span className="team-badge status-pending">
@@ -1557,17 +1513,10 @@ const Dashboard = () => {
                                 {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                               </span>
                             </div>
-<<<<<<< HEAD
                             <div className="application-details">
                               <p><strong>Email:</strong> {application.email}</p>
                               <p><strong>Phone:</strong> {application.phone}</p>
                               <p><strong>Applied Teams:</strong></p>
-=======
-                            <div className="application-details application-details-container">
-                              <p className="application-detail-item"><span className="application-detail-label">Email:</span> <span className="application-detail-value">{application.email}</span></p>
-                              <p className="application-detail-item"><span className="application-detail-label">Phone:</span> <span className="application-detail-value">{application.phone}</span></p>
-                              <p className="application-detail-item"><span className="application-detail-label">Applied Teams:</span></p>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                               <div className="teams-list">
                                 {application.selectedCategories?.map((team, idx) => {
                                   const decision = application.decisionsByRole?.[team] || (application.status === 'approved' ? 'approved' : application.status === 'denied' ? 'denied' : 'pending');

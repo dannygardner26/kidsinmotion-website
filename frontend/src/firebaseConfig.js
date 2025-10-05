@@ -5,7 +5,6 @@ import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/fires
 import { getStorage } from "firebase/storage";
 import { getMessaging } from "firebase/messaging";
 
-<<<<<<< HEAD
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -14,19 +13,6 @@ const firebaseConfig = {
   messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
-=======
-// Firebase config - These values are SAFE to be public per Firebase documentation
-// Firebase API keys are client-side config values, not secret keys
-// Security is enforced by Firebase Security Rules, not by hiding these values
-const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY || "AIzaSyCFe7YIJX_0VtKYDYA7GVTMoJDeTTAufeg",
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN || "kids-in-motion-website-b1c09.firebaseapp.com",
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID || "kids-in-motion-website-b1c09",
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET || "kids-in-motion-website-b1c09.appspot.com",
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID || "839796180413",
-  appId: process.env.REACT_APP_FIREBASE_APP_ID || "1:839796180413:web:b7a1f41253db31e8627ed4",
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID || "G-63BGEP6TCX"
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 };
 
 // Debug: Check if Firebase config is loaded

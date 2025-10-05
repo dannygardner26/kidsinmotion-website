@@ -116,13 +116,6 @@ const Layout = ({ children }) => {
     setMenuOpen(!menuOpen);
   };
 
-<<<<<<< HEAD
-=======
-  const closeMenu = () => {
-    setMenuOpen(false);
-  };
-
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
@@ -154,50 +147,30 @@ const Layout = ({ children }) => {
           
           <ul className={`navbar-menu ${menuOpen ? 'open' : ''}`}>
             <li className="navbar-item">
-<<<<<<< HEAD
               <Link to="/" className={`navbar-link ${location.pathname === '/' ? 'active' : ''}`}>
-=======
-              <Link to="/" className={`navbar-link ${location.pathname === '/' ? 'active' : ''}`} onClick={closeMenu}>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                 Home
               </Link>
             </li>
             <li className="navbar-item">
-<<<<<<< HEAD
               <Link to="/events" className={`navbar-link ${location.pathname.includes('/events') ? 'active' : ''}`}>
-=======
-              <Link to="/events" className={`navbar-link ${location.pathname.includes('/events') ? 'active' : ''}`} onClick={closeMenu}>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                 Events
               </Link>
             </li>
             <li className="navbar-item">
-<<<<<<< HEAD
               <Link to="/about" className={`navbar-link ${location.pathname === '/about' ? 'active' : ''}`}>
-=======
-              <Link to="/about" className={`navbar-link ${location.pathname === '/about' ? 'active' : ''}`} onClick={closeMenu}>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                 About Us
               </Link>
             </li>
             {currentUser && (
               <li className="navbar-item">
-<<<<<<< HEAD
                 <Link to="/dashboard" className={`navbar-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
-=======
-                <Link to="/dashboard" className={`navbar-link ${location.pathname === '/dashboard' ? 'active' : ''}`} onClick={closeMenu}>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                   Dashboard
                 </Link>
               </li>
             )}
             {currentUser && userProfile?.roles?.includes('ROLE_ADMIN') && (
               <li className="navbar-item">
-<<<<<<< HEAD
                 <Link to="/admin" className={`navbar-link ${location.pathname === '/admin' ? 'active' : ''}`}>
-=======
-                <Link to="/admin" className={`navbar-link ${location.pathname === '/admin' ? 'active' : ''}`} onClick={closeMenu}>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                   Admin
                 </Link>
               </li>
@@ -238,72 +211,13 @@ const Layout = ({ children }) => {
                 </>
               ) : (
                 <>
-<<<<<<< HEAD
                   <li className="navbar-item">
                     <Link to="/login" className={`navbar-link ${location.pathname === '/login' ? 'active' : ''}`}>
-=======
-                  {/* Inbox for unregistered users */}
-                  <li className="navbar-item">
-                    <div className={`dropdown inbox-dropdown ${inboxOpen ? 'open' : ''}`}>
-                      <button className="navbar-link inbox-trigger" onClick={() => setInboxOpen(!inboxOpen)}>
-                        <i className="fas fa-inbox mr-2"></i>
-                        Inbox
-                        <span className="unread-badge">1</span>
-                      </button>
-                      <div className={`dropdown-menu inbox-dropdown-menu ${inboxOpen ? 'show' : ''}`}>
-                        <div className="guest-inbox-container">
-                          <div className="inbox-header">
-                            <h5>Welcome to Kids in Motion!</h5>
-                          </div>
-                          <div className="inbox-message">
-                            <div className="message-item guest-welcome-message">
-                              <div className="message-header">
-                                <span className="message-title">Join Our Community</span>
-                                <span className="message-date">Now</span>
-                              </div>
-                              <div className="message-content">
-                                <p><strong>Welcome!</strong> Create an account to:</p>
-                                <ul style={{ marginTop: '0.5rem', paddingLeft: '1.2rem' }}>
-                                  <li>Register for sports clinics</li>
-                                  <li>Receive important updates</li>
-                                  <li>Track your participation</li>
-                                  <li>Connect with our community</li>
-                                </ul>
-                                <div style={{ marginTop: '1rem' }}>
-                                  <Link
-                                    to="/register"
-                                    className="btn btn-primary"
-                                    style={{
-                                      width: '100%',
-                                      textAlign: 'center',
-                                      textDecoration: 'none',
-                                      display: 'block',
-                                      padding: '0.75rem'
-                                    }}
-                                    onClick={() => setInboxOpen(false)}
-                                  >
-                                    Sign Up Today!
-                                  </Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                  <li className="navbar-item">
-                    <Link to="/login" className={`navbar-link ${location.pathname === '/login' ? 'active' : ''}`} onClick={closeMenu}>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                       Login
                     </Link>
                   </li>
                   <li className="navbar-item">
-<<<<<<< HEAD
                     <Link to="/register" className="btn btn-secondary">Register</Link>
-=======
-                    <Link to="/register" className="btn btn-secondary" onClick={closeMenu}>Register</Link>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                   </li>
                 </>
               )

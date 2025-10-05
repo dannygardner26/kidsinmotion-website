@@ -8,11 +8,7 @@ import AdminMessaging from '../components/AdminMessaging';
 const AdminDashboard = () => {
   const { userProfile } = useAuth();
   const [events, setEvents] = useState([]);
-<<<<<<< HEAD
   const [announcements, setAnnouncements] = useState([]);
-=======
-  // const [announcements, setAnnouncements] = useState([]);
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('events');
@@ -28,11 +24,7 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchEvents();
-<<<<<<< HEAD
     fetchAnnouncements();
-=======
-    // fetchAnnouncements();
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   }, []);
 
   const fetchEvents = async () => {
@@ -61,7 +53,6 @@ const AdminDashboard = () => {
     }
   };
 
-<<<<<<< HEAD
   const fetchAnnouncements = async () => {
     try {
       const announcementsData = await apiService.getAllAnnouncements();
@@ -71,18 +62,6 @@ const AdminDashboard = () => {
       setError(error.message);
     }
   };
-=======
-  // Announcements feature disabled
-  // const fetchAnnouncements = async () => {
-  //   try {
-  //     const announcementsData = await apiService.getAllAnnouncements();
-  //     setAnnouncements(announcementsData);
-  //   } catch (error) {
-  //     console.error('Error fetching announcements:', error);
-  //     setError(error.message);
-  //   }
-  // };
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 
   const handleAnnouncementFormChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -195,21 +174,12 @@ const AdminDashboard = () => {
           >
             Events Management
           </button>
-<<<<<<< HEAD
           <button
-=======
-          {/* Announcements feature disabled */}
-          {/* <button
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
             className={`tab-btn ${activeTab === 'announcements' ? 'active' : ''}`}
             onClick={() => setActiveTab('announcements')}
           >
             Announcements
-<<<<<<< HEAD
           </button>
-=======
-          </button> */}
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
           <button
             className={`tab-btn ${activeTab === 'messaging' ? 'active' : ''}`}
             onClick={() => setActiveTab('messaging')}
@@ -222,18 +192,12 @@ const AdminDashboard = () => {
           >
             Users & Registrations
           </button>
-<<<<<<< HEAD
           <button
             className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => setActiveTab('reports')}
           >
             Reports
           </button>
-=======
-          <Link to="/admin/statistics" className="tab-btn">
-            Website Statistics
-          </Link>
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
         </div>
 
         {activeTab === 'events' && (
@@ -587,7 +551,6 @@ const AdminDashboard = () => {
           </div>
         )}
 
-<<<<<<< HEAD
         {activeTab === 'reports' && (
           <div className="admin-section">
             <div className="section-header">
@@ -599,8 +562,6 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
-=======
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
       </div>
 
       <style>{`

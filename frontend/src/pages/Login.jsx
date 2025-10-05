@@ -22,12 +22,7 @@ const Login = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log("User signed in, navigating:", user);
-<<<<<<< HEAD
-=======
-        // Force page refresh after navigation to ensure proper dashboard loading
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
         navigate(redirectUrl, { replace: true });
-        window.location.reload();
       } else {
         console.log("User not signed in.");
         setIsLoading(false); // Ensure loading is false if no user
@@ -84,14 +79,8 @@ const Login = () => {
           localStorage.setItem('testUser', JSON.stringify(userData));
           localStorage.setItem('isTestAdmin', 'true');
 
-<<<<<<< HEAD
           // Navigate to dashboard
           navigate('/dashboard');
-=======
-          // Navigate to dashboard and force refresh
-          navigate('/dashboard');
-          window.location.reload();
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
           return;
         } else {
           throw new Error('Test admin login failed');

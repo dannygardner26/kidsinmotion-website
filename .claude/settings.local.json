@@ -1,7 +1,6 @@
 {
   "permissions": {
     "allow": [
-<<<<<<< HEAD
       "Bash(find:*)",
       "Bash(./gradlew build:*)",
       "Bash(npm run build:*)",
@@ -35,48 +34,5 @@
       "Bash(Stop-Process -Id 38624 -Force)"
     ],
     "deny": []
-=======
-      "Bash(java:*)",
-      "Bash(./java17/jdk-17.0.2/bin/java:*)",
-      "Bash(firebase --version)",
-      "Bash(npm install:*)",
-      "Bash(firebase login:*)",
-      "Bash(firebase use:*)",
-      "Bash(firebase projects:list:*)",
-      "Bash(firebase deploy:*)",
-      "Bash(nslookup:*)",
-      "WebFetch(domain:kids-in-motion-website-b1c09.web.app)",
-      "Bash(git config:*)",
-      "Bash(git update-index:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git rm:*)",
-      "Bash(npm run build:*)",
-      "Bash(curl:*)",
-      "WebFetch(domain:kidsinmotion-website-839796180413.us-east4.run.app)",
-      "WebFetch(domain:kidsinmotionpa.org)",
-      "Bash(firebase hosting:sites:get:*)",
-      "Bash(firebase hosting:channel:list:*)",
-      "Bash(env)",
-      "Bash(./gradlew:*)",
-      "Bash(gcloud run services describe:*)",
-      "Bash(find:*)",
-      "Bash(NODE_ENV=development npm run build)",
-      "Bash(gcloud run deploy:*)",
-      "Bash(tasklist)",
-      "Bash(findstr:*)",
-      "Bash(taskkill:*)",
-      "Read(//c/Users/danny/documents/github/portfolio/**)",
-      "Read(//c/Users/danny/OneDrive/Pictures/Portfolio/**)",
-      "Bash(git checkout:*)",
-      "Bash(start index.html)",
-      "Bash(gcloud builds triggers:*)",
-      "Bash(gcloud config get-value:*)",
-      "Bash(gcloud config:*)"
-    ],
-    "deny": [],
-    "ask": []
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
   }
 }

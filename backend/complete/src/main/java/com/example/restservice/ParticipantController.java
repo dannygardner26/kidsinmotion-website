@@ -18,7 +18,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-// CORS handled by WebSecurityConfig - removed wildcard origin for security
+@CrossOrigin(origins = "*", maxAge = 3600) // Allow all origins for now
 @RestController
 @RequestMapping("/api/participants")
 public class ParticipantController {

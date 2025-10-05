@@ -18,7 +18,6 @@ target/
 # Firebase service account keys
 **/firebase-service-account.json
 **/firebase-adminsdk-*.json
-**/serviceAccountKey.json
 
 # Database files
 *.db
@@ -115,5 +114,3 @@ temp/
 .gradle/
 gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
-java17/
-openjdk-17.zip

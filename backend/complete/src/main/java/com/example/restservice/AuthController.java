@@ -27,11 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-<<<<<<< HEAD
 @CrossOrigin(origins = "*", maxAge = 3600)
-=======
-// CORS handled by WebSecurityConfig - removed wildcard origin for security
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -53,15 +49,8 @@ public class AuthController {
     @PostMapping("/sync-user")
     public ResponseEntity<?> syncUser(HttpServletRequest request) {
         try {
-<<<<<<< HEAD
             String firebaseUid = (String) request.getAttribute("firebaseUid");
             String email = (String) request.getAttribute("firebaseEmail");
-=======
-            logger.info("AuthController: sync-user endpoint called");
-            String firebaseUid = (String) request.getAttribute("firebaseUid");
-            String email = (String) request.getAttribute("firebaseEmail");
-            logger.info("AuthController: firebaseUid={}, email={}", firebaseUid, email);
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
             
             if (firebaseUid == null || email == null) {
                 return ResponseEntity.badRequest()

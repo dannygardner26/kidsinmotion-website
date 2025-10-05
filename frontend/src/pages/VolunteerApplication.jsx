@@ -7,10 +7,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 
 const APPLICATION_STORE_KEY = 'volunteer_applications_global';
-<<<<<<< HEAD
-=======
-const FALLBACK_VERSION = '2.0.1';
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 
 const readGlobalApplications = () => {
   try {
@@ -489,7 +485,6 @@ const VolunteerApplication = () => {
     setApplicationStatus('submitted');
     setIsEditing(true);
 
-<<<<<<< HEAD
     // **PRIORITY 1: Submit to backend API first**
     try {
       const backendData = {
@@ -541,128 +536,6 @@ const VolunteerApplication = () => {
       console.error('Backend submission failed:', error);
       showCustomNotification('Failed to submit application to server. Please try again.', 'error');
       return; // Don't proceed with local save if backend fails
-=======
-    // **PRIORITY 1: Submit to backend API first (only for logged-in users)**
-    if (isLoggedIn) {
-      try {
-        const backendData = {
-          grade: formData.grade,
-          school: formData.school,
-          preferredContact: formData.preferredContact.join(', '), // Convert array to string for backend
-          motivation: formData.motivation,
-          skills: formData.skills,
-          // Include profile fields to update user account
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phoneNumber: formData.phone,
-          resumeLink: formData.resume,
-          portfolioLink: formData.portfolioLink
-        };
-
-        const response = await apiService.registerVolunteerEmployee(backendData);
-        console.log('Backend volunteer employee registration successful:', response);
-
-        // **STEP 2: Apply to each selected team**
-        console.log('Selected categories for team applications:', formData.selectedCategories);
-        console.log('Dynamic answers:', formData.dynamicAnswers);
-        console.log('Available categories:', categories);
-        for (const categorySlug of formData.selectedCategories) {
-          try {
-            console.log(`Processing category slug: ${categorySlug}`);
-            const teamName = categories.find(cat => cat.toLowerCase().replace(/\s+/g, '-') === categorySlug);
-            console.log(`Found team name: ${teamName}`);
-            const teamApplicationData = {
-              teamName: teamName,
-              teamSpecificAnswer: formData.dynamicAnswers[categorySlug] || ''
-            };
-            console.log(`Team application data:`, teamApplicationData);
-
-            const teamResponse = await apiService.applyToTeam(teamApplicationData);
-            console.log(`Team application successful for ${teamName}:`, teamResponse);
-          } catch (teamError) {
-            console.error(`Failed to apply to team ${categorySlug}:`, teamError);
-            showCustomNotification(`Failed to apply to ${categories.find(cat => cat.toLowerCase().replace(/\s+/g, '-') === categorySlug)} team. Please try again.`, 'error');
-            return;
-          }
-        }
-
-        // Backend submission successful - update local status to match
-        setApplicationStatus('submitted');
-        setLastSaved(new Date().toISOString());
-
-      } catch (error) {
-        console.error('Backend submission failed:', error);
-        console.log('Falling back to local storage for logged-in user due to backend error - version:', FALLBACK_VERSION, 'timestamp:', Date.now());
-
-        // Fall back to Firestore for logged-in users when backend fails
-        try {
-          const fallbackData = {
-            ...formData,
-            submittedAt: new Date().toISOString(),
-            status: 'submitted',
-            backendFailure: true,
-            fallbackTimestamp: Date.now()
-          };
-
-          await syncApplicationCaches(auth.currentUser?.uid, fallbackData);
-
-          setApplicationStatus('submitted');
-          setLastSaved(new Date().toISOString());
-
-          showCustomNotification(
-            'Application submitted successfully! Your data has been saved locally and will sync when the server is available.',
-            'success'
-          );
-
-          return; // Successfully saved locally
-        } catch (localError) {
-          console.error('Local save also failed:', localError);
-          showCustomNotification('Failed to submit application. Please try again later.', 'error');
-          return;
-        }
-      }
-    } else {
-      // **UNAUTHORIZED USER: Save to Firestore and prompt for account creation**
-      console.log('Saving application for unauthorized user to Firestore');
-
-      try {
-        // Generate a unique ID for the guest application
-        const guestApplicationId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-        const guestApplicationData = {
-          id: guestApplicationId,
-          ...formData,
-          submittedAt: new Date().toISOString(),
-          status: 'pending_account_creation',
-          type: 'guest_application'
-        };
-
-        // Save to Firestore in a guest applications collection
-        await setDoc(doc(db, 'guestVolunteerApplications', guestApplicationId), guestApplicationData);
-
-        console.log('Guest application saved to Firestore:', guestApplicationId);
-
-        // Update UI
-        setApplicationStatus('submitted');
-        setLastSaved(new Date().toISOString());
-
-        // Show success message with account creation prompt
-        showCustomNotification(
-          'Application submitted successfully! Please create an account to complete the process and access your dashboard.',
-          'success'
-        );
-
-        // Optionally redirect to registration page after a delay
-        setTimeout(() => {
-          window.location.href = `/register?applicationId=${guestApplicationId}&email=${encodeURIComponent(formData.email)}`;
-        }, 3000);
-
-      } catch (error) {
-        console.error('Failed to save guest application:', error);
-        showCustomNotification('Failed to submit application. Please try again.', 'error');
-        return;
-      }
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
     }
 
     // **FALLBACK: Save to local caches as backup**
@@ -1150,11 +1023,7 @@ const VolunteerApplication = () => {
                 }}>
                   Which teams would you like to join? (Select all that apply) *
                 </label>
-<<<<<<< HEAD
                 <div style={{
-=======
-                <div className="team-selection-container" style={{
->>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                   gap: '0.75rem',
