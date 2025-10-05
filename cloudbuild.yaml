@@ -4,18 +4,18 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'chmod +x ./gradlew && ./gradlew clean build --no-daemon'
+      - 'apt-get update && apt-get install -y git && chmod +x ./gradlew && ./gradlew clean build --no-daemon --stacktrace'
     dir: 'backend/complete'
 
-  # Step 2: Build Docker image with proper tagging
+  # Step 2: Build Docker image with proper tagging (force Dockerfile usage)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '-f'
-      - 'Dockerfile'
-      - '-t'
+      - '--file'
+      - './Dockerfile'
+      - '--tag'
       - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
-      - '-t'
+      - '--tag'
       - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
       - '.'
     dir: 'backend/complete'

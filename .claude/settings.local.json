@@ -35,7 +35,9 @@
       "Read(//c/Users/danny/documents/github/portfolio/**)",
       "Read(//c/Users/danny/OneDrive/Pictures/Portfolio/**)",
       "Bash(git checkout:*)",
-      "Bash(start index.html)"
+      "Bash(start index.html)",
+      "Bash(gcloud builds triggers:*)",
+      "Bash(gcloud config get-value:*)"
     ],
     "deny": [],
     "ask": []
