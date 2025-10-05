@@ -28,6 +28,7 @@ const InboxModal = ({ isOpen, onClose }) => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'announcement':
+<<<<<<< HEAD
         return '📢';
       case 'info':
         return 'ℹ️';
@@ -39,6 +40,19 @@ const InboxModal = ({ isOpen, onClose }) => {
         return '❌';
       default:
         return '📬';
+=======
+        return 'Announcement';
+      case 'info':
+        return 'Info';
+      case 'success':
+        return 'Success';
+      case 'warning':
+        return 'Warning';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Message';
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
     }
   };
 
@@ -119,8 +133,14 @@ const InboxModal = ({ isOpen, onClose }) => {
             padding: '1rem 1.5rem',
             borderBottom: '1px solid #e5e7eb',
             display: 'flex',
+<<<<<<< HEAD
             gap: '1rem',
             backgroundColor: '#f8f9fa'
+=======
+            gap: '0.5rem',
+            backgroundColor: '#f8f9fa',
+            flexWrap: 'wrap'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
           }}>
             {unreadCount > 0 && (
               <button
@@ -129,12 +149,24 @@ const InboxModal = ({ isOpen, onClose }) => {
                   background: 'none',
                   border: '1px solid #2f506a',
                   color: '#2f506a',
+<<<<<<< HEAD
                   padding: '0.5rem 1rem',
                   borderRadius: '6px',
                   fontSize: '0.9rem',
                   cursor: 'pointer',
                   fontWeight: '500',
                   transition: 'all 0.2s'
+=======
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  flex: '1',
+                  minWidth: 'fit-content',
+                  whiteSpace: 'nowrap'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#2f506a';
@@ -145,7 +177,11 @@ const InboxModal = ({ isOpen, onClose }) => {
                   e.target.style.color = '#2f506a';
                 }}
               >
+<<<<<<< HEAD
                 Mark all as read
+=======
+                Mark all read
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
               </button>
             )}
             {currentUser && (
@@ -155,12 +191,24 @@ const InboxModal = ({ isOpen, onClose }) => {
                   background: 'none',
                   border: '1px solid #dc2626',
                   color: '#dc2626',
+<<<<<<< HEAD
                   padding: '0.5rem 1rem',
                   borderRadius: '6px',
                   fontSize: '0.9rem',
                   cursor: 'pointer',
                   fontWeight: '500',
                   transition: 'all 0.2s'
+=======
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: '6px',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  transition: 'all 0.2s',
+                  flex: '1',
+                  minWidth: 'fit-content',
+                  whiteSpace: 'nowrap'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.backgroundColor = '#dc2626';
@@ -211,6 +259,7 @@ const InboxModal = ({ isOpen, onClose }) => {
                   e.currentTarget.style.backgroundColor = notification.isRead ? 'transparent' : '#f0f9ff';
                 }}
               >
+<<<<<<< HEAD
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
                   <div style={{ fontSize: '1.5rem', flexShrink: 0 }}>
                     {getNotificationIcon(notification.type)}
@@ -224,17 +273,43 @@ const InboxModal = ({ isOpen, onClose }) => {
                         fontWeight: notification.isRead ? '500' : '700',
                         color: notification.isRead ? '#374151' : '#1f2937',
                         lineHeight: '1.4'
+=======
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                  <div style={{ fontSize: '1.25rem', flexShrink: 0, marginTop: '0.125rem' }}>
+                    {getNotificationIcon(notification.type)}
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <h4 style={{
+                        margin: 0,
+                        fontSize: '0.95rem',
+                        fontWeight: notification.isRead ? '500' : '700',
+                        color: notification.isRead ? '#374151' : '#1f2937',
+                        lineHeight: '1.4',
+                        wordBreak: 'break-word',
+                        flex: 1,
+                        paddingRight: '0.5rem'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                       }}>
                         {notification.title}
                       </h4>
                       {!notification.isRead && (
                         <div style={{
+<<<<<<< HEAD
                           width: '8px',
                           height: '8px',
                           backgroundColor: '#dc2626',
                           borderRadius: '50%',
                           flexShrink: 0,
                           marginLeft: '0.5rem',
+=======
+                          width: '6px',
+                          height: '6px',
+                          backgroundColor: '#dc2626',
+                          borderRadius: '50%',
+                          flexShrink: 0,
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                           marginTop: '0.5rem'
                         }} />
                       )}
@@ -242,15 +317,39 @@ const InboxModal = ({ isOpen, onClose }) => {
 
                     <p style={{
                       margin: '0 0 0.75rem 0',
+<<<<<<< HEAD
                       fontSize: '0.95rem',
                       color: '#6b7280',
                       lineHeight: '1.5'
+=======
+                      fontSize: '0.9rem',
+                      color: '#6b7280',
+                      lineHeight: '1.5',
+                      wordBreak: 'break-word',
+                      overflow: 'hidden'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                     }}>
                       {notification.message}
                     </p>
 
+<<<<<<< HEAD
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+=======
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem'
+                    }}>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: '#9ca3af',
+                        wordBreak: 'break-word',
+                        flex: '1 1 auto'
+                      }}>
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                         {notification.from && <span>{notification.from} • </span>}
                         {formatDate(notification.createdAt)}
                       </div>
@@ -266,10 +365,18 @@ const InboxModal = ({ isOpen, onClose }) => {
                             border: 'none',
                             color: '#9ca3af',
                             cursor: 'pointer',
+<<<<<<< HEAD
                             padding: '0.25rem',
                             borderRadius: '4px',
                             fontSize: '0.8rem',
                             transition: 'color 0.2s'
+=======
+                            padding: '0.25rem 0.5rem',
+                            borderRadius: '4px',
+                            fontSize: '0.75rem',
+                            transition: 'color 0.2s',
+                            flexShrink: 0
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                           }}
                           onMouseEnter={(e) => e.target.style.color = '#dc2626'}
                           onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
@@ -284,7 +391,15 @@ const InboxModal = ({ isOpen, onClose }) => {
                 {/* Special handling for sign-in message */}
                 {notification.id === 'signin-prompt' && (
                   <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e5e7eb' }}>
+<<<<<<< HEAD
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+=======
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
+                    }}>
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                       <Link
                         to="/login"
                         onClick={() => {
@@ -293,12 +408,24 @@ const InboxModal = ({ isOpen, onClose }) => {
                         style={{
                           backgroundColor: '#2f506a',
                           color: 'white',
+<<<<<<< HEAD
                           padding: '0.5rem 1rem',
                           borderRadius: '6px',
                           textDecoration: 'none',
                           fontSize: '0.9rem',
                           fontWeight: '500',
                           transition: 'background-color 0.2s'
+=======
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          transition: 'background-color 0.2s',
+                          flex: '1',
+                          textAlign: 'center',
+                          minWidth: 'fit-content'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#1e3a52'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = '#2f506a'}
@@ -311,12 +438,24 @@ const InboxModal = ({ isOpen, onClose }) => {
                         style={{
                           backgroundColor: '#e53e3e',
                           color: 'white',
+<<<<<<< HEAD
                           padding: '0.5rem 1rem',
                           borderRadius: '6px',
                           textDecoration: 'none',
                           fontSize: '0.9rem',
                           fontWeight: '500',
                           transition: 'background-color 0.2s'
+=======
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          textDecoration: 'none',
+                          fontSize: '0.85rem',
+                          fontWeight: '500',
+                          transition: 'background-color 0.2s',
+                          flex: '1',
+                          textAlign: 'center',
+                          minWidth: 'fit-content'
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                         }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#c53030'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = '#e53e3e'}

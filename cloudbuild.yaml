@@ -1,0 +1,65 @@
+steps:
+  # Step 1: Build the Spring Boot application with Gradle (Java 17)
+  - name: 'eclipse-temurin:17-jdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - 'apt-get update && apt-get install -y git && chmod +x ./gradlew && ./gradlew clean build --no-daemon --stacktrace'
+    dir: 'backend/complete'
+
+  # Step 2: Build Docker image with proper tagging (force Dockerfile usage)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--file'
+      - './Dockerfile'
+      - '--tag'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+      - '--tag'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+      - '.'
+    dir: 'backend/complete'
+
+  # Step 3: Push both tags to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+
+  # Step 4: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'update'
+      - 'kidsinmotion-website'
+      - '--platform=managed'
+      - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+      - '--region=us-east4'
+      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,GOOGLE_CLOUD_PROJECT=kids-in-motion-website-b1c09,FIREBASE_PROJECT_ID=kids-in-motion-website-b1c09,FIREBASE_ENABLED=true'
+      - '--update-secrets=GOOGLE_APPLICATION_CREDENTIALS=firebase-key:latest'
+      - '--port=8080'
+      - '--timeout=1200'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--cpu-throttling'
+      - '--max-instances=10'
+      - '--allow-unauthenticated'
+
+# Specify which image will be pushed to registry
+images:
+  - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
+  - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+
+# Build options
+options:
+  substitutionOption: ALLOW_LOOSE
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY

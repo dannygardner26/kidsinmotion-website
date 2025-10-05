@@ -19,6 +19,10 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+<<<<<<< HEAD
+=======
+const AdminWebsiteStatistics = lazy(() => import('./pages/AdminWebsiteStatistics'));
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 const CreateEvent = lazy(() => import('./pages/CreateEvent'));
 
 // CSS
@@ -129,6 +133,17 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+<<<<<<< HEAD
+=======
+                <Route
+                  path="/admin/statistics"
+                  element={
+                    <ProtectedRoute>
+                      <AdminWebsiteStatistics />
+                    </ProtectedRoute>
+                  }
+                />
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 
                 {/* Catch-all Not Found Route */}
                 <Route path="*" element={<NotFound />} />

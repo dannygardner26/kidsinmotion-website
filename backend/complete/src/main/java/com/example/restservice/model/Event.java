@@ -33,6 +33,12 @@ public class Event {
     private String ageGroup;
 
     private Double price;
+<<<<<<< HEAD
+=======
+
+    @Lob
+    private String targetAudience; // JSON array of category IDs for target audience
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 
     public Event() {
     }
@@ -107,4 +113,15 @@ public class Event {
     public void setPrice(Double price) {
         this.price = price;
     }
+<<<<<<< HEAD
+=======
+
+    public String getTargetAudience() {
+        return targetAudience;
+    }
+
+    public void setTargetAudience(String targetAudience) {
+        this.targetAudience = targetAudience;
+    }
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 }

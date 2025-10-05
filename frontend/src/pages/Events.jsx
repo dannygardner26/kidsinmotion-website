@@ -71,6 +71,29 @@ const Events = () => {
     const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
+  // Format target audience for display
+  const formatTargetAudience = (targetAudienceJson) => {
+    if (!targetAudienceJson) return null;
+
+    try {
+      const audiences = JSON.parse(targetAudienceJson);
+      const audienceLabels = {
+        'all': 'All Users',
+        'parents': 'Parents',
+        'volunteers': 'Volunteers',
+        'approved': 'Approved Volunteers',
+        'pending': 'Pending Applications',
+        'coaches': 'Coaches',
+        'event-coordinators': 'Event Coordinators',
+        'social-media': 'Social Media Team'
+      };
+
+      return audiences.map(id => audienceLabels[id] || id).join(', ');
+    } catch (e) {
+      return null;
+    }
+  };
   
   return (
     <>
@@ -147,19 +170,34 @@ const Events = () => {
               <p>Loading events...</p>
             </div>
           ) : events.length > 0 ? (
+<<<<<<< HEAD
             <div className="row">
               {events.map((event, index) => (
                 <div 
                   className="col-half mb-3 fade-in" 
                   key={event.id} 
+=======
+            <div className="row events-container">
+              {events.map((event, index) => (
+                <div
+                  className="col-half mb-3 fade-in"
+                  key={event.id}
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                   style={{ animationDelay: `${0.1 * index}s` }}
                 >
                   <div className="card event-card">
                     <div className="card-header">
+<<<<<<< HEAD
                       <h3>{event.name}</h3>
                     </div>
                     <div className="card-body">
                       <div className="event-meta">
+=======
+                      <h3 className="event-title">{event.name}</h3>
+                    </div>
+                    <div className="card-body">
+                      <div className="event-meta event-details">
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                         <p><i className="far fa-calendar"></i> {formatDate(event.date)}</p>
                         <p><i className="fas fa-map-marker-alt"></i> {event.location || 'TBD'}</p>
                         {event.ageGroup && (
@@ -171,8 +209,16 @@ const Events = () => {
                         {event.price && event.price > 0 && (
                           <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
                         )}
+<<<<<<< HEAD
                       </div>
                       <p>{event.description}</p>
+=======
+                        {formatTargetAudience(event.targetAudience) && (
+                          <p><i className="fas fa-user-tag"></i> For: {formatTargetAudience(event.targetAudience)}</p>
+                        )}
+                      </div>
+                      <p className="event-description">{event.description}</p>
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
                     </div>
                     <div className="card-footer">
                       <Link to={`/events/${event.id}`} className="btn btn-primary">View Details</Link>

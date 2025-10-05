@@ -22,7 +22,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+<<<<<<< HEAD
 @CrossOrigin(origins = "*", maxAge = 3600)
+=======
+// CORS handled by WebSecurityConfig - removed wildcard origin for security
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 @RestController
 @RequestMapping("/api/volunteer")
 public class VolunteerEmployeeController {

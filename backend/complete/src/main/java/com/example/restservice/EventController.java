@@ -14,7 +14,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-@CrossOrigin(origins = "*", maxAge = 3600) // Allow all origins for now
+// CORS handled by WebSecurityConfig - removed wildcard origin for security
 @RestController
 @RequestMapping("/api/events")
 public class EventController {
@@ -78,7 +78,14 @@ public class EventController {
             if (eventRequest.getPrice() != null) {
                 event.setPrice(eventRequest.getPrice());
             }
+<<<<<<< HEAD
             
+=======
+            if (eventRequest.getTargetAudience() != null) {
+                event.setTargetAudience(eventRequest.getTargetAudience());
+            }
+
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
             Event savedEvent = eventRepository.save(event);
             return ResponseEntity.ok(savedEvent);
             
@@ -116,7 +123,14 @@ public class EventController {
             if (eventRequest.getPrice() != null) {
                 event.setPrice(eventRequest.getPrice());
             }
+<<<<<<< HEAD
             
+=======
+            if (eventRequest.getTargetAudience() != null) {
+                event.setTargetAudience(eventRequest.getTargetAudience());
+            }
+
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
             Event savedEvent = eventRepository.save(event);
             return ResponseEntity.ok(savedEvent);
             
@@ -153,6 +167,10 @@ public class EventController {
         private Integer capacity;
         private String ageGroup;
         private Double price;
+<<<<<<< HEAD
+=======
+        private String targetAudience;
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 
         // Getters and setters
         public String getName() { return name; }
@@ -175,5 +193,11 @@ public class EventController {
         
         public Double getPrice() { return price; }
         public void setPrice(Double price) { this.price = price; }
+<<<<<<< HEAD
+=======
+
+        public String getTargetAudience() { return targetAudience; }
+        public void setTargetAudience(String targetAudience) { this.targetAudience = targetAudience; }
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
     }
 }

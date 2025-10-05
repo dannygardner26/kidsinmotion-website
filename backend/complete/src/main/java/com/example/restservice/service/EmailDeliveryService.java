@@ -18,10 +18,17 @@ public class EmailDeliveryService {
     @Autowired(required = false)
     private JavaMailSender mailSender;
 
+<<<<<<< HEAD
     @Value("")
     private boolean emailEnabled;
 
     @Value("")
+=======
+    @Value("${app.messaging.email.enabled:false}")
+    private boolean emailEnabled;
+
+    @Value("${app.messaging.email.from:no-reply@kidsinmotion.org}")
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
     private String defaultFromAddress;
 
     public boolean isEnabled() {

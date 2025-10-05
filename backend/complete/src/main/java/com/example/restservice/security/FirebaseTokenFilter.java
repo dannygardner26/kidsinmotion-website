@@ -46,6 +46,7 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
         // Check for test-admin-token first, even when Firebase is disabled
         String authHeader = request.getHeader("Authorization");
+<<<<<<< HEAD
         System.out.println("DEBUG: Authorization header: " + authHeader);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -55,6 +56,21 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             // Handle test admin token for development (works even when Firebase is disabled)
             if ("test-admin-token".equals(idToken)) {
                 System.out.println("DEBUG: Processing test-admin-token");
+=======
+        if (logger.isDebugEnabled()) {
+            logger.debug("Processing authentication request");
+        }
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String idToken = authHeader.substring(7);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Extracted Bearer token");
+            }
+
+            // Handle test admin token for development (works even when Firebase is disabled)
+            if ("test-admin-token".equals(idToken)) {
+                logger.warn("Using test admin token - should only be used in development!");
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 
                 // Create authentication for test admin user
                 List<SimpleGrantedAuthority> authorities = resolveAuthorities("test-admin-uid", true);

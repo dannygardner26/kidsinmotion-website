@@ -1,14 +1,22 @@
 package com.example.restservice.config;
 
+<<<<<<< HEAD
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.firestore.Firestore;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
+=======
+import com.google.cloud.firestore.Firestore;
+import com.google.firebase.cloud.FirestoreClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+<<<<<<< HEAD
 import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -58,13 +66,34 @@ public class FirestoreConfig {
     @Bean
     public Firestore firestore() {
         if (!firebaseEnabled) {
+=======
+@Configuration
+public class FirestoreConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(FirestoreConfig.class);
+
+    @Value("${firebase.enabled:true}")
+    private boolean firebaseEnabled;
+
+    @Bean
+    public Firestore firestore() {
+        if (!firebaseEnabled) {
+            logger.info("Firebase is disabled - skipping Firestore bean creation");
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
             return null;
         }
 
         try {
+<<<<<<< HEAD
             return FirestoreClient.getFirestore();
         } catch (Exception e) {
             System.err.println("Failed to get Firestore client: " + e.getMessage());
+=======
+            logger.info("Creating Firestore client from Firebase instance");
+            return FirestoreClient.getFirestore();
+        } catch (Exception e) {
+            logger.error("Failed to get Firestore client: {}", e.getMessage(), e);
+>>>>>>> db03c1d12b4d8355fc970330f2d440837c0e2733
             return null;
         }
     }

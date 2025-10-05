@@ -27,21 +27,24 @@ const Home = () => {
   ];
   
   useEffect(() => {
-    // Fetch upcoming events
+    // TODO: Fetch real events from backend API
+    // For now, show no events (remove sample data)
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events/upcoming');
-        if (response.ok) {
-          const data = await response.json();
-          setUpcomingEvents(data.slice(0, 3)); // Get first 3 events
-        }
+        // This would be the real API call when ready:
+        // const events = await apiService.getUpcomingEvents();
+        // setUpcomingEvents(events);
+
+        // For now, show no events
+        setUpcomingEvents([]);
       } catch (error) {
         console.error('Error fetching events:', error);
+        setUpcomingEvents([]);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     fetchEvents();
   }, []);
   
