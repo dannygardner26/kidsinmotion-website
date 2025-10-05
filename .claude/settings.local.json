@@ -37,7 +37,8 @@
       "Bash(git checkout:*)",
       "Bash(start index.html)",
       "Bash(gcloud builds triggers:*)",
-      "Bash(gcloud config get-value:*)"
+      "Bash(gcloud config get-value:*)",
+      "Bash(gcloud config:*)"
     ],
     "deny": [],
     "ask": []
