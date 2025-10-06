@@ -16,8 +16,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	// --- Added Dependencies ---
 	implementation 'org.springframework.boot:spring-boot-starter-security' // For authentication/authorization
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // Temporarily disabled for Firestore migration
 	implementation 'org.springframework.boot:spring-boot-starter-validation' // For validation annotations
-	implementation 'com.google.firebase:firebase-admin:9.2.0' // Firebase Admin SDK
+	implementation 'com.google.firebase:firebase-admin:9.2.0' // Firebase Admin SDK for Firestore
 	implementation 'org.springframework.boot:spring-boot-starter-mail' // Email delivery
 	implementation 'com.twilio.sdk:twilio:9.3.0' // SMS delivery via Twilio
 	// --- End Added Dependencies ---
