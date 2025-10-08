@@ -14,6 +14,9 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA and Spring Data
+	runtimeOnly 'com.h2database:h2' // H2 in-memory database for development
+	runtimeOnly 'org.postgresql:postgresql' // PostgreSQL driver for production
 	// --- Added Dependencies ---
 	implementation 'org.springframework.boot:spring-boot-starter-security' // For authentication/authorization
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // Temporarily disabled for Firestore migration
