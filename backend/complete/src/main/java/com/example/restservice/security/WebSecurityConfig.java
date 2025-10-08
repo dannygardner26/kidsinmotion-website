@@ -53,6 +53,7 @@ public class WebSecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS using the bean
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(request -> "OPTIONS".equals(request.getMethod())).permitAll() // Allow all OPTIONS requests for CORS preflight
                 .requestMatchers("/api/auth/**").permitAll() // Allow auth endpoints (for user profile sync)
                 .requestMatchers("/h2-console/**").permitAll() // Allow H2 console access (for dev)
                 .requestMatchers("/api/events", "/api/events/upcoming", "/api/events/past").permitAll() // Allow public event viewing
