@@ -44,6 +44,12 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                   FilterChain filterChain) throws ServletException, IOException {
 
+        // Always allow OPTIONS requests through (for CORS preflight)
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // Check for test-admin-token first, even when Firebase is disabled
         String authHeader = request.getHeader("Authorization");
         System.out.println("DEBUG: Authorization header: " + authHeader);
@@ -126,9 +132,15 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
 
             } catch (FirebaseAuthException e) {
                 logger.error("Firebase token validation failed", e);
+                // Add CORS headers to error response
+                String origin = request.getHeader("Origin");
+                if (origin != null) {
+                    response.setHeader("Access-Control-Allow-Origin", origin);
+                    response.setHeader("Access-Control-Allow-Credentials", "true");
+                }
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
                 response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
                 return;
             }
         } else {
