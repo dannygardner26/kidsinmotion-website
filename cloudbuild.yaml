@@ -41,7 +41,7 @@ steps:
       - '--platform=managed'
       - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:$COMMIT_SHA'
       - '--region=us-east4'
-      - '--set-env-vars=SPRING_PROFILES_ACTIVE=production,CORS_ALLOWED_ORIGINS=https://kidsinmotionpa.org\,https://www.kidsinmotionpa.org'
+      - '--set-env-vars=^@^SPRING_PROFILES_ACTIVE=production@CORS_ALLOWED_ORIGINS=https://kidsinmotionpa.org,https://www.kidsinmotionpa.org'
       - '--port=8080'
       - '--timeout=1200'
       - '--memory=2Gi'
