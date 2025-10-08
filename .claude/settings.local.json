@@ -34,7 +34,8 @@
       "Bash(Stop-Process -Id 38624 -Force)",
       "Bash(gcloud logs read:*)",
       "Bash(gcloud run services logs read:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }
