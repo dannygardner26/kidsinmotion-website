@@ -35,6 +35,7 @@ public class FirebaseConfig {
 
                 FirebaseOptions options = FirebaseOptions.builder()
                         .setCredentials(credentials)
+                        .setProjectId("kids-in-motion-website-b1c09")
                         .build();
 
                 System.out.println("DEBUG: Firebase initialized successfully with service account from classpath");
@@ -49,6 +50,7 @@ public class FirebaseConfig {
 
                     FirebaseOptions options = FirebaseOptions.builder()
                             .setCredentials(credentials)
+                            .setProjectId("kids-in-motion-website-b1c09")
                             .build();
 
                     System.out.println("DEBUG: Firebase initialized successfully with environment credentials (forced deployment)");
