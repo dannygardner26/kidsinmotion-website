@@ -24,23 +24,34 @@ public class FirebaseConfig {
             
             try {
                 // Try to load from classpath first
+                System.out.println("DEBUG: Attempting to load firebase-service-account.json from classpath");
                 InputStream serviceAccount = new ClassPathResource("firebase-service-account.json").getInputStream();
                 GoogleCredentials credentials = GoogleCredentials.fromStream(serviceAccount);
-                
+
                 FirebaseOptions options = FirebaseOptions.builder()
                         .setCredentials(credentials)
                         .build();
-                
+
+                System.out.println("DEBUG: Firebase initialized successfully with service account from classpath");
                 return FirebaseApp.initializeApp(options);
             } catch (Exception e) {
                 // Fallback to default credentials (useful for local development)
-                System.out.println("Using default Firebase credentials. Make sure GOOGLE_APPLICATION_CREDENTIALS is set.");
-                
-                FirebaseOptions options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.getApplicationDefault())
-                        .build();
-                
-                return FirebaseApp.initializeApp(options);
+                System.out.println("ERROR: Failed to load Firebase service account from classpath: " + e.getMessage());
+                System.out.println("DEBUG: Attempting to use default Firebase credentials");
+
+                try {
+                    FirebaseOptions options = FirebaseOptions.builder()
+                            .setCredentials(GoogleCredentials.getApplicationDefault())
+                            .build();
+
+                    System.out.println("DEBUG: Firebase initialized successfully with application default credentials");
+                    return FirebaseApp.initializeApp(options);
+                } catch (Exception defaultCredentialsError) {
+                    System.err.println("ERROR: Failed to initialize Firebase with both classpath and default credentials");
+                    System.err.println("Classpath error: " + e.getMessage());
+                    System.err.println("Default credentials error: " + defaultCredentialsError.getMessage());
+                    throw new RuntimeException("Firebase initialization failed", defaultCredentialsError);
+                }
             }
         } else {
             return FirebaseApp.getInstance();
