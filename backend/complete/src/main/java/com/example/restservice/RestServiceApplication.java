@@ -15,10 +15,7 @@ import org.springframework.context.annotation.Bean;
 import java.util.HashSet;
 import java.util.Set;
 
-@SpringBootApplication(exclude = {
-    org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
-    org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class
-})
+@SpringBootApplication
 public class RestServiceApplication {
 
     private static final Logger log = LoggerFactory.getLogger(RestServiceApplication.class);
@@ -27,14 +24,23 @@ public class RestServiceApplication {
         SpringApplication.run(RestServiceApplication.class, args);
     }
 
-    // Database initialization disabled - using Firestore instead
-    // TODO: Migrate this initialization logic to Firestore
-    /*
     @Bean
     CommandLineRunner initDatabase(RoleRepository roleRepository, UserRepository userRepository) {
         return args -> {
-            log.info("Database initialization skipped - using Firestore");
+            log.info("Initializing database with default roles...");
+
+            // Create default roles if they don't exist
+            if (roleRepository.findByName(ERole.ROLE_USER).isEmpty()) {
+                roleRepository.save(new Role(ERole.ROLE_USER));
+                log.info("Created ROLE_USER");
+            }
+
+            if (roleRepository.findByName(ERole.ROLE_ADMIN).isEmpty()) {
+                roleRepository.save(new Role(ERole.ROLE_ADMIN));
+                log.info("Created ROLE_ADMIN");
+            }
+
+            log.info("Database initialization completed");
         };
     }
-    */
 }
