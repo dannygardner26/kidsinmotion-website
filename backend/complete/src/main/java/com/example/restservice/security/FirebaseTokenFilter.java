@@ -100,48 +100,63 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             // Skip test-admin-token since it was already processed above
             if (!"test-admin-token".equals(idToken)) {
                 System.out.println("DEBUG: Processing regular Firebase token");
+
+                try {
+                    FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
+                    String uid = decodedToken.getUid();
+                    String email = decodedToken.getEmail();
+
+                    System.out.println("DEBUG: Firebase token verified successfully - UID: " + uid + ", Email: " + email);
+
+                    // Get user authorities from database
+                    List<SimpleGrantedAuthority> authorities = resolveAuthorities(uid, false);
+
+                    // Create a UserDetails object with Firebase UID as username
+                    UserDetails userDetails = User.builder()
+                            .username(uid)
+                            .password("") // No password needed for Firebase auth
+                            .authorities(authorities)
+                            .build();
+
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    // Store Firebase UID and email in request attributes for use in controllers
+                    request.setAttribute("firebaseUid", uid);
+                    request.setAttribute("firebaseEmail", email);
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    System.out.println("DEBUG: Firebase authentication set successfully for user: " + email);
+
+                } catch (FirebaseAuthException e) {
+                    logger.error("Firebase token validation failed for token: " + idToken.substring(0, Math.min(20, idToken.length())) + "...", e);
+                    // Add CORS headers to error response
+                    String origin = request.getHeader("Origin");
+                    if (origin != null) {
+                        response.setHeader("Access-Control-Allow-Origin", origin);
+                        response.setHeader("Access-Control-Allow-Credentials", "true");
+                    }
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
+                    return;
+                } catch (Exception e) {
+                    logger.error("Unexpected error during Firebase token processing", e);
+                    // Add CORS headers to error response
+                    String origin = request.getHeader("Origin");
+                    if (origin != null) {
+                        response.setHeader("Access-Control-Allow-Origin", origin);
+                        response.setHeader("Access-Control-Allow-Credentials", "true");
+                    }
+                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Authentication service error\"}");
+                    return;
+                }
             } else {
                 // This shouldn't happen since test-admin-token was handled above
                 System.out.println("DEBUG: Unexpected test-admin-token in Firebase processing section");
-            }
-
-            try {
-                FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(idToken);
-                String uid = decodedToken.getUid();
-                String email = decodedToken.getEmail();
-
-                // Get user authorities from database
-                List<SimpleGrantedAuthority> authorities = resolveAuthorities(uid, false);
-
-                // Create a UserDetails object with Firebase UID as username
-                UserDetails userDetails = User.builder()
-                        .username(uid)
-                        .password("") // No password needed for Firebase auth
-                        .authorities(authorities)
-                        .build();
-
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Store Firebase UID and email in request attributes for use in controllers
-                request.setAttribute("firebaseUid", uid);
-                request.setAttribute("firebaseEmail", email);
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            } catch (FirebaseAuthException e) {
-                logger.error("Firebase token validation failed", e);
-                // Add CORS headers to error response
-                String origin = request.getHeader("Origin");
-                if (origin != null) {
-                    response.setHeader("Access-Control-Allow-Origin", origin);
-                    response.setHeader("Access-Control-Allow-Credentials", "true");
-                }
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.getWriter().write("{\"error\":\"Invalid or expired token\"}");
-                return;
             }
         } else {
             System.out.println("DEBUG: No Authorization header found, proceeding as anonymous");
