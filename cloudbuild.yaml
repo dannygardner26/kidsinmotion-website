@@ -4,7 +4,7 @@ steps:
     entrypoint: 'bash'
     args:
       - '-c'
-      - 'apt-get update && apt-get install -y git && chmod +x ./gradlew && ./gradlew clean build --no-daemon --stacktrace'
+      - 'apt-get update && apt-get install -y git file && chmod +x ./gradlew && ./gradlew clean build --no-daemon --stacktrace'
     dir: 'backend/complete'
 
   # Step 2: Build Docker image with proper tagging (force Dockerfile usage)
