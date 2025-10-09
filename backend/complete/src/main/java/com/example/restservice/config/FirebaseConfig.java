@@ -8,8 +8,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Configuration
 @ConditionalOnProperty(name = "firebase.enabled", havingValue = "true", matchIfMissing = true)
@@ -34,27 +39,71 @@ public class FirebaseConfig {
 
                 System.out.println("DEBUG: Firebase initialized successfully with service account from classpath");
                 return FirebaseApp.initializeApp(options);
-            } catch (Exception e) {
-                // Fallback to default credentials (useful for local development)
-                System.out.println("ERROR: Failed to load Firebase service account from classpath: " + e.getMessage());
-                System.out.println("DEBUG: Attempting to use default Firebase credentials");
+            } catch (Exception classpathError) {
+                // Fallback to environment-provided credentials (default for production)
+                System.out.println("ERROR: Failed to load Firebase service account from classpath: " + classpathError.getClass().getSimpleName());
+                System.out.println("DEBUG: Attempting to resolve Firebase credentials from environment");
 
                 try {
+                    GoogleCredentials credentials = resolveCredentialsFromEnvironment();
+
                     FirebaseOptions options = FirebaseOptions.builder()
-                            .setCredentials(GoogleCredentials.getApplicationDefault())
+                            .setCredentials(credentials)
                             .build();
 
-                    System.out.println("DEBUG: Firebase initialized successfully with application default credentials");
+                    System.out.println("DEBUG: Firebase initialized successfully with environment credentials");
                     return FirebaseApp.initializeApp(options);
-                } catch (Exception defaultCredentialsError) {
-                    System.err.println("ERROR: Failed to initialize Firebase with both classpath and default credentials");
-                    System.err.println("Classpath error: " + e.getMessage());
-                    System.err.println("Default credentials error: " + defaultCredentialsError.getMessage());
-                    throw new RuntimeException("Firebase initialization failed", defaultCredentialsError);
+                } catch (Exception credentialResolutionError) {
+                    System.err.println("ERROR: Failed to initialize Firebase with both classpath and environment credentials");
+                    System.err.println("Classpath error: " + classpathError.getClass().getSimpleName());
+                    System.err.println("Credential resolution error: " + credentialResolutionError.getClass().getSimpleName());
+                    throw new RuntimeException("Firebase initialization failed", credentialResolutionError);
                 }
             }
         } else {
             return FirebaseApp.getInstance();
+        }
+    }
+
+    private GoogleCredentials resolveCredentialsFromEnvironment() throws IOException {
+        String inlineJson = System.getenv("FIREBASE_SERVICE_ACCOUNT_JSON");
+        if (inlineJson == null || inlineJson.isBlank()) {
+            inlineJson = System.getenv("FIREBASE_SERVICE_ACCOUNT");
+        }
+        if (inlineJson != null && !inlineJson.isBlank()) {
+            try {
+                return GoogleCredentials.fromStream(new ByteArrayInputStream(inlineJson.getBytes(StandardCharsets.UTF_8)));
+            } catch (IOException ex) {
+                throw new IOException("Failed to parse credentials from inline Firebase service account JSON", ex);
+            }
+        }
+
+        String configuredCredentialPointer = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
+        if (configuredCredentialPointer != null && !configuredCredentialPointer.isBlank()) {
+            if (configuredCredentialPointer.trim().startsWith("{")) {
+                try {
+                    return GoogleCredentials.fromStream(new ByteArrayInputStream(configuredCredentialPointer.getBytes(StandardCharsets.UTF_8)));
+                } catch (IOException ex) {
+                    throw new IOException("Failed to parse credentials from GOOGLE_APPLICATION_CREDENTIALS inline JSON", ex);
+                }
+            }
+
+            Path credentialPath = Paths.get(configuredCredentialPointer);
+            if (Files.exists(credentialPath)) {
+                try (InputStream fileStream = Files.newInputStream(credentialPath)) {
+                    return GoogleCredentials.fromStream(fileStream);
+                } catch (IOException ex) {
+                    throw new IOException("Failed to parse credentials file located via GOOGLE_APPLICATION_CREDENTIALS", ex);
+                }
+            }
+
+            throw new IOException("Credential file not found at configured GOOGLE_APPLICATION_CREDENTIALS path");
+        }
+
+        try {
+            return GoogleCredentials.getApplicationDefault();
+        } catch (IOException ex) {
+            throw new IOException("Failed to resolve Google application default credentials", ex);
         }
     }
 }

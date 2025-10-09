@@ -65,8 +65,8 @@ GRANT ALL PRIVILEGES ON DATABASE kidsinmotion TO kidsinmotion;
 1. Go to Firebase Console → Project Settings → Service Accounts
 2. Generate new private key
 3. Download the JSON file
-4. Place it securely on your server (NOT in the repository)
-5. Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable
+4. Store the JSON securely (NOT in the repository). For Google Cloud Run deployments, create a Secret Manager secret named `firebase-service-account` containing the JSON and grant the Cloud Run service account `Secret Manager Secret Accessor`.
+5. Set `GOOGLE_APPLICATION_CREDENTIALS` environment variable to point to the JSON file. When using Cloud Run, the deployment pipeline mounts the secret at `/var/secrets/google/firebase-service-account.json` automatically.
 
 #### Firebase Authentication Rules
 Ensure your Firebase project has proper authentication rules configured.

@@ -25,6 +25,7 @@ DB_USERNAME=your-username
 DB_PASSWORD=your-password
 
 # Firebase (upload your service account JSON)
+# When deploying to Cloud Run, store the JSON in Secret Manager as `firebase-service-account`; the pipeline mounts it at /var/secrets/google/firebase-service-account.json.
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/firebase-service-account.json
 
 # Server
