@@ -51,7 +51,7 @@ public class FirebaseConfig {
                             .setCredentials(credentials)
                             .build();
 
-                    System.out.println("DEBUG: Firebase initialized successfully with environment credentials");
+                    System.out.println("DEBUG: Firebase initialized successfully with environment credentials (forced deployment)");
                     return FirebaseApp.initializeApp(options);
                 } catch (Exception credentialResolutionError) {
                     System.err.println("ERROR: Failed to initialize Firebase with both classpath and environment credentials");
