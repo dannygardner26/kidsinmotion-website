@@ -38,7 +38,11 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(gcloud secrets list:*)",
+      "Bash(gcloud secrets versions access:*)",
+      "Bash(gcloud run services list:*)",
+      "WebFetch(domain:console.cloud.google.com)"
     ],
     "deny": []
   }
