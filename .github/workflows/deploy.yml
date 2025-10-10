@@ -28,6 +28,8 @@ jobs:
         run: |
           cd frontend
           npm run build
+        env:
+          NODE_ENV: production
 
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -42,6 +44,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Decode and setup credentials
+        run: |
+          echo "${{ secrets.GCP_SA_KEY }}" | base64 -d > /tmp/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json" >> $GITHUB_ENV
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
