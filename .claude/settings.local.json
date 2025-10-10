@@ -42,7 +42,10 @@
       "Bash(gcloud secrets list:*)",
       "Bash(gcloud secrets versions access:*)",
       "Bash(gcloud run services list:*)",
-      "WebFetch(domain:console.cloud.google.com)"
+      "WebFetch(domain:console.cloud.google.com)",
+      "Bash(firebase deploy:*)",
+      "Bash(gcloud builds list:*)",
+      "Bash(gcloud components:*)"
     ],
     "deny": []
   }
