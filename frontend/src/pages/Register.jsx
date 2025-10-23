@@ -101,17 +101,39 @@ const Register = () => {
 
     } catch (error) {
       console.error('Registration error:', error);
-      // Provide more specific Firebase error messages
+
+      // Convert Firebase error codes to user-friendly messages
       let errorMessage = 'Registration failed. Please try again.';
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email address is already registered. Please login or use a different email.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
-      } else if (error.message.includes('Failed to save user profile')) {
-          errorMessage = error.message; // Use the specific backend error
+
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'This email address is already registered. Please sign in instead or use a different email.';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Password is too weak. Please choose a password with at least 6 characters.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many attempts. Please try again later.';
+          break;
+        default:
+          if (error.message.includes('Failed to save user profile')) {
+            errorMessage = error.message; // Use the specific backend error
+          } else if (error.message.includes('network-request-failed')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+          } else if (error.message.includes('internal-error')) {
+            errorMessage = 'A server error occurred. Please try again later.';
+          }
+          break;
       }
+
       setError(errorMessage);
-      setIsLoading(false); // Ensure loading is stopped on error
+      setIsLoading(false);
     }
     // No finally block needed for setIsLoading(false) if navigation happens on success
   };
@@ -343,18 +365,20 @@ const Register = () => {
 
                   {/* Agreement checkbox with validation */}
                   <div className="mt-4 mb-4">
-                    <div className="flex items-start">
-                      <input
-                        className={`mr-2 mt-1 leading-tight ${formErrors.agreeToTerms ? 'border-red-500' : ''}`}
-                        type="checkbox"
-                        id="agreeToTerms"
-                        name="agreeToTerms"
-                        checked={formData.agreeToTerms}
-                        onChange={handleChange}
-                        required
-                      />
-                      <label className="text-sm text-gray-600" htmlFor="agreeToTerms">
-                        I agree to the <Link to="/terms" target="_blank" className="font-medium hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium hover:underline">Privacy Policy</Link>.
+                    <div className="checkbox-option">
+                      <label className={`checkbox-label ${formErrors.agreeToTerms ? 'error' : ''}`}>
+                        <input
+                          type="checkbox"
+                          id="agreeToTerms"
+                          name="agreeToTerms"
+                          checked={formData.agreeToTerms}
+                          onChange={handleChange}
+                          required
+                        />
+                        <span className="custom-checkbox"></span>
+                        <span className="text-sm text-gray-600">
+                          I agree to the <Link to="/terms" target="_blank" className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline">Privacy Policy</Link>.
+                        </span>
                       </label>
                     </div>
                     {formErrors.agreeToTerms && (
@@ -362,9 +386,9 @@ const Register = () => {
                     )}
                   </div>
 
-                  {/* Use theme button styles, add w-full */}
-                  <div className="mt-6"> 
-                    <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
+                  {/* Enhanced button styling */}
+                  <div className="mt-6">
+                    <button type="submit" className="btn btn-primary enhanced-btn w-full" disabled={isLoading}>
                       {isLoading ? 'Creating Account...' : 'Create Account'}
                     </button>
                   </div>
@@ -378,6 +402,159 @@ const Register = () => {
           </div> {/* Closing tag for w-full max-w-xl */}
         </div> 
       {/* Removed the extra closing div here */}
+      <style>{`
+        .checkbox-option {
+          margin: 1rem 0;
+        }
+
+        .checkbox-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          cursor: pointer;
+          margin: 0;
+          padding: 1rem;
+          background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        .checkbox-label:hover {
+          border-color: var(--primary);
+          background: linear-gradient(145deg, #f8f9fa 0%, #ffffff 100%);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .checkbox-label.error {
+          border-color: #dc3545;
+          background: linear-gradient(145deg, #fff5f5 0%, #fef2f2 100%);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+          width: 0;
+          height: 0;
+        }
+
+        .custom-checkbox {
+          position: relative;
+          min-height: 22px;
+          min-width: 22px;
+          height: 22px;
+          width: 22px;
+          background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+          border: 2px solid #ced4da;
+          border-radius: 6px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          flex-shrink: 0;
+          margin-top: 1px;
+          display: inline-block;
+          box-sizing: border-box;
+          box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-label input:checked ~ .custom-checkbox {
+          background: linear-gradient(145deg, var(--primary) 0%, var(--primary-light) 100%);
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1);
+        }
+
+        .custom-checkbox:after {
+          content: "";
+          position: absolute;
+          display: none;
+          left: 7px;
+          top: 3px;
+          width: 6px;
+          height: 10px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+          animation: checkmarkPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .checkbox-label input:checked ~ .custom-checkbox:after {
+          display: block;
+        }
+
+        @keyframes checkmarkPop {
+          0% {
+            transform: rotate(45deg) scale(0);
+          }
+          50% {
+            transform: rotate(45deg) scale(1.2);
+          }
+          100% {
+            transform: rotate(45deg) scale(1);
+          }
+        }
+
+        .enhanced-btn {
+          background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+          border: 2px solid var(--primary) !important;
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.2) !important;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          font-weight: 600 !important;
+          letter-spacing: 0.5px !important;
+          text-transform: uppercase !important;
+          font-size: 0.9rem !important;
+          padding: 0.875rem 2rem !important;
+          border-radius: 8px !important;
+        }
+
+        .enhanced-btn:hover:not(:disabled) {
+          transform: translateY(-2px) !important;
+          box-shadow: 0 6px 20px rgba(47, 80, 106, 0.3) !important;
+          background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%) !important;
+        }
+
+        .enhanced-btn:active:not(:disabled) {
+          transform: translateY(0) !important;
+          box-shadow: 0 2px 10px rgba(47, 80, 106, 0.2) !important;
+        }
+
+        .enhanced-btn:disabled {
+          opacity: 0.6 !important;
+          cursor: not-allowed !important;
+          transform: none !important;
+          box-shadow: 0 2px 8px rgba(47, 80, 106, 0.1) !important;
+        }
+
+        /* Ensure proper spacing and alignment */
+        .form-group {
+          margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+          color: var(--text);
+        }
+
+        /* Enhanced input focus states */
+        .form-control:focus {
+          border-color: var(--primary) !important;
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1) !important;
+          outline: none !important;
+        }
+
+        /* Enhanced select styling */
+        select.form-control {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+          background-position: right 0.5rem center;
+          background-repeat: no-repeat;
+          background-size: 1.5em 1.5em;
+          padding-right: 2.5rem;
+        }
+      `}</style>
     </>
   );
 };

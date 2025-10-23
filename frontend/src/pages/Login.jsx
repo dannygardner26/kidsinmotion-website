@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, onAuthStateChanged } from "firebase/auth";
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
 
 
@@ -12,6 +12,9 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
   const googleButtonDivRef = useRef(null);
 
   const queryParams = new URLSearchParams(location.search);
@@ -93,7 +96,42 @@ const Login = () => {
       // Navigation is handled by onAuthStateChanged effect
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message || 'Login failed. Please check your credentials.');
+
+      // Convert Firebase error codes to user-friendly messages
+      let errorMessage = 'Login failed. Please check your credentials.';
+
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email address. Please register first.';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled. Please contact support.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed attempts. Please try again later.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection.';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password. Please try again.';
+          break;
+        default:
+          if (error.message.includes('network-request-failed')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+          } else if (error.message.includes('internal-error')) {
+            errorMessage = 'A server error occurred. Please try again later.';
+          }
+          break;
+      }
+
+      setError(errorMessage);
       setIsLoading(false);
     }
     // No finally block needed for setIsLoading(false) here, as it's handled by the effect or error catch
@@ -114,6 +152,63 @@ const Login = () => {
       setError(error.message || 'Google Sign-in failed.');
       setIsLoading(false);
     }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+
+    if (!resetEmail.trim()) {
+      setResetMessage('Please enter your email address.');
+      return;
+    }
+
+    if (!/\S+@\S+\.\S+/.test(resetEmail)) {
+      setResetMessage('Please enter a valid email address.');
+      return;
+    }
+
+    setIsLoading(true);
+    setResetMessage('');
+
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      setResetMessage('Password reset email sent! Please check your inbox and follow the instructions to reset your password.');
+    } catch (error) {
+      console.error('Password reset error:', error);
+
+      let errorMessage = 'Failed to send password reset email. Please try again.';
+
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email address. Please check the email or register for a new account.';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many password reset attempts. Please try again later.';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+          break;
+        default:
+          if (error.message.includes('network-request-failed')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+          }
+          break;
+      }
+
+      setResetMessage(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setShowForgotPassword(false);
+    setResetMessage('');
+    setResetEmail('');
+    setError(null);
   };
 
   useEffect(() => {
@@ -155,89 +250,145 @@ const Login = () => {
             <div className="card"> {/* Use theme card style (shadow included) */}
               <div className="card-header"> {/* Use theme card-header style */}
                 {/* Ensure h1 color contrasts with header bg if needed, theme handles white text */}
-                <h1 className="text-2xl font-bold text-center mb-0">Login</h1> 
+                <h1 className="text-2xl font-bold text-center mb-0">
+                  {showForgotPassword ? 'Reset Password' : 'Login'}
+                </h1>
               </div>
               <div className="card-body">
-                {error && (
-                  // Use Tailwind for alert, leveraging theme colors
-                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span className="block sm:inline">{error}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleEmailPasswordLogin}>
-                  {/* Use theme form-group */}
-                  <div className="form-group"> 
-                    <label htmlFor="email">Email</label>
-                    <input
-                      type="email"
-                      id="email"
-                      // Use theme form-control
-                      className={`form-control ${formErrors.email ? 'border-red-500' : ''}`} 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
-                    />
-                    {formErrors.email && (
-                      // Simple error text styling
-                      <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p> 
+                {!showForgotPassword ? (
+                  // Login Form
+                  <>
+                    {error && (
+                      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                        <span className="block sm:inline">{error}</span>
+                      </div>
                     )}
-                  </div>
 
-                  {/* Use theme form-group */}
-                  <div className="form-group"> 
-                    <label htmlFor="password">Password</label>
-                    <input
-                      type="password"
-                      id="password"
-                      // Use theme form-control
-                      className={`form-control ${formErrors.password ? 'border-red-500' : ''}`} 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required 
-                    />
-                    {formErrors.password && (
-                      // Simple error text styling
-                      <p className="text-red-500 text-xs italic mt-1">{formErrors.password}</p> 
-                    )}
-                  </div>
+                    <form onSubmit={handleEmailPasswordLogin}>
+                      <div className="form-group">
+                        <label htmlFor="email">Email</label>
+                        <input
+                          type="email"
+                          id="email"
+                          className={`form-control ${formErrors.email ? 'border-red-500' : ''}`}
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                        />
+                        {formErrors.email && (
+                          <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p>
+                        )}
+                      </div>
 
-                  {/* Use theme button styles, add w-full for block display */}
-                  <div className="mt-4"> 
-                    <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
-                      {isLoading ? 'Logging in...' : 'Login with Email'}
-                    </button>
-                  </div>
-                </form>
+                      <div className="form-group">
+                        <label htmlFor="password">Password</label>
+                        <input
+                          type="password"
+                          id="password"
+                          className={`form-control ${formErrors.password ? 'border-red-500' : ''}`}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        {formErrors.password && (
+                          <p className="text-red-500 text-xs italic mt-1">{formErrors.password}</p>
+                        )}
+                      </div>
 
-                 <div className="my-4 text-center">
-                   <span className="text-xs uppercase text-gray-400 font-semibold">OR</span>
-                 </div>
+                      <div className="mt-4">
+                        <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
+                          {isLoading ? 'Logging in...' : 'Login with Email'}
+                        </button>
+                      </div>
 
-                 {/* Google Sign-in Button - Rendered by Google Identity Services */}
-                 <div className="mb-4 flex justify-center">
-                    <div id="googleSignInButtonDiv" ref={googleButtonDivRef}></div>
-                    {/* The Google button will be rendered here. Ensure this div is visible. */}
-                 </div>
-                 {isLoading && (
-                    <div className="text-center text-sm text-gray-500">
-                        <span>Processing Google Sign-In...</span>
+                      <div className="mt-3 text-center">
+                        <button
+                          type="button"
+                          className="text-sm text-indigo-600 hover:text-indigo-500 hover:underline focus:outline-none"
+                          onClick={() => setShowForgotPassword(true)}
+                        >
+                          Forgot your password?
+                        </button>
+                      </div>
+                    </form>
+
+                    <div className="my-4 text-center">
+                      <span className="text-xs uppercase text-gray-400 font-semibold">OR</span>
                     </div>
-                 )}
 
+                    <div className="mb-4 flex justify-center">
+                       <div id="googleSignInButtonDiv" ref={googleButtonDivRef}></div>
+                    </div>
+                    {isLoading && (
+                       <div className="text-center text-sm text-gray-500">
+                           <span>Processing Google Sign-In...</span>
+                       </div>
+                    )}
 
-                <div className="mt-6 text-center">
-                  <p className="text-sm text-gray-600">
-                    Don't have an account?{' '}
-                    <Link 
-                      to="/register" 
-                      className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
-                      style={{ display: 'inline-block', padding: '0.25rem', position: 'relative', zIndex: 10 }} // Ensure clickability
-                    >
-                      Register
-                    </Link>
-                  </p>
-                </div>
+                    <div className="mt-6 text-center">
+                      <p className="text-sm text-gray-600">
+                        Don't have an account?{' '}
+                        <Link
+                          to="/register"
+                          className="font-medium text-indigo-600 hover:text-indigo-500 hover:underline focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+                          style={{ display: 'inline-block', padding: '0.25rem', position: 'relative', zIndex: 10 }}
+                        >
+                          Register
+                        </Link>
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  // Forgot Password Form
+                  <>
+                    {resetMessage && (
+                      <div className={`border px-4 py-3 rounded relative mb-4 ${
+                        resetMessage.includes('sent') ?
+                        'bg-green-100 border-green-400 text-green-700' :
+                        'bg-red-100 border-red-400 text-red-700'
+                      }`} role="alert">
+                        <span className="block sm:inline">{resetMessage}</span>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleForgotPassword}>
+                      <div className="mb-4">
+                        <p className="text-sm text-gray-600 mb-4">
+                          Enter your email address and we'll send you a link to reset your password.
+                        </p>
+                      </div>
+
+                      <div className="form-group">
+                        <label htmlFor="resetEmail">Email</label>
+                        <input
+                          type="email"
+                          id="resetEmail"
+                          className="form-control"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          required
+                          placeholder="Enter your email address"
+                        />
+                      </div>
+
+                      <div className="mt-4">
+                        <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
+                          {isLoading ? 'Sending...' : 'Send Reset Email'}
+                        </button>
+                      </div>
+                    </form>
+
+                    <div className="mt-4 text-center">
+                      <button
+                        type="button"
+                        className="text-sm text-indigo-600 hover:text-indigo-500 hover:underline focus:outline-none"
+                        onClick={handleBackToLogin}
+                      >
+                        Back to Login
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

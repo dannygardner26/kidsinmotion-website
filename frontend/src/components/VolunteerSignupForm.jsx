@@ -3,32 +3,31 @@ import { apiService } from '../services/api';
 
 const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
-    role: '',
-    availability: '',
-    skills: '',
-    notes: ''
+    notes: '',
+    backgroundCheck: false,
+    previousVolunteer: false,
+    previousVolunteerDetails: '',
+    canAttendFullTime: false,
+    communicationPreferences: []
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  const volunteerRoles = [
-    'Event Helper',
-    'Setup Crew',
-    'Registration Assistant',
-    'Activity Leader',
-    'Photographer',
-    'First Aid Support',
-    'Cleanup Crew',
-    'Equipment Manager',
-    'Snack Coordinator',
-    'Other'
-  ];
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleCommunicationPreferenceChange = (preference) => {
+    setFormData(prev => ({
+      ...prev,
+      communicationPreferences: prev.communicationPreferences.includes(preference)
+        ? prev.communicationPreferences.filter(p => p !== preference)
+        : [...prev.communicationPreferences, preference]
     }));
   };
 
@@ -40,10 +39,16 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
     try {
       const volunteerData = {
         eventId: event.id,
-        role: formData.role,
-        availability: formData.availability || null,
-        skills: formData.skills || null,
-        notes: formData.notes || null
+        role: 'Event Volunteer', // Default role since we removed role selection
+        availability: formData.canAttendFullTime ? 'Full event duration' : null,
+        skills: null, // Removed skills section
+        notes: [
+          formData.notes || '',
+          formData.communicationPreferences.length > 0 ? `Contact via: ${formData.communicationPreferences.join(', ')}` : '',
+          formData.backgroundCheck ? 'Background check completed/willing' : '',
+          formData.previousVolunteer ? 'Previous Kids in Motion volunteer' : '',
+          formData.previousVolunteerDetails ? `Previous experience: ${formData.previousVolunteerDetails}` : ''
+        ].filter(Boolean).join('\n') || null
       };
 
       await apiService.volunteerForEvent(volunteerData);
@@ -58,9 +63,13 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
 
   return (
     <div className="volunteer-form">
-      <div className="card">
-        <div className="card-header">
-          <h3>Volunteer for {event.name}</h3>
+      <div className="card volunteer-signup-card">
+        <div className="card-header volunteer-header">
+          <h3>Volunteer Sign-up</h3>
+          <h4 className="event-name">{event.name}</h4>
+          <p className="volunteer-welcome">
+            Thank you for your interest in volunteering! Your time and energy help make these events possible.
+          </p>
         </div>
         <div className="card-body">
           {error && (
@@ -77,50 +86,98 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="role">Volunteer Role *</label>
-              <select
-                id="role"
-                name="role"
-                className="form-control"
-                value={formData.role}
-                onChange={handleInputChange}
-                required
-              >
-                <option value="">Select a role...</option>
-                {volunteerRoles.map(role => (
-                  <option key={role} value={role}>{role}</option>
-                ))}
-              </select>
+            <div className="form-group attendance-question">
+              <div className="attendance-card">
+                <h4>Event Attendance Confirmation</h4>
+                <p>
+                  <strong>Event Duration:</strong> {event.startTime && event.endTime
+                    ? `${event.startTime} to ${event.endTime}`
+                    : 'Full event duration'} on {new Date(event.date).toLocaleDateString()}
+                </p>
+                <label className="checkbox-label attendance-checkbox">
+                  <input
+                    type="checkbox"
+                    name="canAttendFullTime"
+                    checked={formData.canAttendFullTime}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <span className="checkmark"></span>
+                  <strong>Yes, I can attend the event from start to end</strong>
+                </label>
+                <small className="form-text">
+                  We need volunteers who can commit to the full event duration to ensure consistent support.
+                </small>
+              </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="availability">Availability</label>
-              <input
-                type="text"
-                id="availability"
-                name="availability"
-                className="form-control"
-                value={formData.availability}
-                onChange={handleInputChange}
-                placeholder="e.g., Available all day, Morning only, 9 AM - 2 PM"
-              />
+              <div className="volunteer-checkboxes">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="backgroundCheck"
+                    checked={formData.backgroundCheck}
+                    onChange={handleInputChange}
+                  />
+                  <span className="checkmark"></span>
+                  I have completed or am willing to complete a background check if required
+                </label>
+
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="previousVolunteer"
+                    checked={formData.previousVolunteer}
+                    onChange={handleInputChange}
+                  />
+                  <span className="checkmark"></span>
+                  I have previously volunteered with Kids in Motion
+                </label>
+              </div>
+
+              {formData.previousVolunteer && (
+                <div className="previous-volunteer-details">
+                  <label htmlFor="previousVolunteerDetails">Please describe your previous volunteer experience with Kids in Motion:</label>
+                  <textarea
+                    id="previousVolunteerDetails"
+                    name="previousVolunteerDetails"
+                    className="form-control"
+                    rows="3"
+                    value={formData.previousVolunteerDetails}
+                    onChange={handleInputChange}
+                    placeholder="Describe your previous roles, events you helped with, any training you received, etc."
+                    required={formData.previousVolunteer}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label>How would you like to be contacted? (Select all that apply)</label>
+              <div className="communication-preferences">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={formData.communicationPreferences.includes('email')}
+                    onChange={() => handleCommunicationPreferenceChange('email')}
+                  />
+                  <span className="checkmark"></span>
+                  Email
+                </label>
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={formData.communicationPreferences.includes('sms')}
+                    onChange={() => handleCommunicationPreferenceChange('sms')}
+                  />
+                  <span className="checkmark"></span>
+                  SMS/Text Messages
+                </label>
+              </div>
               <small className="form-text">
-                Please specify when you're available during the event
+                Please select at least one method so we can keep you updated about the event. Website messages are included automatically.
               </small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="skills">Relevant Skills or Experience</label>
-              <textarea
-                id="skills"
-                name="skills"
-                className="form-control"
-                rows="3"
-                value={formData.skills}
-                onChange={handleInputChange}
-                placeholder="Any relevant skills, certifications, or experience (e.g., First Aid certified, Photography experience, Working with children)"
-              />
             </div>
 
             <div className="form-group">
@@ -137,13 +194,37 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
             </div>
 
             <div className="volunteer-commitment">
-              <h5>Volunteer Commitment</h5>
-              <ul>
-                <li>Arrive on time and stay for your designated volunteer period</li>
-                <li>Follow all safety guidelines and event protocols</li>
-                <li>Help create a positive and fun environment for children</li>
-                <li>Contact event organizers if you need to cancel (at least 48 hours notice preferred)</li>
-              </ul>
+              <h5>Volunteer Commitment & Expectations</h5>
+              <div className="commitment-content">
+                <div className="row">
+                  <div className="col-md-6">
+                    <h6>What We Expect:</h6>
+                    <ul>
+                      <li>Arrive 15 minutes before your scheduled time</li>
+                      <li>Stay for your full volunteer commitment</li>
+                      <li>Follow all safety protocols and guidelines</li>
+                      <li>Maintain a positive, encouraging attitude</li>
+                      <li>Respect all participants and fellow volunteers</li>
+                    </ul>
+                  </div>
+                  <div className="col-md-6">
+                    <h6>What You Get:</h6>
+                    <ul>
+                      <li>Make a meaningful impact in children's lives</li>
+                      <li>Community service hours (if needed)</li>
+                      <li>Experience working with youth sports</li>
+                      <li>Connect with like-minded volunteers</li>
+                      <li>Free event t-shirt (for regular volunteers)</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="cancellation-policy">
+                  <small className="text-muted">
+                    <strong>Cancellation Policy:</strong> Please contact us at least 48 hours in advance if you need to cancel.
+                    We understand emergencies happen - just let us know as soon as possible!
+                  </small>
+                </div>
+              </div>
             </div>
 
             <div className="form-actions">
@@ -158,7 +239,7 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
               <button
                 type="submit"
                 className="btn btn-secondary"
-                disabled={isSubmitting || !formData.role}
+                disabled={isSubmitting || !formData.canAttendFullTime || formData.communicationPreferences.length === 0}
               >
                 {isSubmitting ? 'Signing Up...' : 'Sign Up as Volunteer'}
               </button>
@@ -169,7 +250,77 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
 
       <style>{`
         .volunteer-form {
-          max-width: 600px;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 1.5rem;
+        }
+
+        .volunteer-signup-card {
+          border: none;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.06);
+          border-radius: 20px;
+          overflow: hidden;
+          background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+          border: 1px solid rgba(255, 255, 255, 0.8);
+          backdrop-filter: blur(10px);
+        }
+
+        .volunteer-header {
+          background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+          color: white;
+          padding: 3rem 2rem;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .volunteer-header::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='30'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+          animation: floatPattern 20s linear infinite;
+        }
+
+        @keyframes floatPattern {
+          0% { transform: translateX(0) translateY(0); }
+          100% { transform: translateX(-60px) translateY(-60px); }
+        }
+
+        .volunteer-header h3 {
+          margin: 0 0 1rem 0;
+          font-size: 2.2rem;
+          font-weight: 700;
+          position: relative;
+          z-index: 2;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .volunteer-header .event-name {
+          margin: 0 0 1.5rem 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: var(--secondary);
+          position: relative;
+          z-index: 2;
+          background: rgba(255, 255, 255, 0.1);
+          padding: 0.5rem 1rem;
+          border-radius: 25px;
+          display: inline-block;
+          backdrop-filter: blur(10px);
+        }
+
+        .volunteer-welcome {
+          margin: 0;
+          font-size: 1.1rem;
+          color: rgba(255, 255, 255, 0.95);
+          line-height: 1.6;
+          position: relative;
+          z-index: 2;
+          max-width: 500px;
           margin: 0 auto;
         }
 
@@ -187,6 +338,50 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
 
         .event-summary p {
           margin-bottom: 0.5rem;
+        }
+
+        .attendance-question {
+          margin-bottom: 2rem;
+        }
+
+        .attendance-card {
+          background: #f8f9fa;
+          border: 2px solid var(--primary);
+          border-radius: 12px;
+          padding: 1.5rem;
+          text-align: center;
+        }
+
+        .attendance-card h4 {
+          color: var(--primary);
+          margin-bottom: 1rem;
+          font-size: 1.3rem;
+        }
+
+        .attendance-card p {
+          margin-bottom: 1.5rem;
+          font-size: 1.1rem;
+          color: #495057;
+        }
+
+        .attendance-checkbox {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          font-size: 1.1rem;
+          margin-bottom: 0.75rem;
+          padding: 1rem;
+          background: white;
+          border-radius: 8px;
+          border: 1px solid #e9ecef;
+        }
+
+        .attendance-checkbox input[type="checkbox"] {
+          position: relative;
+          width: 20px;
+          height: 20px;
+          margin: 0;
         }
 
         .volunteer-commitment {
@@ -254,11 +449,52 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
 
         .form-actions {
           display: flex;
-          justify-content: flex-end;
+          justify-content: space-between;
           gap: 1rem;
           margin-top: 2rem;
-          padding-top: 1rem;
+          padding: 1.5rem 0 0 0;
           border-top: 1px solid #eee;
+        }
+
+        .btn {
+          padding: 0.75rem 2rem;
+          border-radius: 6px;
+          border: 2px solid;
+          font-weight: 600;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-decoration: none;
+          display: inline-block;
+          text-align: center;
+          min-width: 120px;
+        }
+
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .btn-outline {
+          background: white;
+          color: var(--primary);
+          border-color: var(--primary);
+        }
+
+        .btn-outline:hover:not(:disabled) {
+          background: var(--primary);
+          color: white;
+        }
+
+        .btn-secondary {
+          background: var(--secondary);
+          color: white;
+          border-color: var(--secondary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+          background: var(--secondary-light);
+          border-color: var(--secondary-light);
         }
 
         .alert {
@@ -277,6 +513,163 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
           margin-right: 1rem;
         }
 
+        .communication-preferences {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-top: 0.5rem;
+        }
+
+        /* Custom Checkbox Styles - Enhanced */
+        .checkbox-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+          cursor: pointer;
+          margin-bottom: 1rem;
+          position: relative;
+          padding: 1rem;
+          border-radius: 12px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+          border: 2px solid #e9ecef;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .checkbox-label:hover {
+          background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+          border-color: var(--primary);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(47, 80, 106, 0.15);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+          width: 0;
+          height: 0;
+        }
+
+        .checkmark {
+          position: relative;
+          height: 24px;
+          width: 24px;
+          background: linear-gradient(145deg, #ffffff, #f1f3f4);
+          border: 3px solid #ddd;
+          border-radius: 8px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          flex-shrink: 0;
+          margin-top: 1px;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-label:hover .checkmark {
+          border-color: var(--primary);
+          background: linear-gradient(145deg, #ffffff, #f8f9fa);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-label input:checked ~ .checkmark {
+          background: linear-gradient(145deg, var(--primary), var(--primary-light));
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+          transform: scale(1.05);
+        }
+
+        .checkbox-label input:focus ~ .checkmark {
+          box-shadow: 0 0 0 4px rgba(47, 80, 106, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkmark:after {
+          content: "";
+          position: absolute;
+          display: none;
+          left: 7px;
+          top: 2px;
+          width: 6px;
+          height: 12px;
+          border: solid white;
+          border-width: 0 3px 3px 0;
+          transform: rotate(45deg);
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .checkbox-label input:checked ~ .checkmark:after {
+          display: block;
+          animation: checkmarkPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes checkmarkPop {
+          0% {
+            transform: rotate(45deg) scale(0);
+          }
+          50% {
+            transform: rotate(45deg) scale(1.2);
+          }
+          100% {
+            transform: rotate(45deg) scale(1);
+          }
+        }
+
+        .checkbox-label span:not(.checkmark) {
+          line-height: 1.5;
+          color: var(--text);
+          font-weight: 500;
+        }
+
+        .volunteer-checkboxes {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-top: 0.5rem;
+        }
+
+        .previous-volunteer-details {
+          margin-top: 1rem;
+          padding: 1rem;
+          background-color: #f8f9fa;
+          border-radius: 8px;
+          border-left: 4px solid var(--secondary);
+        }
+
+        .previous-volunteer-details label {
+          color: var(--secondary);
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+        }
+
+        .previous-volunteer-details textarea {
+          background-color: white;
+          border: 1px solid #ddd;
+        }
+
+        .previous-volunteer-details textarea:focus {
+          border-color: var(--secondary);
+          box-shadow: 0 0 0 2px rgba(231, 110, 90, 0.1);
+        }
+
+        .communication-preferences .checkbox-label {
+          background-color: #f8f9fa;
+          border: 1px solid #e9ecef;
+          border-radius: 8px;
+          padding: 1rem;
+          margin-bottom: 0.75rem;
+          transition: all 0.3s ease;
+        }
+
+        .communication-preferences .checkbox-label:hover {
+          background-color: rgba(47, 80, 106, 0.08);
+          border-color: var(--primary);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .communication-preferences .checkbox-label input:checked ~ .checkmark {
+          background-color: var(--secondary);
+          border-color: var(--secondary);
+        }
+
         @media (max-width: 768px) {
           .form-actions {
             flex-direction: column;
@@ -285,6 +678,10 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
           .form-actions .btn {
             width: 100%;
             margin-bottom: 0.5rem;
+          }
+
+          .volunteer-form {
+            padding: 0.5rem;
           }
         }
       `}</style>

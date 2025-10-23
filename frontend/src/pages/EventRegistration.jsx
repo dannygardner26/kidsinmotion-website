@@ -8,7 +8,7 @@ import { apiService } from '../services/api';
 const EventRegistration = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,12 +20,18 @@ const EventRegistration = () => {
       navigate(`/login?redirect=/events/${id}/register`);
       return;
     }
-    
+
+    // Redirect volunteers to volunteer signup page
+    if (userProfile && userProfile.userType === 'VOLUNTEER') {
+      navigate(`/events/${id}/volunteer`);
+      return;
+    }
+
     // Fetch event details when user is available
     if (currentUser) {
       fetchEventDetails();
     }
-  }, [id, currentUser, authLoading, navigate]);
+  }, [id, currentUser, userProfile, authLoading, navigate]);
   
   const fetchEventDetails = async () => {
     try {
@@ -117,7 +123,17 @@ const EventRegistration = () => {
   return (
     <>
       <div className="container mt-4">
-        <EventRegistrationForm 
+        {/* Enhanced info note for parents about stored account information */}
+        <div className="account-info-note enhanced">
+          <div className="info-icon">
+            <i className="fas fa-shield-alt"></i>
+          </div>
+          <div className="info-content">
+            <strong>Account Information Notice:</strong> We securely store your contact information (email and phone) and will use it to send important updates about your child's registration and event details.
+          </div>
+        </div>
+
+        <EventRegistrationForm
           event={event}
           onSuccess={handleRegistrationSuccess}
           onCancel={handleCancel}
@@ -125,6 +141,70 @@ const EventRegistration = () => {
       </div>
       
       <style>{`
+        .account-info-note {
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+          background: linear-gradient(135deg, #e6f3ff 0%, #f0f8ff 100%);
+          border: 2px solid #b3d9ff;
+          border-radius: 16px;
+          padding: 1.5rem;
+          margin-bottom: 2rem;
+          color: #0c4a6e;
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.1);
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .account-info-note.enhanced {
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+          border: 2px solid #7dd3fc;
+        }
+
+        .account-info-note::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          right: -50%;
+          width: 100%;
+          height: 100%;
+          background: radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
+          transform: rotate(45deg);
+          pointer-events: none;
+        }
+
+        .account-info-note:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(2, 132, 199, 0.15);
+          border-color: #0ea5e9;
+        }
+
+        .info-icon {
+          color: #0284c7;
+          font-size: 1.5rem;
+          margin-top: 0.125rem;
+          flex-shrink: 0;
+          background: rgba(2, 132, 199, 0.1);
+          padding: 0.75rem;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(2, 132, 199, 0.1);
+          position: relative;
+          z-index: 2;
+        }
+
+        .info-content {
+          line-height: 1.6;
+          position: relative;
+          z-index: 2;
+        }
+
+        .info-content strong {
+          color: #0c4a6e;
+          font-weight: 700;
+          font-size: 1.05rem;
+        }
+
         .loading-container {
           display: flex;
           flex-direction: column;
