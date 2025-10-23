@@ -45,7 +45,26 @@
       "WebFetch(domain:console.cloud.google.com)",
       "Bash(firebase deploy:*)",
       "Bash(gcloud builds list:*)",
-      "Bash(gcloud components:*)"
+      "Bash(gcloud components:*)",
+      "Bash(gcloud builds log:*)",
+      "Bash(gcloud builds submit:*)",
+      "Bash(gcloud config get-value:*)",
+      "Bash(gcloud run deploy:*)",
+      "Bash(gcloud run services update:*)",
+      "Read(//c/Users/danny/Documents/GitHub/MalvernWebDevelopment/assets/images/**)",
+      "Bash(nslookup:*)",
+      "Bash(mvn:*)",
+      "Bash(gradlew.bat build:*)",
+      "Bash(git reset:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git revert:*)",
+      "Bash(powershell:*)",
+      "Bash(.gradlew.bat:*)",
+      "Bash(gradlew.bat -p backendcomplete build)",
+      "Bash(./gradlew.bat build:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)"
     ],
     "deny": []
   }
