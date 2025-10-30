@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Clean Poster Template</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .event-poster {
+            width: 600px;
+            height: 600px;
+            background: #f8fafc;
+            color: #1e293b;
+            font-family: 'Arial', sans-serif;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+        }
+
+        .poster-header {
+            display: flex;
+            align-items: center;
+            padding: 25px;
+            background: #ffffff;
+            border-bottom: 4px solid #2f506a;
+        }
+
+        .poster-logo {
+            width: 70px;
+            height: 70px;
+            margin-right: 20px;
+            border-radius: 50%;
+            background: white;
+            padding: 10px;
+            border: 2px solid #2f506a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .poster-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .header-text h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: bold;
+            color: #2f506a;
+        }
+
+        .header-text p {
+            margin: 3px 0 0 0;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .poster-main {
+            padding: 20px 25px 80px 25px;
+            text-align: center;
+        }
+
+        .event-title h2 {
+            font-size: 24px;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #2f506a;
+            font-weight: 900;
+        }
+
+        .event-details {
+            margin: 12px 0;
+            text-align: left;
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(47, 80, 106, 0.1);
+            border-left: 4px solid #2f506a;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-icon {
+            font-size: 18px;
+            margin-right: 15px;
+            width: 30px;
+            text-align: center;
+            color: #2f506a;
+        }
+
+        .detail-text {
+            flex: 1;
+            color: #1e293b;
+        }
+
+        .event-description {
+            margin: 10px 0;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(47, 80, 106, 0.1);
+        }
+
+        .event-description p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #1e293b;
+        }
+
+        .call-to-action {
+            margin: 10px 0;
+            background: #2f506a;
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(47, 80, 106, 0.3);
+        }
+
+        .call-to-action-text {
+            flex: 1;
+        }
+
+        .call-to-action h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .call-to-action p {
+            margin: 2px 0;
+            font-size: 12px;
+        }
+
+        .website-link {
+            font-size: 14px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .qr-code {
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .qr-code img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .poster-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1e293b;
+            padding: 18px 30px;
+            color: white;
+        }
+
+        .contact-info p {
+            margin: 0;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .footer-decoration {
+            height: 3px;
+            background: #2f506a;
+            margin-top: 10px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="event-poster">
+        <!-- Header with logo -->
+        <div class="poster-header">
+            <div class="poster-logo">
+                <img src="https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/realKIMlogo-transparent.png?alt=media" alt="Kids in Motion Logo">
+            </div>
+            <div class="header-text">
+                <h1>KIDS IN MOTION</h1>
+                <p>Building Champions On and Off the Field</p>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="poster-main">
+            <div class="event-title">
+                <h2>Baseball Clinic</h2>
+            </div>
+
+            <div class="event-details">
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div class="detail-text">
+                        <strong>Friday, August 2, 2024</strong>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-clock"></i></div>
+                    <div class="detail-text">
+                        <strong>6:00 PM - 8:00 PM</strong>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="detail-text">
+                        <strong>Malvern Recreation Center</strong><br>
+                        <span style="font-size: 14px; font-weight: normal;">King Rd, Malvern, PA</span>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-users"></i></div>
+                    <div class="detail-text">
+                        <strong>Ages: 10-16 years</strong>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-icon"><i class="fas fa-dollar-sign"></i></div>
+                    <div class="detail-text">
+                        <strong>$25</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-description">
+                <p>High-energy basketball skills training! Dribbling, shooting, defense, and teamwork. Bring your energy and competitive spirit. Sneakers and water bottle required.</p>
+            </div>
+
+            <div class="call-to-action">
+                <div class="call-to-action-text">
+                    <h3>Register Today!</h3>
+                    <p class="website-link">kidsinmotionpa.org/events</p>
+                    <p>Scan QR code to register online</p>
+                </div>
+                <div class="qr-code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://kidsinmotionpa.org/events&color=2f506a&bgcolor=ffffff"
+                         alt="QR Code" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="poster-footer">
+            <div class="contact-info">
+                <p><i class="fas fa-globe"></i> kidsinmotionpa.org | <i class="fas fa-envelope"></i> kidsinmotion@gmail.com</p>
+            </div>
+            <div class="footer-decoration"></div>
+        </div>
+    </div>
+</body>
+</html>

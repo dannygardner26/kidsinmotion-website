@@ -1,0 +1,1697 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kids in Motion - Main CSS with animations and parallax support - Updated v2 */
+
+:root {
+  --imperial-red: #e64f50;
+  --indigo-dye: #2f506a;
+  --isabelline: #ede9e7;
+  --black: #060606;
+  --jet: #383838;
+  
+  --primary: var(--indigo-dye);
+  --primary-light: #3a6587;
+  --secondary: var(--imperial-red);
+  --secondary-light: #eb7172;
+  --background: var(--isabelline);
+  --text: var(--black);
+  --text-light: var(--jet);
+  --text-on-dark: white;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Open Sans', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+  padding-top: 5rem; /* Default padding for non-home pages */
+}
+
+/* Remove top padding specifically for pages with transparent headers */
+body.transparent-header-page-body {
+  padding-top: 0;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: var(--primary);
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+h3 {
+  font-size: 1.75rem;
+}
+
+h4 {
+  font-size: 1.5rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+a:hover {
+  color: var(--primary-light);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 0;
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  transition: height 0.5s ease, opacity 0.5s ease;
+}
+
+.btn:active::after {
+  height: 300%;
+  opacity: 1;
+  transition: height 0s, opacity 0.2s;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(47, 80, 106, 0.2);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(47, 80, 106, 0.3);
+}
+
+.btn-secondary {
+  display: inline-block !important; /* Force display */
+  background-color: var(--secondary);
+  color: white;
+  box-shadow: 0 2px 4px rgba(230, 79, 80, 0.2);
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(230, 79, 80, 0.3);
+}
+
+.btn-outline {
+  border: 2px solid var(--primary);
+  background-color: transparent;
+  color: var(--primary);
+}
+
+.btn-outline:hover {
+  background-color: var(--primary);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(47, 80, 106, 0.2);
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.2);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+/* Animated form labels */
+.form-floating {
+  position: relative;
+}
+
+.form-floating input,
+.form-floating textarea {
+  padding: 1.5rem 0.75rem 0.75rem;
+}
+
+.form-floating label {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.form-floating input:focus ~ label,
+.form-floating input:not(:placeholder-shown) ~ label,
+.form-floating textarea:focus ~ label,
+.form-floating textarea:not(:placeholder-shown) ~ label {
+  transform: translateY(-0.5rem) scale(0.85);
+  opacity: 1;
+  color: var(--primary);
+}
+
+/* Card */
+.card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  padding: 1rem;
+  background-color: var(--primary);
+  color: var(--text-on-dark);
+}
+
+.card-header--light {
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eee;
+}
+
+.card-header h1,
+.card-header h2,
+.card-header h3,
+.card-header h4,
+.card-header h5,
+.card-header h6 {
+  color: var(--text-on-dark);
+}
+
+.card-header a {
+  color: var(--text-on-dark);
+}
+
+.card-header--light h1,
+.card-header--light h2,
+.card-header--light h3,
+.card-header--light h4,
+.card-header--light h5,
+.card-header--light h6 {
+  color: var(--text);
+}
+
+.card-header--light a {
+  color: var(--text);
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+.card-footer {
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  background-color: var(--primary);
+  color: white;
+  padding: 6rem 0;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Remove top padding on hero section only for pages with transparent headers */
+body.transparent-header-page-body .hero { /* Keep this for the Home page */
+  padding-top: 0;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.2;
+  z-index: 0;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero h1 {
+  color: white;
+  font-size: 3.5rem;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUp 1s forwards 0.2s;
+}
+
+.hero p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUp 1s forwards 0.4s;
+}
+
+.hero .btn {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeUp 1s forwards 0.6s;
+}
+
+.hero-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  z-index: 1;
+  /* Ensure wave doesn't interfere with content */
+  pointer-events: none;
+}
+
+.hero-shapes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-shape {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: -150px;
+  left: -150px;
+  animation: float 20s infinite ease-in-out;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  top: 20%;
+  right: -100px;
+  animation: float 15s infinite ease-in-out reverse;
+}
+
+.shape-3 {
+  width: 150px;
+  height: 150px;
+  bottom: 10%;
+  left: 15%;
+  animation: float 25s infinite ease-in-out;
+}
+
+/* Navigation */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  padding: 1rem 0;
+  background-color: var(--primary); /* Default background */
+  transition: background-color 0.4s ease, box-shadow 0.4s ease, padding 0.4s ease;
+}
+
+/* Transparent state for Home page */
+.navbar.navbar-transparent {
+  background-color: transparent;
+  box-shadow: none; /* Remove shadow when transparent */
+}
+
+.navbar.scrolled {
+  padding: 0.5rem 0; /* Slightly reduce padding when scrolled */
+  background-color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: none;
+  padding: 0 2rem;
+}
+
+.navbar-logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-on-dark); /* Changed for initial visibility */
+  position: relative;
+  z-index: 102;
+  transition: transform 0.3s ease;
+}
+
+.navbar-logo:hover {
+  transform: scale(1.05);
+}
+
+.navbar-logo img {
+  height: 60px;
+  margin-right: 10px;
+  vertical-align: middle;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  border-radius: 8px;
+  object-fit: contain;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 4px;
+}
+
+/* Enhanced logo visibility when scrolled */
+.navbar.scrolled .navbar-logo img {
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3)) brightness(1.1) contrast(1.1);
+}
+
+.navbar-logo:hover img {
+  transform: rotate(5deg) scale(1.1);
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
+/* Added rule for scrolled state */
+.navbar.scrolled .navbar-logo {
+  color: var(--primary);
+}
+
+.navbar-menu {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.navbar-item {
+  /* Remove margin-left since we're using gap now */
+}
+
+.navbar-link {
+  color: var(--text-on-dark); /* Changed for initial visibility */
+  font-weight: 600;
+  padding: 0.5rem;
+  position: relative;
+}
+
+.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--secondary);
+  transition: width 0.3s ease;
+}
+
+/* Added rule for scrolled state */
+.navbar.scrolled .navbar-link {
+  color: var(--text);
+}
+
+.navbar-link:hover {
+  color: var(--secondary); /* Changed for contrast on dark bg */
+}
+
+.navbar-link:hover::after {
+  width: 100%;
+}
+
+.navbar-link.active {
+  color: var(--secondary); /* Changed for contrast on dark bg */
+}
+
+/* Added rules for scrolled hover/active state */
+.navbar.scrolled .navbar-link:hover,
+.navbar.scrolled .navbar-link.active {
+  color: var(--primary);
+}
+
+.navbar-link.active::after {
+  width: 100%;
+}
+
+.navbar-toggler {
+  display: none;
+  background: #e74c3c !important; /* Always red */
+  border: 2px solid #c0392b !important;
+  cursor: pointer;
+  width: 40px;
+  height: 32px;
+  position: relative;
+  z-index: 102;
+  padding: 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+}
+
+.navbar-toggler span {
+  display: block;
+  position: absolute;
+  height: 3px;
+  width: calc(100% - 12px);
+  background: white !important; /* White lines for contrast against red */
+  border-radius: 3px;
+  opacity: 1;
+  left: 6px;
+  transform: rotate(0deg);
+  transition: .25s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Keep red even when scrolled */
+.navbar.scrolled .navbar-toggler {
+  background: #e74c3c !important; /* Stay red when scrolled */
+  border: 2px solid #c0392b !important;
+}
+
+.navbar.scrolled .navbar-toggler span {
+  background: white !important; /* Keep white lines when scrolled */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-toggler span:nth-child(1) {
+  top: 6px;
+}
+
+.navbar-toggler span:nth-child(2),
+.navbar-toggler span:nth-child(3) {
+  top: 14px;
+}
+
+.navbar-toggler span:nth-child(4) {
+  top: 22px;
+}
+
+.navbar-toggler.open span:nth-child(1) {
+  top: 14px;
+  width: 0;
+  left: 50%;
+}
+
+.navbar-toggler.open span:nth-child(2) {
+  transform: rotate(45deg);
+}
+
+.navbar-toggler.open span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
+.navbar-toggler.open span:nth-child(4) {
+  top: 14px;
+  width: 0;
+  left: 50%;
+}
+
+/* Dropdown Menu Styles */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-arrow {
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  padding: 0.5rem 0;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+  color: var(--primary);
+}
+
+.dropdown-item i {
+  width: 16px;
+  text-align: center;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #e9ecef;
+  margin: 0.5rem 0;
+}
+
+.mr-2 {
+  margin-right: 0.5rem;
+}
+
+/* Section styles */
+.section {
+  padding: 5rem 0;
+  position: relative; /* Ensure stacking context */
+  z-index: 2; /* Stack above footer wave (z-index: 1) */
+  /* overflow: hidden; */ /* Removed to test button visibility */
+}
+
+/* Ensure form sections have higher z-index to prevent footer overlap */
+.section:has(.registration-form),
+.section:has(.card),
+.section:has(form) {
+  z-index: 10;
+  margin-bottom: 2rem;
+}
+
+.section-head {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+}
+
+.section-head::after {
+  content: '';
+  display: block;
+  width: 100px;
+  height: 3px;
+  background-color: var(--secondary);
+  margin: 1rem auto 0;
+}
+
+/* Scroll animations */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-in-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.slide-in-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.slide-in-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.slide-in-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Events */
+.event-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.event-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(47, 80, 106, 0.1);
+}
+
+.event-card .card-body {
+  flex: 1;
+}
+
+.event-meta {
+  margin-bottom: 1rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+}
+
+.event-meta i {
+  margin-right: 0.5rem;
+  color: var(--primary);
+}
+
+/* Footer */
+.footer {
+  background-color: var(--primary);
+  color: white;
+  padding: 3rem 0 1.5rem;
+  position: relative;
+}
+
+.footer a {
+  color: rgba(255, 255, 255, 0.8);
+  transition: color 0.3s ease;
+}
+
+.footer a:hover {
+  color: white;
+}
+
+.footer-wave {
+  position: absolute;
+  top: -100px;
+  left: 0;
+  width: 100%;
+  height: 100px;
+  z-index: 1;
+  /* Ensure footer wave doesn't cover interactive elements */
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .footer-wave {
+    top: -50px;
+    height: 50px;
+  }
+
+  .footer {
+    margin-top: 3rem; /* Add space between content and footer */
+  }
+
+  /* Ensure support mission section has proper spacing from footer */
+  .section:last-of-type {
+    margin-bottom: 4rem;
+    padding-bottom: 2rem;
+  }
+}
+
+.footer-content {
+  position: relative;
+  z-index: 2;
+  padding-left: 0; /* Remove horizontal padding */
+  padding-right: 0; /* Remove horizontal padding */
+}
+
+.footer-logo {
+  margin-bottom: 1.5rem;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-links li {
+  margin-bottom: 0.75rem;
+}
+
+.footer-social {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+  background-color: var(--secondary);
+  transform: translateY(-3px);
+}
+
+.footer-bottom {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Footer Layout Adjustments */
+.footer .row {
+  display: flex;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens if needed */
+  gap: 2rem; /* Add space between columns */
+  justify-content: space-between; /* Distribute space */
+}
+
+.footer .col-third {
+  flex: 1; /* Allow columns to grow */
+  min-width: 250px; /* Minimum width before wrapping */
+  margin-bottom: 1.5rem; /* Add bottom margin for spacing when stacked */
+}
+
+/* Apply horizontal layout only on medium screens and up */
+@media (min-width: 768px) {
+  .footer .row {
+    flex-wrap: nowrap; /* Prevent wrapping on larger screens */
+  }
+  .footer .col-third {
+     flex-basis: 30%; /* Approximate width for three columns */
+     margin-bottom: 0; /* Remove bottom margin when horizontal */
+  }
+}
+
+
+/* Utilities */
+.text-center {
+  text-align: center;
+}
+
+.mb-1 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 1rem;
+}
+
+.mb-3 {
+  margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+  margin-bottom: 2rem;
+}
+
+.mt-1 {
+  margin-top: 0.5rem;
+}
+
+.mt-2 {
+  margin-top: 1rem;
+}
+
+.mt-3 {
+  margin-top: 1.5rem;
+}
+
+.mt-4 {
+  margin-top: 2rem;
+}
+
+/* Animations */
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(15px, -15px);
+  }
+}
+
+/* Parallax effect */
+.parallax {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .hero h1 {
+    font-size: 3rem;
+  }
+  
+  .col-third, .col-fourth {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-menu {
+    position: fixed;
+    top: 0;
+    right: -350px;
+    width: 350px;
+    height: 100vh;
+    background-color: white;
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    transition: right 0.3s ease;
+    z-index: 101;
+    padding: 80px 0 20px 0;
+    overflow-y: auto;
+    gap: 0;
+  }
+
+  .navbar-menu.open {
+    right: 0;
+  }
+
+  .navbar-toggler {
+    display: block;
+  }
+
+  .navbar-item {
+    margin: 0;
+    width: 100%;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .navbar-link {
+    display: block;
+    padding: 1rem 1.5rem;
+    width: 100%;
+    text-align: left;
+    color: #000;
+    border: none;
+    background: none;
+    font-size: 1rem;
+  }
+
+  .navbar-link:hover {
+    background-color: #f8f9fa;
+    color: #000;
+  }
+
+  .navbar-link.active {
+    background-color: var(--primary);
+    color: white;
+  }
+
+  .navbar-link.active::after {
+    display: none;
+  }
+
+  /* Mobile dropdown styling */
+  .navbar-menu .dropdown {
+    position: static;
+    width: 100%;
+  }
+
+  .navbar-menu .dropdown-toggle {
+    padding: 1rem 1.5rem;
+    width: 100%;
+    text-align: left;
+    justify-content: space-between;
+    background: none;
+    border: none;
+    color: #000;
+    font-size: 1rem;
+  }
+
+  .navbar-menu .dropdown-toggle:hover {
+    background-color: #f8f9fa;
+    color: #000;
+  }
+
+  .navbar-menu .dropdown-menu {
+    position: static;
+    width: 100%;
+    background: #f8f9fa;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    display: none;
+  }
+
+  .navbar-menu .dropdown-menu.show {
+    display: block;
+  }
+
+  .navbar-menu .dropdown-item {
+    padding: 0.75rem 2rem;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 0.9rem;
+  }
+
+  .navbar-menu .dropdown-item:hover {
+    background-color: #e9ecef;
+  }
+
+  /* Mobile inbox dropdown */
+  .navbar-menu .inbox-dropdown-menu {
+    position: static;
+    width: 100%;
+    min-width: unset;
+    max-width: none;
+    background: #f8f9fa;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .navbar-menu .inbox-dropdown-header {
+    padding: 0.75rem 1.5rem;
+    background: var(--primary);
+    margin: 0;
+  }
+
+  .navbar-menu .inbox-dropdown-body {
+    max-height: 300px;
+    padding: 0;
+  }
+
+  .navbar-menu .inbox-message-compact {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  /* Remove mobile overlay to eliminate screen dimming */
+  .navbar-menu.open::before {
+    display: none;
+  }
+
+  /* Ensure mobile menu is above overlay */
+  .navbar-menu {
+    z-index: 102;
+  }
+
+  /* Fix navbar dimming by ensuring proper z-index stacking */
+  .navbar {
+    z-index: 1000;
+    position: relative;
+  }
+  
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .col-half, .col-third, .col-two-thirds, .col-fourth {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .section {
+    padding: 3rem 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero h1 {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .btn {
+    display: block;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Fix view events button positioning */
+  .hero .btn {
+    margin: 0.5rem auto;
+    max-width: 280px;
+    padding: 0.75rem 1.5rem;
+  }
+
+  /* Ensure hero content has proper spacing */
+  .hero-content {
+    padding: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  /* Mission section mobile improvements */
+  .flex[style*="flex-direction: row"] {
+    flex-direction: column !important;
+  }
+
+  .flex[style*="flex-direction: row"] > div {
+    flex-basis: auto !important;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Footer logo spacing fix */
+  .footer-logo {
+    margin-bottom: 1.5rem;
+    padding: 0 1rem;
+  }
+
+  .footer-content {
+    padding: 0 1rem;
+  }
+}
+
+/* Loading Spinner Styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(47, 80, 106, 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Inbox Styles */
+.inbox-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.inbox-container {
+  background: white;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inbox-header {
+  background: var(--primary);
+  color: white;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inbox-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.unread-badge {
+  background: var(--secondary);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-left: 0.5rem;
+}
+
+.inbox-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.inbox-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.inbox-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.inbox-loading, .inbox-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-light);
+}
+
+.inbox-empty i {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.inbox-messages {
+  display: flex;
+  flex-direction: column;
+}
+
+.inbox-message {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inbox-message:hover {
+  background: #f8f9fa;
+}
+
+.inbox-message.unread {
+  background: #f0f9ff;
+  border-left: 4px solid var(--primary);
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.message-from {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.message-time {
+  font-size: 0.8rem;
+  color: var(--text-light);
+}
+
+.message-delete {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: color 0.2s;
+}
+
+.message-delete:hover {
+  color: var(--secondary);
+}
+
+.message-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.message-body {
+  color: var(--text-light);
+  line-height: 1.4;
+  margin-bottom: 0.75rem;
+}
+
+.message-action {
+  margin-top: 0.75rem;
+}
+
+.message-action .btn {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+}
+
+/* Inbox dropdown in navbar */
+.inbox-dropdown {
+  position: relative;
+}
+
+.inbox-trigger {
+  display: flex;
+  align-items: center;
+  color: white !important;
+  text-decoration: none;
+  position: relative;
+}
+
+.inbox-trigger:hover {
+  color: white !important;
+}
+
+/* Fix inbox text color when navbar is scrolled */
+.navbar.scrolled .inbox-trigger {
+  color: var(--text) !important;
+}
+
+.navbar.scrolled .inbox-trigger:hover {
+  color: var(--primary) !important;
+}
+
+.inbox-trigger .unread-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 0.6rem;
+  min-width: 16px;
+  height: 16px;
+}
+
+.inbox-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  min-width: 350px;
+  max-width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e5e7eb;
+  z-index: 1000;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+.inbox-dropdown-content {
+  width: 100%;
+}
+
+.inbox-dropdown-header {
+  background: var(--primary);
+  color: white;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inbox-title {
+  display: flex;
+  align-items: center;
+}
+
+.inbox-dropdown-body {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.inbox-message-compact {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.85rem;
+}
+
+.inbox-message-compact:hover {
+  background: #f8fafc;
+}
+
+.inbox-message-compact.unread {
+  background: #f0f9ff;
+  border-left: 3px solid var(--primary);
+}
+
+.message-header-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.message-from-compact {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.message-delete-compact {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  transition: color 0.2s;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.inbox-message-compact:hover .message-delete-compact {
+  opacity: 1;
+}
+
+.message-delete-compact:hover {
+  color: var(--secondary);
+}
+
+.message-title-compact {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  font-size: 0.8rem;
+  color: #1e293b;
+  line-height: 1.2;
+}
+
+.message-body-compact {
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.message-time-compact {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.message-action-compact {
+  margin-top: 0.5rem;
+}
+
+.btn-xs {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.message-action-compact .btn-xs {
+  font-size: 0.65rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.inbox-view-all {
+  padding: 0.75rem;
+  text-align: center;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.inbox-view-all:hover {
+  background: #f1f5f9;
+}
+
+/* Inbox icon in navbar (legacy support) */
+.inbox-icon {
+  position: relative;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.inbox-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.inbox-icon .unread-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(25%, -25%);
+  font-size: 0.6rem;
+  min-width: 16px;
+  height: 16px;
+}
+
+/* Additional Mobile Fixes and Improvements */
+@media (max-width: 768px) {
+  /* Mission section text formatting improvements */
+  .section h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .section p {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Fix container padding on mobile */
+  .container {
+    padding: 0 1rem;
+  }
+
+  /* Improve card spacing */
+  .card {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Ensure buttons are properly sized */
+  .btn {
+    min-height: 44px; /* Touch-friendly minimum */
+    padding: 0.75rem 1.5rem;
+  }
+
+  /* Footer improvements */
+  .footer {
+    padding: 2rem 0 1rem;
+  }
+
+  .footer .row {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer .col-third {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Wave background fixes */
+  .hero-wave svg,
+  .footer-wave svg {
+    width: 100%;
+    height: auto;
+    min-height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile devices */
+  .hero {
+    min-height: 60vh;
+    padding: 2rem 0;
+  }
+
+  .hero h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero p {
+    font-size: 0.95rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Form improvements for very small screens */
+  .form-control {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0 0.75rem;
+  }
+
+  /* Registration form mobile fixes */
+  .registration-form {
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .registration-form .card {
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .registration-form .form-actions {
+    padding: 1rem;
+    margin: 0 -1rem -1rem;
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+  }
+
+  .registration-form .form-actions .btn {
+    font-size: 1rem;
+    padding: 0.875rem 1rem;
+  }
+}

@@ -1,0 +1,19 @@
+# Ignore build artifacts
+**/build/
+**/target/
+**/.gradle/
+**/node_modules/
+**/.git/
+
+# Ignore IDE files
+**/.idea/
+**/.vscode/
+**/*.iml
+
+# Ignore OS files
+**/.DS_Store
+**/Thumbs.db
+
+# Ignore sensitive files
+**/*.env
+**/firebase-service-account.json

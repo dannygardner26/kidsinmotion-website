@@ -1,0 +1,46 @@
+plugins {
+	id 'org.springframework.boot' version '3.3.0'
+	id 'io.spring.dependency-management' version '1.1.5'
+	id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // JPA and Spring Data
+	runtimeOnly 'com.h2database:h2' // H2 in-memory database for development
+	runtimeOnly 'org.postgresql:postgresql' // PostgreSQL driver for production
+	// --- Added Dependencies ---
+	implementation 'org.springframework.boot:spring-boot-starter-security' // For authentication/authorization
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa' // Temporarily disabled for Firestore migration
+	implementation 'org.springframework.boot:spring-boot-starter-validation' // For validation annotations
+	implementation 'com.google.firebase:firebase-admin:9.2.0' // Firebase Admin SDK for Firestore
+	implementation 'org.springframework.boot:spring-boot-starter-mail' // Email delivery
+	implementation 'com.sendgrid:sendgrid-java:4.9.3' // SendGrid email service
+	implementation 'com.twilio.sdk:twilio:9.3.0' // SMS delivery via Twilio
+	// --- End Added Dependencies ---
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine' // Exclude vintage engine if not needed
+    }
+    testImplementation 'org.springframework.security:spring-security-test' // For testing security aspects
+}
+
+bootJar {
+	archiveFileName = 'app.jar'
+}
+
+// Only publish the Boot fat JAR for container builds
+tasks.named('jar') {
+	enabled = false
+}
+
+test {
+	useJUnitPlatform()
+}

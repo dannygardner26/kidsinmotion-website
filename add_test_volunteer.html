@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Test Volunteer</title>
+    <script>
+        // Script to add a test volunteer for an event
+        const baseURL = 'https://kidsinmotion-website-839796180413.us-east4.run.app/api';
+
+        async function addTestVolunteer() {
+            const token = prompt("Please enter your auth token (get this from browser dev tools after logging in as admin):");
+
+            if (!token) {
+                alert("Token required to add volunteer");
+                return;
+            }
+
+            const eventId = prompt("Enter the event ID you want to add a volunteer to:");
+
+            if (!eventId) {
+                alert("Event ID required");
+                return;
+            }
+
+            const volunteerData = {
+                eventId: eventId, // Keep as string for Firestore
+                role: "General Volunteer",
+                availability: "All day",
+                skills: "Event setup, crowd management",
+                notes: "Test volunteer for debugging purposes"
+            };
+
+            try {
+                console.log(`Adding volunteer to event: ${eventId}`);
+
+                const response = await fetch(`${baseURL}/volunteers`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(volunteerData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log(`✅ Added volunteer:`, result);
+                    document.getElementById('results').innerHTML += `<p>✅ Added volunteer successfully</p>`;
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Failed to add volunteer:`, errorText);
+                    document.getElementById('results').innerHTML += `<p>❌ Failed: ${response.status} - ${errorText}</p>`;
+                }
+            } catch (error) {
+                console.error(`❌ Error adding volunteer:`, error);
+                document.getElementById('results').innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testGetVolunteers() {
+            const token = prompt("Please enter your auth token:");
+
+            if (!token) {
+                alert("Token required to get volunteers");
+                return;
+            }
+
+            const eventId = prompt("Enter the event ID to check volunteers for:");
+
+            if (!eventId) {
+                alert("Event ID required");
+                return;
+            }
+
+            try {
+                console.log(`Getting volunteers for event: ${eventId}`);
+
+                const response = await fetch(`${baseURL}/volunteers/event/${eventId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log(`✅ Volunteers found:`, result);
+                    document.getElementById('results').innerHTML += `<p>✅ Found ${result.length} volunteers for event ${eventId}</p>`;
+                    if (result.length > 0) {
+                        result.forEach((v, i) => {
+                            document.getElementById('results').innerHTML += `<p>Volunteer ${i+1}: ${v.userFirstName} ${v.userLastName} - ${v.role} (${v.userEmail})</p>`;
+                        });
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Failed to get volunteers:`, errorText);
+                    document.getElementById('results').innerHTML += `<p>❌ Failed: ${response.status} - ${errorText}</p>`;
+                }
+            } catch (error) {
+                console.error(`❌ Error getting volunteers:`, error);
+                document.getElementById('results').innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testGetAllVolunteers() {
+            const token = prompt("Please enter your auth token:");
+
+            if (!token) {
+                alert("Token required to get volunteers");
+                return;
+            }
+
+            try {
+                console.log(`Getting all volunteers across all events`);
+
+                const response = await fetch(`${baseURL}/volunteers/admin/all`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log(`✅ All volunteers found:`, result);
+                    document.getElementById('results').innerHTML += `<p>✅ Found ${result.length} total volunteers across all events</p>`;
+                    if (result.length > 0) {
+                        result.forEach((v, i) => {
+                            document.getElementById('results').innerHTML += `<p>Volunteer ${i+1}: ${v.userFirstName} ${v.userLastName} - ${v.role} for event "${v.eventName}" (${v.userEmail})</p>`;
+                        });
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Failed to get all volunteers:`, errorText);
+                    document.getElementById('results').innerHTML += `<p>❌ Failed: ${response.status} - ${errorText}</p>`;
+                }
+            } catch (error) {
+                console.error(`❌ Error getting all volunteers:`, error);
+                document.getElementById('results').innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Test Volunteer Management</h1>
+
+    <button onclick="addTestVolunteer()">Add Test Volunteer</button>
+    <button onclick="testGetVolunteers()">Get Volunteers for Event</button>
+    <button onclick="testGetAllVolunteers()">Get ALL Volunteers</button>
+
+    <div id="results"></div>
+
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Open your browser and go to <a href="https://kidsinmotionpa.org" target="_blank">kidsinmotionpa.org</a></li>
+        <li>Log in as admin (kidsinmotion0@gmail.com)</li>
+        <li>Open browser dev tools (F12)</li>
+        <li>Go to Application/Storage → Local Storage → kidsinmotionpa.org</li>
+        <li>Find the auth token and copy it</li>
+        <li>Come back to this page and use the buttons above</li>
+        <li>You can get event IDs from the admin dashboard</li>
+    </ol>
+</body>
+</html>

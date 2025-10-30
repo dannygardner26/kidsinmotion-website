@@ -1,0 +1,254 @@
+package com.example.restservice;
+
+import com.example.restservice.model.Child;
+import com.example.restservice.model.Participant;
+import com.example.restservice.model.User;
+import com.example.restservice.payload.response.MessageResponse;
+import com.example.restservice.repository.ChildRepository;
+import com.example.restservice.repository.ParticipantRepository;
+import com.example.restservice.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+
+import java.util.List;
+import java.util.Optional;
+
+@CrossOrigin(origins = "*", maxAge = 3600)
+@RestController
+@RequestMapping("/api/children")
+public class ChildController {
+
+    @Autowired
+    private ChildRepository childRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ParticipantRepository participantRepository;
+
+    // Get all children for the current user
+    @GetMapping
+    public ResponseEntity<?> getMyChildren(HttpServletRequest request) {
+        try {
+            String firebaseUid = (String) request.getAttribute("firebaseUid");
+
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            User currentUser = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElse(null);
+
+            if (currentUser == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: User not found"));
+            }
+
+            // Only parents can manage children
+            if (currentUser.getUserType() != User.UserType.PARENT) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Only parents can manage children"));
+            }
+
+            List<Child> children = childRepository.findByParentOrderByFirstNameAsc(currentUser);
+            return ResponseEntity.ok(children);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to get children - " + e.getMessage()));
+        }
+    }
+
+    // Get a specific child by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getChild(@PathVariable Long id, HttpServletRequest request) {
+        try {
+            String firebaseUid = (String) request.getAttribute("firebaseUid");
+
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            Optional<Child> child = childRepository.findByIdAndParentFirebaseUid(id, firebaseUid);
+
+            if (child.isEmpty()) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Child not found"));
+            }
+
+            return ResponseEntity.ok(child.get());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to get child - " + e.getMessage()));
+        }
+    }
+
+    // Create a new child
+    @PostMapping
+    public ResponseEntity<?> createChild(@Valid @RequestBody ChildCreateRequest request,
+                                       HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            User currentUser = userRepository.findByFirebaseUid(firebaseUid)
+                    .orElse(null);
+
+            if (currentUser == null) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: User not found"));
+            }
+
+            // Only parents can create children
+            if (currentUser.getUserType() != User.UserType.PARENT) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Only parents can manage children"));
+            }
+
+            Child child = new Child(request.getFirstName(), request.getLastName(), request.getAge(), currentUser);
+            child.setGrade(request.getGrade());
+            child.setBaseballExperience(request.getBaseballExperience());
+            child.setMedicalConcerns(request.getMedicalConcerns());
+            child.setFoodAllergies(request.getFoodAllergies());
+            child.setAdditionalInformation(request.getAdditionalInformation());
+
+            Child savedChild = childRepository.save(child);
+            return ResponseEntity.ok(savedChild);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to create child - " + e.getMessage()));
+        }
+    }
+
+    // Update an existing child
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateChild(@PathVariable Long id,
+                                       @Valid @RequestBody ChildUpdateRequest request,
+                                       HttpServletRequest httpRequest) {
+        try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            Optional<Child> optionalChild = childRepository.findByIdAndParentFirebaseUid(id, firebaseUid);
+
+            if (optionalChild.isEmpty()) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Child not found"));
+            }
+
+            Child child = optionalChild.get();
+            child.setFirstName(request.getFirstName());
+            child.setLastName(request.getLastName());
+            child.setAge(request.getAge());
+            child.setGrade(request.getGrade());
+            child.setBaseballExperience(request.getBaseballExperience());
+            child.setMedicalConcerns(request.getMedicalConcerns());
+            child.setFoodAllergies(request.getFoodAllergies());
+            child.setAdditionalInformation(request.getAdditionalInformation());
+
+            Child updatedChild = childRepository.save(child);
+            return ResponseEntity.ok(updatedChild);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to update child - " + e.getMessage()));
+        }
+    }
+
+    // Delete a child
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteChild(@PathVariable Long id, HttpServletRequest request) {
+        try {
+            String firebaseUid = (String) request.getAttribute("firebaseUid");
+
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            Optional<Child> child = childRepository.findByIdAndParentFirebaseUid(id, firebaseUid);
+
+            if (child.isEmpty()) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Child not found"));
+            }
+
+            // Get the parent user
+            Optional<User> parentUser = userRepository.findByFirebaseUid(firebaseUid);
+            if (parentUser.isEmpty()) {
+                return ResponseEntity.status(404)
+                    .body(new MessageResponse("Error: Parent user not found"));
+            }
+
+            // Delete all event registrations for this child
+            String childFullName = child.get().getFirstName() + " " + child.get().getLastName();
+            List<Participant> childParticipants = participantRepository.findByChildNameAndParentUser(childFullName, parentUser.get());
+            participantRepository.deleteAll(childParticipants);
+
+            // Delete the child
+            childRepository.delete(child.get());
+            return ResponseEntity.ok(new MessageResponse("Child and associated event registrations deleted successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to delete child - " + e.getMessage()));
+        }
+    }
+
+    // Request classes for creating and updating children
+    public static class ChildCreateRequest {
+        private String firstName;
+        private String lastName;
+        private Integer age;
+        private String grade;
+        private String baseballExperience;
+        private String medicalConcerns;
+        private String foodAllergies;
+        private String additionalInformation;
+
+        // Getters and setters
+        public String getFirstName() { return firstName; }
+        public void setFirstName(String firstName) { this.firstName = firstName; }
+
+        public String getLastName() { return lastName; }
+        public void setLastName(String lastName) { this.lastName = lastName; }
+
+        public Integer getAge() { return age; }
+        public void setAge(Integer age) { this.age = age; }
+
+        public String getGrade() { return grade; }
+        public void setGrade(String grade) { this.grade = grade; }
+
+        public String getBaseballExperience() { return baseballExperience; }
+        public void setBaseballExperience(String baseballExperience) { this.baseballExperience = baseballExperience; }
+
+        public String getMedicalConcerns() { return medicalConcerns; }
+        public void setMedicalConcerns(String medicalConcerns) { this.medicalConcerns = medicalConcerns; }
+
+        public String getFoodAllergies() { return foodAllergies; }
+        public void setFoodAllergies(String foodAllergies) { this.foodAllergies = foodAllergies; }
+
+        public String getAdditionalInformation() { return additionalInformation; }
+        public void setAdditionalInformation(String additionalInformation) { this.additionalInformation = additionalInformation; }
+    }
+
+    public static class ChildUpdateRequest extends ChildCreateRequest {
+        // Inherits all fields from ChildCreateRequest
+    }
+}

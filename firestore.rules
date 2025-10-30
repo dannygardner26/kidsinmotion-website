@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Events collection - readable by all authenticated users, writable by admins
+    match /events/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Participants collection - readable by all authenticated users, writable by admins
+    match /participants/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Volunteers collection - readable by all authenticated users, writable by admins
+    match /volunteers/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Children collection - parents can read/write their own children
+    match /children/{childId} {
+      allow read, write: if request.auth != null &&
+        (request.auth.uid == resource.data.parentFirebaseUid ||
+         request.auth.uid == request.resource.data.parentFirebaseUid ||
+         hasAdminRole());
+    }
+
+    // Event chat subcollection - accessible by admins and allowed users
+    match /events/{eventId}/chat/{messageId} {
+      allow read: if request.auth != null &&
+        (hasAdminRole() ||
+         request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.allowedUserIds);
+      allow create: if request.auth != null &&
+        (hasAdminRole() ||
+         request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.allowedUserIds) &&
+        request.resource.data.senderId == request.auth.uid &&
+        request.resource.data.keys().hasAll(['text', 'senderId', 'senderName', 'senderRole', 'timestamp']);
+      allow update: if request.auth != null &&
+        (hasAdminRole() ||
+         request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.allowedUserIds) &&
+        // Only allow updating the 'read' field
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+        // Ensure read field is set to true
+        request.resource.data.read == true;
+    }
+
+    // User messages subcollection - users can only read their own messages
+    match /users/{userId}/messages/{messageId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Admin-only collections
+    match /admin_messages/{document=**} {
+      allow read, write: if request.auth != null && hasAdminRole();
+    }
+
+    // Public announcements - readable by all authenticated users
+    match /announcements/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && hasAdminRole();
+    }
+
+    // Helper function to check admin role
+    function hasAdminRole() {
+      return request.auth.token.email in [
+        'kidsinmotion0@gmail.com',
+        'danny@dannygardner.com'
+      ] ||
+      request.auth.token.admin == true;
+    }
+
+  }
+}

@@ -1,0 +1,62 @@
+steps:
+  # Step 1: Build the Spring Boot application with Gradle (Java 17)
+  - name: 'gradle:8.5-jdk17'
+    id: 'gradle-build'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        ls -la
+        pwd
+        gradle --version
+        gradle clean build --no-daemon --stacktrace
+    dir: 'backend/complete'
+
+  # Step 2: Build Docker image with proper tagging (force Dockerfile usage)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--file'
+      - './Dockerfile'
+      - '--tag'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+      - '.'
+    dir: 'backend/complete'
+    waitFor: ['gradle-build']  # Wait for Gradle build to complete
+
+  # Step 3: Push to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+
+  # Step 4: Deploy to Cloud Run (use 'deploy' so --allow-unauthenticated works)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'kidsinmotion-website'
+      - '--platform=managed'
+      - '--image=us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+      - '--region=us-east4'
+      - '--set-env-vars=^@^SPRING_PROFILES_ACTIVE=production@CORS_ALLOWED_ORIGINS=https://kidsinmotionpa.org,https://www.kidsinmotionpa.org@FIREBASE_ENABLED=true'
+      - '--set-secrets=FIREBASE_SERVICE_ACCOUNT_JSON=firebase-service-account:latest'
+      - '--port=8080'
+      - '--timeout=1200'
+      - '--memory=2Gi'
+      - '--cpu=2'
+      - '--cpu-throttling'
+      - '--max-instances=10'
+      - '--allow-unauthenticated'
+
+# Specify which image will be pushed to registry
+images:
+  - 'us-east4-docker.pkg.dev/kids-in-motion-website-b1c09/cloud-run-source-deploy/kidsinmotion-website:latest'
+
+# Build options
+options:
+  substitutionOption: ALLOW_LOOSE
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
