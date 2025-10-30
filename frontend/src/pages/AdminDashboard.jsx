@@ -322,11 +322,11 @@ const AdminDashboard = () => {
                         <td>
                           <div className="stats-cell">
                             <div className="stat-item">
-                              <strong>{loadingStats ? '...' : registrationCount}</strong>
+                              <strong>{isLoading ? '...' : registrationCount}</strong>
                               <span className="small"> registrations</span>
                             </div>
                             <div className="stat-item">
-                              <strong>{loadingStats ? '...' : volunteerCount}</strong>
+                              <strong>{isLoading ? '...' : volunteerCount}</strong>
                               <span className="small"> volunteers</span>
                               {stats.volunteerError && volunteerCount === 0 && (
                                 <i className="fas fa-exclamation-triangle text-warning ml-1" title="Error loading volunteers"></i>

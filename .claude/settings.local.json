@@ -111,7 +111,11 @@
       "Bash(git fetch:*)",
       "Bash(docker build:*)",
       "Bash(git log:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(firebase database:get:*)",
+      "Bash(firebase init:*)",
+      "WebFetch(domain:console.firebase.google.com)",
+      "Bash(gcloud firebase databases create:*)"
     ],
     "deny": []
   }
