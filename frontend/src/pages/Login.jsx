@@ -205,7 +205,7 @@ const Login = () => {
       if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
         try {
           window.google.accounts.id.initialize({
-            client_id: "839796180413-i0uvjtqpus9rj5pnvk7jngb31n6qvco4.apps.googleusercontent.com",
+            client_id: "839796180413-30kvc5flvdeo29pks8r9kkf1jr67ccju.apps.googleusercontent.com",
             callback: handleGoogleSignIn,
           });
           window.google.accounts.id.renderButton(
