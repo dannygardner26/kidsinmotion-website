@@ -114,9 +114,9 @@ public class AdminController {
                     List<ConnectionFirestore> connections = connectionRepository.findAcceptedConnectionsForUser(participant.getParentUserId());
 
                     for (ConnectionFirestore connection : connections) {
-                        String connectionUid = connection.getUserId().equals(participant.getParentUserId())
-                            ? connection.getConnectedUserId()
-                            : connection.getUserId();
+                        String connectionUid = connection.getRequesterId().equals(participant.getParentUserId())
+                            ? connection.getReceiverId()
+                            : connection.getRequesterId();
 
                         connectionsToNotify.computeIfAbsent(connectionUid, k -> new ArrayList<>());
 
@@ -145,9 +145,9 @@ public class AdminController {
                     List<ConnectionFirestore> connections = connectionRepository.findAcceptedConnectionsForUser(volunteer.getUserId());
 
                     for (ConnectionFirestore connection : connections) {
-                        String connectionUid = connection.getUserId().equals(volunteer.getUserId())
-                            ? connection.getConnectedUserId()
-                            : connection.getUserId();
+                        String connectionUid = connection.getRequesterId().equals(volunteer.getUserId())
+                            ? connection.getReceiverId()
+                            : connection.getRequesterId();
 
                         connectionsToNotify.computeIfAbsent(connectionUid, k -> new ArrayList<>());
 

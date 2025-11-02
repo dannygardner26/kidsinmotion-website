@@ -3,9 +3,11 @@ package com.example.restservice;
 import com.example.restservice.model.firestore.EventFirestore;
 import com.example.restservice.model.firestore.UserFirestore;
 import com.example.restservice.model.firestore.ParticipantFirestore;
+import com.example.restservice.model.firestore.VolunteerFirestore;
 import com.example.restservice.repository.firestore.EventFirestoreRepository;
 import com.example.restservice.repository.firestore.UserFirestoreRepository;
 import com.example.restservice.repository.firestore.ParticipantFirestoreRepository;
+import com.example.restservice.repository.firestore.VolunteerFirestoreRepository;
 import com.example.restservice.payload.response.MessageResponse;
 import com.example.restservice.service.NotificationService;
 import com.google.cloud.firestore.Firestore;
@@ -46,6 +48,9 @@ public class ParticipantController {
 
     @Autowired
     private EventFirestoreRepository eventRepository;
+
+    @Autowired
+    private VolunteerFirestoreRepository volunteerRepository;
 
     @Autowired
     private NotificationService notificationService;
