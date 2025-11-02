@@ -267,18 +267,50 @@ const Register = () => {
 
   // Initialize Google Sign-In button
   useEffect(() => {
-    if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
-      window.google.accounts.id.initialize({
-        client_id: "839796180413-i0uvjtqpus9rj5pnvk7jngb31n6qvco4.apps.googleusercontent.com",
-        callback: handleGoogleSignIn,
-      });
-      window.google.accounts.id.renderButton(
-        googleButtonDivRef.current,
-        { theme: "outline", size: "large", type: "standard", text: "signup_with" }
-      );
-    } else {
-      console.log("Google GSI not ready or div not available yet.");
+    const initializeGoogleSignIn = () => {
+      if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: "839796180413-i0uvjtqpus9rj5pnvk7jngb31n6qvco4.apps.googleusercontent.com",
+            callback: handleGoogleSignIn,
+          });
+          window.google.accounts.id.renderButton(
+            googleButtonDivRef.current,
+            { theme: "outline", size: "large", type: "standard", text: "signup_with" }
+          );
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Google Sign-In initialized successfully on Register");
+          }
+        } catch (error) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error("Error initializing Google Sign-In on Register:", error);
+          }
+        }
+      } else {
+        // Retry after a short delay if Google script hasn't loaded yet
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Google GSI not ready on Register, retrying in 500ms...");
+        }
+        setTimeout(initializeGoogleSignIn, 500);
+      }
+    };
+
+    // Try to initialize immediately
+    initializeGoogleSignIn();
+
+    // Also listen for the script load event
+    const handleGoogleScriptLoad = () => {
+      initializeGoogleSignIn();
+    };
+
+    // Add event listener for when the script loads
+    if (typeof window.google === 'undefined') {
+      window.addEventListener('load', handleGoogleScriptLoad);
     }
+
+    return () => {
+      window.removeEventListener('load', handleGoogleScriptLoad);
+    };
   }, []); // Run once on mount
 
   return (

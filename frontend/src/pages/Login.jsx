@@ -201,23 +201,50 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
-      window.google.accounts.id.initialize({
-        client_id: "839796180413-i0uvjtqpus9rj5pnvk7jngb31n6qvco4.apps.googleusercontent.com",
-        callback: handleGoogleSignIn,
-      });
-      window.google.accounts.id.renderButton(
-        googleButtonDivRef.current,
-        { theme: "outline", size: "large", type: "standard", text: "signin_with" } 
-      );
-      // Optional: google.accounts.id.prompt(); // For One Tap sign-in
-    } else {
-      // Handle case where Google script might not be loaded yet or div isn't rendered
-      // This might require a retry mechanism or ensuring script loads before component mount
-      console.log("Google GSI not ready or div not available yet.");
+    const initializeGoogleSignIn = () => {
+      if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: "839796180413-i0uvjtqpus9rj5pnvk7jngb31n6qvco4.apps.googleusercontent.com",
+            callback: handleGoogleSignIn,
+          });
+          window.google.accounts.id.renderButton(
+            googleButtonDivRef.current,
+            { theme: "outline", size: "large", type: "standard", text: "signin_with" }
+          );
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Google Sign-In initialized successfully");
+          }
+        } catch (error) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error("Error initializing Google Sign-In:", error);
+          }
+        }
+      } else {
+        // Retry after a short delay if Google script hasn't loaded yet
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Google GSI not ready, retrying in 500ms...");
+        }
+        setTimeout(initializeGoogleSignIn, 500);
+      }
+    };
+
+    // Try to initialize immediately
+    initializeGoogleSignIn();
+
+    // Also listen for the script load event
+    const handleGoogleScriptLoad = () => {
+      initializeGoogleSignIn();
+    };
+
+    // Add event listener for when the script loads
+    if (typeof window.google === 'undefined') {
+      window.addEventListener('load', handleGoogleScriptLoad);
     }
-    // Cleanup function for GSI if needed, though renderButton doesn't return a cleanup
-    // For prompt, one might use google.accounts.id.cancel()
+
+    return () => {
+      window.removeEventListener('load', handleGoogleScriptLoad);
+    };
   }, []); // Run once on mount
 
   // Initial loading state before Firebase auth check completes (optional, can be brief)
@@ -312,7 +339,12 @@ const Login = () => {
 
                  {/* Google Sign-in Button - Rendered by Google Identity Services */}
                  <div className="mb-4 flex justify-center">
-                    <div id="googleSignInButtonDiv" ref={googleButtonDivRef}></div>
+                    <div id="googleSignInButtonDiv" ref={googleButtonDivRef}>
+                      {/* Fallback button if Google script doesn't load */}
+                      <div className="text-center text-sm text-gray-500 p-3">
+                        <span>Loading Google Sign-In...</span>
+                      </div>
+                    </div>
                     {/* The Google button will be rendered here. Ensure this div is visible. */}
                  </div>
                  {isLoading && (
