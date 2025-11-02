@@ -3,9 +3,11 @@ package com.example.restservice;
 import com.example.restservice.model.firestore.EventFirestore;
 import com.example.restservice.model.firestore.UserFirestore;
 import com.example.restservice.model.firestore.VolunteerFirestore;
+import com.example.restservice.model.firestore.ParticipantFirestore;
 import com.example.restservice.repository.firestore.EventFirestoreRepository;
 import com.example.restservice.repository.firestore.UserFirestoreRepository;
 import com.example.restservice.repository.firestore.VolunteerFirestoreRepository;
+import com.example.restservice.repository.firestore.ParticipantFirestoreRepository;
 import com.example.restservice.payload.response.MessageResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ArrayList;
 
 @CrossOrigin(origins = "*", maxAge = 3600) // Allow all origins for now
 @RestController
@@ -32,6 +37,9 @@ public class VolunteerController {
 
     @Autowired
     private EventFirestoreRepository eventRepository;
+
+    @Autowired
+    private ParticipantFirestoreRepository participantRepository;
 
     // Fetch volunteer signups for the currently logged-in user
     @GetMapping("/me")
@@ -238,6 +246,126 @@ public class VolunteerController {
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(new MessageResponse("Error: Failed to cancel volunteer signup - " + e.getMessage()));
+        }
+    }
+
+    // Parent search endpoint for volunteer check-in functionality
+    @GetMapping("/search-parents")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER')")
+    public ResponseEntity<?> searchParents(@RequestParam String query,
+                                          @RequestParam String eventId,
+                                          HttpServletRequest request) {
+        try {
+            String firebaseUid = (String) request.getAttribute("firebaseUid");
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
+            // Verify user is either admin or volunteer for this event
+            Optional<UserFirestore> userOpt = userRepository.findByFirebaseUid(firebaseUid);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            boolean isAdmin = "ADMIN".equals(user.getUserType());
+            boolean isVolunteer = false;
+
+            if (!isAdmin) {
+                // Check if user is a volunteer for this event
+                List<VolunteerFirestore> volunteerRecords = volunteerRepository.findByUserIdAndEventId(firebaseUid, eventId);
+                isVolunteer = !volunteerRecords.isEmpty();
+            }
+
+            if (!isAdmin && !isVolunteer) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Access denied. Must be admin or volunteer for this event"));
+            }
+
+            // Search for participants in the specified event
+            List<ParticipantFirestore> allParticipants = participantRepository.findByEventId(eventId);
+            Map<String, Map<String, Object>> parentGroups = new HashMap<>();
+
+            String lowerQuery = query.toLowerCase().trim();
+
+            for (ParticipantFirestore participant : allParticipants) {
+                boolean matches = false;
+
+                // Search in parent name
+                if (participant.getParentUserFullName() != null &&
+                    participant.getParentUserFullName().toLowerCase().contains(lowerQuery)) {
+                    matches = true;
+                }
+
+                // Search in parent username
+                if (participant.getParentUserUsername() != null &&
+                    participant.getParentUserUsername().toLowerCase().contains(lowerQuery)) {
+                    matches = true;
+                }
+
+                // Search in child name
+                if (participant.getChildName() != null &&
+                    participant.getChildName().toLowerCase().contains(lowerQuery)) {
+                    matches = true;
+                }
+
+                if (matches) {
+                    String parentKey = participant.getParentUserId();
+
+                    // Get or create parent group
+                    Map<String, Object> parentData = parentGroups.computeIfAbsent(parentKey, k -> {
+                        Map<String, Object> parent = new HashMap<>();
+                        parent.put("parentUserId", participant.getParentUserId());
+                        parent.put("parentName", participant.getParentUserFullName());
+                        parent.put("parentUsername", participant.getParentUserUsername());
+                        parent.put("children", new ArrayList<Map<String, Object>>());
+                        return parent;
+                    });
+
+                    // Add child to parent's children list
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> children = (List<Map<String, Object>>) parentData.get("children");
+
+                    Map<String, Object> childData = new HashMap<>();
+                    childData.put("participantId", participant.getId());
+                    childData.put("childName", participant.getChildName());
+                    childData.put("childAge", participant.getChildAge());
+                    childData.put("status", participant.getStatus());
+                    childData.put("registrationDate", participant.getRegistrationDate());
+                    childData.put("attendanceStatus", participant.getStatus());
+
+                    children.add(childData);
+                }
+            }
+
+            List<Map<String, Object>> matchingParents = new ArrayList<>(parentGroups.values());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("parents", matchingParents);
+            response.put("totalFound", matchingParents.size());
+            response.put("eventId", eventId);
+
+            // Add event name if available
+            try {
+                Optional<EventFirestore> eventOpt = eventRepository.findById(eventId);
+                if (eventOpt.isPresent()) {
+                    response.put("eventName", eventOpt.get().getName());
+                }
+            } catch (Exception e) {
+                // Event name not critical, continue without it
+                System.err.println("Warning: Could not fetch event name for eventId " + eventId + ": " + e.getMessage());
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (ExecutionException | InterruptedException e) {
+            return ResponseEntity.status(500)
+                .body(new MessageResponse("Error: Failed to search parents - " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(new MessageResponse("Error: Failed to search parents - " + e.getMessage()));
         }
     }
 

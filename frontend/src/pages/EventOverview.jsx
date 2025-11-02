@@ -18,6 +18,11 @@ const EventOverview = () => {
   const [error, setError] = useState(null);
   const [volunteerError, setVolunteerError] = useState(null);
 
+  // Network broadcast state
+  const [showNetworkBroadcastModal, setShowNetworkBroadcastModal] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null);
+
   // Search functionality
   const [participantSearch, setParticipantSearch] = useState('');
   const [volunteerSearch, setVolunteerSearch] = useState('');
@@ -300,6 +305,23 @@ const EventOverview = () => {
       }
     });
     return registrationsByDate;
+  };
+
+  // Network broadcast handler
+  const handleNetworkBroadcast = async () => {
+    setIsBroadcasting(true);
+    setBroadcastResult(null);
+    try {
+      const result = await apiService.triggerNetworkBroadcast(eventId);
+      setBroadcastResult(result);
+    } catch (error) {
+      console.error('Network broadcast error:', error);
+      setBroadcastResult({
+        error: error.message || 'Failed to send network broadcast'
+      });
+    } finally {
+      setIsBroadcasting(false);
+    }
   };
 
   // Filter functions for search
@@ -599,6 +621,15 @@ const EventOverview = () => {
               <Link to="/admin?tab=messaging" className="btn btn-secondary">
                 Send a Message
               </Link>
+              <button
+                onClick={() => setShowNetworkBroadcastModal(true)}
+                className="btn btn-primary ml-2"
+                disabled={!event || participants.length !== 0}
+                title={participants.length !== 0 ? 'Participants already registered - broadcast not needed' : 'Send notifications to connections when people register'}
+              >
+                <i className="fas fa-broadcast-tower mr-1"></i>
+                Network Broadcast
+              </button>
             </div>
           </div>
         </div>
@@ -1230,6 +1261,32 @@ const EventOverview = () => {
           background: var(--secondary-light);
           color: white;
           text-decoration: none;
+        }
+
+        .btn-primary {
+          background: var(--primary);
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background: var(--primary-light);
+          color: white;
+          text-decoration: none;
+        }
+
+        .btn-primary:disabled {
+          background: #6c757d;
+          border-color: #6c757d;
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .ml-2 {
+          margin-left: 0.5rem;
+        }
+
+        .mr-1 {
+          margin-right: 0.25rem;
         }
 
         .stats-grid {
@@ -1966,6 +2023,189 @@ const EventOverview = () => {
               >
                 {isDeleting ? 'Deleting...' : 'Delete'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Network Broadcast Modal */}
+      {showNetworkBroadcastModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '8px',
+            maxWidth: '600px',
+            width: '90%',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <h4 style={{ marginBottom: '15px', color: '#2f506a' }}>
+              <i className="fas fa-broadcast-tower" style={{ marginRight: '8px' }}></i>
+              Network Broadcast
+            </h4>
+
+            {!broadcastResult ? (
+              <>
+                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
+                  <h5 style={{ marginBottom: '10px', color: '#495057' }}>What is Network Broadcast?</h5>
+                  <p style={{ marginBottom: '10px', fontSize: '14px', color: '#6c757d' }}>
+                    This feature will notify the connections of all registered participants and volunteers about this event.
+                    It helps spread awareness among your community network.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <i className="fas fa-users" style={{ color: '#2f506a' }}></i>
+                      <span style={{ fontSize: '14px', fontWeight: '600' }}>{participants.length}</span>
+                      <span style={{ fontSize: '14px', color: '#6c757d' }}>Participants</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <i className="fas fa-hands-helping" style={{ color: '#ff6b35' }}></i>
+                      <span style={{ fontSize: '14px', fontWeight: '600' }}>{volunteers.length}</span>
+                      <span style={{ fontSize: '14px', color: '#6c757d' }}>Volunteers</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: '#fff3cd',
+                  border: '1px solid #ffeaa7',
+                  padding: '15px',
+                  borderRadius: '4px',
+                  marginBottom: '20px',
+                  fontSize: '14px',
+                  color: '#856404'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <i className="fas fa-info-circle" style={{ marginTop: '2px' }}></i>
+                    <div>
+                      <strong>How it works:</strong>
+                      <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '18px' }}>
+                        <li>We'll find all connections of registered participants and volunteers</li>
+                        <li>Send them personalized messages about who they know that registered</li>
+                        <li>Include event details and registration information</li>
+                        <li>Help build community engagement around your events</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <p style={{ marginBottom: '20px', fontSize: '16px' }}>
+                  Send network broadcast notifications for <strong>{event?.name}</strong>?
+                </p>
+              </>
+            ) : (
+              <div>
+                {broadcastResult.error ? (
+                  <div style={{
+                    backgroundColor: '#f8d7da',
+                    border: '1px solid #f5c6cb',
+                    padding: '15px',
+                    borderRadius: '4px',
+                    marginBottom: '20px',
+                    color: '#721c24'
+                  }}>
+                    <h5><i className="fas fa-exclamation-triangle mr-2"></i>Broadcast Failed</h5>
+                    <p style={{ marginBottom: '0' }}>{broadcastResult.error}</p>
+                  </div>
+                ) : (
+                  <div style={{
+                    backgroundColor: '#d4edda',
+                    border: '1px solid #c3e6cb',
+                    padding: '15px',
+                    borderRadius: '4px',
+                    marginBottom: '20px',
+                    color: '#155724'
+                  }}>
+                    <h5><i className="fas fa-check-circle mr-2"></i>Broadcast Successful!</h5>
+                    <div style={{ marginTop: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span>Connections Notified:</span>
+                        <strong>{broadcastResult.connectionsNotified}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span>Registrations Included:</span>
+                        <strong>{broadcastResult.registrationsIncluded}</strong>
+                      </div>
+                      {broadcastResult.errors && broadcastResult.errors.length > 0 && (
+                        <div style={{ marginTop: '10px' }}>
+                          <details>
+                            <summary style={{ cursor: 'pointer', color: '#856404' }}>
+                              {broadcastResult.errors.length} Warnings/Errors
+                            </summary>
+                            <ul style={{ marginTop: '8px', fontSize: '13px' }}>
+                              {broadcastResult.errors.map((error, index) => (
+                                <li key={index} style={{ marginBottom: '3px' }}>{error}</li>
+                              ))}
+                            </ul>
+                          </details>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowNetworkBroadcastModal(false);
+                  setBroadcastResult(null);
+                }}
+                disabled={isBroadcasting}
+                style={{
+                  padding: '8px 16px',
+                  border: '1px solid #ccc',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '4px',
+                  cursor: isBroadcasting ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {broadcastResult ? 'Close' : 'Cancel'}
+              </button>
+              {!broadcastResult && (
+                <button
+                  onClick={handleNetworkBroadcast}
+                  disabled={isBroadcasting}
+                  style={{
+                    padding: '8px 16px',
+                    border: 'none',
+                    backgroundColor: '#2f506a',
+                    color: 'white',
+                    borderRadius: '4px',
+                    cursor: isBroadcasting ? 'not-allowed' : 'pointer',
+                    opacity: isBroadcasting ? 0.6 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  {isBroadcasting ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i>
+                      Broadcasting...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-broadcast-tower"></i>
+                      Send Broadcast
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

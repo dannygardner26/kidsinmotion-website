@@ -31,6 +31,23 @@ const UsersAndRegistrations = () => {
     teams: []
   });
 
+  // Admin action states
+  const [actionLoading, setActionLoading] = useState({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  // Ban modal state
+  const [showBanModal, setShowBanModal] = useState(false);
+  const [banUser, setBanUser] = useState(null);
+  const [banReason, setBanReason] = useState('');
+  const [banMessage, setBanMessage] = useState('');
+
+  // Account type change modal state
+  const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
+  const [accountTypeUser, setAccountTypeUser] = useState(null);
+  const [newAccountType, setNewAccountType] = useState('');
+  const [accountTypeWarnings, setAccountTypeWarnings] = useState([]);
+
   useEffect(() => {
     fetchAllData();
 
@@ -160,6 +177,193 @@ const UsersAndRegistrations = () => {
     });
   };
 
+  // Admin action handlers
+  const handleAdminAction = (user, action) => {
+    if (action === 'changeType') {
+      setAccountTypeUser(user);
+      setNewAccountType(user.userType || 'PARENT');
+      setAccountTypeWarnings([]);
+      setShowAccountTypeModal(true);
+    } else if (action === 'ban') {
+      setBanUser(user);
+      setBanReason('');
+      setBanMessage('');
+      setShowBanModal(true);
+    } else {
+      setConfirmAction({
+        user,
+        action,
+        title: getActionTitle(action),
+        message: getActionMessage(user, action),
+        buttonText: getActionButtonText(action),
+        buttonClass: getActionButtonClass(action)
+      });
+      setShowConfirmModal(true);
+    }
+  };
+
+  const getActionTitle = (action) => {
+    switch (action) {
+      case 'ban': return 'Ban User';
+      case 'unban': return 'Unban User';
+      case 'verify': return 'Verify Email';
+      case 'changeType': return 'Change Account Type';
+      default: return 'Confirm Action';
+    }
+  };
+
+  const getActionMessage = (user, action) => {
+    const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email;
+    switch (action) {
+      case 'ban': return `Are you sure you want to ban ${userName}? They will be immediately logged out and unable to access the system.`;
+      case 'unban': return `Are you sure you want to unban ${userName}? They will regain access to the system.`;
+      case 'verify': return `Are you sure you want to manually verify ${userName}'s email address?`;
+      case 'changeType': return `Are you sure you want to change ${userName}'s account type?`;
+      default: return 'Are you sure you want to perform this action?';
+    }
+  };
+
+  const getActionButtonText = (action) => {
+    switch (action) {
+      case 'ban': return 'Ban User';
+      case 'unban': return 'Unban User';
+      case 'verify': return 'Verify Email';
+      case 'changeType': return 'Change Type';
+      default: return 'Confirm';
+    }
+  };
+
+  const getActionButtonClass = (action) => {
+    switch (action) {
+      case 'ban': return 'btn-danger';
+      case 'unban': return 'btn-success';
+      case 'verify': return 'btn-info';
+      case 'changeType': return 'btn-warning';
+      default: return 'btn-primary';
+    }
+  };
+
+  const executeAdminAction = async () => {
+    if (!confirmAction) return;
+
+    const { user, action } = confirmAction;
+    setActionLoading(prev => ({ ...prev, [user.id]: true }));
+
+    try {
+      let result;
+      switch (action) {
+        case 'ban':
+          // This will be handled by the modal, not inline
+          result = { message: 'Ban initiated' };
+          break;
+        case 'unban':
+          result = await apiService.unbanUser(user.id);
+          break;
+        case 'verify':
+          result = await apiService.verifyUserEmail(user.id);
+          break;
+        case 'changeType':
+          // This will be handled by the modal, not inline
+          result = { message: 'Account type change initiated' };
+          break;
+        default:
+          throw new Error('Unknown action');
+      }
+
+      // Update local state based on action type since backend only returns message
+      setUsers(prevUsers => prevUsers.map(u => {
+        if (u.id === user.id) {
+          switch (action) {
+            case 'ban':
+              return { ...u, isBanned: true, bannedReason: banReason, bannedAt: Date.now() };
+            case 'unban':
+              return { ...u, isBanned: false, bannedReason: null, bannedAt: null };
+            case 'verify':
+              return { ...u, emailVerified: true };
+            case 'changeType':
+              const newType = prompt('Enter new account type (PARENT, VOLUNTEER, ADMIN):');
+              return { ...u, userType: newType?.toUpperCase() };
+            default:
+              return u;
+          }
+        }
+        return u;
+      }));
+
+      showNotification(result.message || 'Action completed successfully', 'success');
+      setShowConfirmModal(false);
+      setConfirmAction(null);
+    } catch (error) {
+      console.error('Admin action error:', error);
+      showNotification('Failed to execute action: ' + error.message, 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [user.id]: false }));
+    }
+  };
+
+  // Account type change handlers
+  const handleAccountTypeChange = async () => {
+    if (!accountTypeUser || !newAccountType) return;
+
+    setActionLoading(prev => ({ ...prev, [accountTypeUser.id]: true }));
+
+    try {
+      const result = await apiService.changeUserAccountType(accountTypeUser.id, newAccountType);
+
+      // Update local state
+      setUsers(prevUsers => prevUsers.map(u =>
+        u.id === accountTypeUser.id ? { ...u, userType: newAccountType } : u
+      ));
+
+      showNotification(result.message || 'Account type changed successfully', 'success');
+
+      if (result.warnings && result.warnings.length > 0) {
+        // Show warnings in a notification
+        setTimeout(() => {
+          showNotification(`Warnings: ${result.warnings.join(', ')}`, 'info');
+        }, 2000);
+      }
+
+      setShowAccountTypeModal(false);
+      setAccountTypeUser(null);
+      setNewAccountType('');
+      setAccountTypeWarnings([]);
+    } catch (error) {
+      console.error('Account type change error:', error);
+      showNotification('Failed to change account type: ' + error.message, 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [accountTypeUser.id]: false }));
+    }
+  };
+
+  // Ban user handler
+  const handleBanUser = async () => {
+    if (!banUser || !banReason.trim()) return;
+
+    setActionLoading(prev => ({ ...prev, [banUser.id]: true }));
+
+    try {
+      const result = await apiService.banUser(banUser.id, banReason, banMessage);
+
+      // Update local state
+      setUsers(prevUsers => prevUsers.map(u =>
+        u.id === banUser.id ? { ...u, isBanned: true, bannedReason: banReason, bannedAt: Date.now() } : u
+      ));
+
+      showNotification(result.message || 'User banned successfully', 'success');
+
+      setShowBanModal(false);
+      setBanUser(null);
+      setBanReason('');
+      setBanMessage('');
+    } catch (error) {
+      console.error('Ban user error:', error);
+      showNotification('Failed to ban user: ' + error.message, 'error');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [banUser.id]: false }));
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -238,7 +442,7 @@ const UsersAndRegistrations = () => {
                 </thead>
                 <tbody>
                   {users.map(user => (
-                    <tr key={user.id}>
+                    <tr key={user.id} className={user.isBanned ? 'banned-row' : ''}>
                       <td>
                         <button
                           className="user-name-link"
@@ -246,6 +450,7 @@ const UsersAndRegistrations = () => {
                           title="View full profile"
                         >
                           {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name || 'N/A'}
+                          {user.isBanned && <span className="banned-badge">(Banned)</span>}
                         </button>
                       </td>
                       <td>{user.email}</td>
@@ -274,10 +479,51 @@ const UsersAndRegistrations = () => {
                           <button
                             onClick={() => handleEditUser(user)}
                             className="btn btn-sm btn-primary"
+                            disabled={actionLoading[user.id]}
                           >
-                            Edit
+                            {actionLoading[user.id] ? <i className="fas fa-spinner fa-spin"></i> : 'Edit'}
                           </button>
-                                        </div>
+
+                          {!user.emailVerified && (
+                            <button
+                              onClick={() => handleAdminAction(user, 'verify')}
+                              className="btn btn-sm btn-info"
+                              disabled={actionLoading[user.id]}
+                              title="Verify email address"
+                            >
+                              <i className="fas fa-envelope-check"></i>
+                            </button>
+                          )}
+
+                          {user.isBanned ? (
+                            <button
+                              onClick={() => handleAdminAction(user, 'unban')}
+                              className="btn btn-sm btn-success"
+                              disabled={actionLoading[user.id]}
+                              title="Unban user"
+                            >
+                              <i className="fas fa-user-check"></i>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleAdminAction(user, 'ban')}
+                              className="btn btn-sm btn-danger"
+                              disabled={actionLoading[user.id]}
+                              title="Ban user"
+                            >
+                              <i className="fas fa-user-slash"></i>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleAdminAction(user, 'changeType')}
+                            className="btn btn-sm btn-warning"
+                            disabled={actionLoading[user.id]}
+                            title="Change account type"
+                          >
+                            <i className="fas fa-user-cog"></i>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -503,6 +749,247 @@ const UsersAndRegistrations = () => {
         </div>
       )}
 
+      {/* Admin Action Confirmation Modal */}
+      {showConfirmModal && confirmAction && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{confirmAction.title}</h3>
+              <button className="modal-close" onClick={() => setShowConfirmModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                padding: '15px',
+                borderRadius: '4px',
+                marginBottom: '20px',
+                fontSize: '14px',
+                color: '#856404'
+              }}>
+                <i className="fas fa-exclamation-triangle" style={{ marginRight: '8px' }}></i>
+                <strong>Warning:</strong> This action will take effect immediately.
+              </div>
+              <p>{confirmAction.message}</p>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="btn btn-secondary"
+                disabled={actionLoading[confirmAction.user?.id]}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeAdminAction}
+                className={`btn ${confirmAction.buttonClass}`}
+                disabled={actionLoading[confirmAction.user?.id]}
+              >
+                {actionLoading[confirmAction.user?.id] ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-1"></i>
+                    Processing...
+                  </>
+                ) : (
+                  confirmAction.buttonText
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Type Change Modal */}
+      {showAccountTypeModal && accountTypeUser && (
+        <div className="modal-overlay" onClick={() => setShowAccountTypeModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Change Account Type</h3>
+              <button className="modal-close" onClick={() => setShowAccountTypeModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                padding: '15px',
+                borderRadius: '4px',
+                marginBottom: '20px',
+                fontSize: '14px',
+                color: '#856404'
+              }}>
+                <i className="fas fa-exclamation-triangle" style={{ marginRight: '8px' }}></i>
+                <strong>Warning:</strong> Changing account type may affect existing registrations and permissions.
+              </div>
+
+              <div className="form-group">
+                <label>User:</label>
+                <span>
+                  {accountTypeUser.firstName && accountTypeUser.lastName
+                    ? `${accountTypeUser.firstName} ${accountTypeUser.lastName}`
+                    : accountTypeUser.email}
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label>Current Type:</label>
+                <span className={`user-type-badge ${accountTypeUser.userType?.toLowerCase()}`}>
+                  {accountTypeUser.userType || 'PARENT'}
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="newAccountType">New Account Type:</label>
+                <select
+                  id="newAccountType"
+                  value={newAccountType}
+                  onChange={(e) => setNewAccountType(e.target.value)}
+                  className="form-input"
+                >
+                  <option value="PARENT">Parent</option>
+                  <option value="VOLUNTEER">Volunteer</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="ATHLETE">Athlete</option>
+                </select>
+              </div>
+
+              {accountTypeWarnings.length > 0 && (
+                <div style={{
+                  backgroundColor: '#f8d7da',
+                  border: '1px solid #f5c6cb',
+                  padding: '15px',
+                  borderRadius: '4px',
+                  marginTop: '15px',
+                  fontSize: '14px',
+                  color: '#721c24'
+                }}>
+                  <strong>Potential Issues:</strong>
+                  <ul style={{ marginTop: '8px', marginBottom: '0', paddingLeft: '20px' }}>
+                    {accountTypeWarnings.map((warning, index) => (
+                      <li key={index}>{warning}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowAccountTypeModal(false)}
+                className="btn btn-secondary"
+                disabled={actionLoading[accountTypeUser?.id]}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAccountTypeChange}
+                className="btn btn-warning"
+                disabled={actionLoading[accountTypeUser?.id] || newAccountType === accountTypeUser.userType}
+              >
+                {actionLoading[accountTypeUser?.id] ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-1"></i>
+                    Changing...
+                  </>
+                ) : (
+                  'Change Account Type'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ban User Modal */}
+      {showBanModal && banUser && (
+        <div className="modal-overlay" onClick={() => setShowBanModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Ban User</h3>
+              <button className="modal-close" onClick={() => setShowBanModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{
+                backgroundColor: '#f8d7da',
+                border: '1px solid #f5c6cb',
+                padding: '15px',
+                borderRadius: '4px',
+                marginBottom: '20px',
+                fontSize: '14px',
+                color: '#721c24'
+              }}>
+                <i className="fas fa-exclamation-triangle" style={{ marginRight: '8px' }}></i>
+                <strong>Warning:</strong> This will immediately suspend the user's account and log them out.
+              </div>
+
+              <div className="form-group">
+                <label>User:</label>
+                <span>
+                  {banUser.firstName && banUser.lastName
+                    ? `${banUser.firstName} ${banUser.lastName}`
+                    : banUser.email}
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="banReason">Reason for Ban (Required):</label>
+                <select
+                  id="banReason"
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  className="form-input"
+                  required
+                >
+                  <option value="">Select a reason...</option>
+                  <option value="Violation of Terms of Service">Violation of Terms of Service</option>
+                  <option value="Inappropriate Behavior">Inappropriate Behavior</option>
+                  <option value="Spam or Abusive Content">Spam or Abusive Content</option>
+                  <option value="Security Concerns">Security Concerns</option>
+                  <option value="Administrative Decision">Administrative Decision</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="banMessage">Additional Message to User (Optional):</label>
+                <textarea
+                  id="banMessage"
+                  value={banMessage}
+                  onChange={(e) => setBanMessage(e.target.value)}
+                  className="form-input"
+                  rows="4"
+                  placeholder="Enter additional information or instructions for the user..."
+                />
+                <small style={{ color: '#6c757d', fontSize: '12px' }}>
+                  This message will be included in the notification sent to the user.
+                </small>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowBanModal(false)}
+                className="btn btn-secondary"
+                disabled={actionLoading[banUser?.id]}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBanUser}
+                className="btn btn-danger"
+                disabled={actionLoading[banUser?.id] || !banReason.trim()}
+              >
+                {actionLoading[banUser?.id] ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin mr-1"></i>
+                    Banning...
+                  </>
+                ) : (
+                  'Ban User'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .users-registrations-container {
           width: 100%;
@@ -687,8 +1174,64 @@ const UsersAndRegistrations = () => {
 
         .action-buttons {
           display: flex;
-          gap: 0.5rem;
+          gap: 0.25rem;
           flex-wrap: wrap;
+        }
+
+        .btn-danger {
+          background-color: #dc3545;
+          border-color: #dc3545;
+          color: white;
+        }
+
+        .btn-danger:hover {
+          background-color: #c82333;
+          border-color: #bd2130;
+        }
+
+        .btn-success {
+          background-color: #28a745;
+          border-color: #28a745;
+          color: white;
+        }
+
+        .btn-success:hover {
+          background-color: #218838;
+          border-color: #1e7e34;
+        }
+
+        .btn-info {
+          background-color: #17a2b8;
+          border-color: #17a2b8;
+          color: white;
+        }
+
+        .btn-info:hover {
+          background-color: #138496;
+          border-color: #117a8b;
+        }
+
+        .btn-warning {
+          background-color: #ffc107;
+          border-color: #ffc107;
+          color: #212529;
+        }
+
+        .btn-warning:hover {
+          background-color: #e0a800;
+          border-color: #d39e00;
+        }
+
+        .btn:disabled {
+          opacity: 0.65;
+          cursor: not-allowed;
+        }
+
+        .btn-sm {
+          padding: 0.25rem 0.5rem;
+          font-size: 0.75rem;
+          line-height: 1.5;
+          border-radius: 0.2rem;
         }
 
         .text-muted {
@@ -1005,6 +1548,22 @@ const UsersAndRegistrations = () => {
         .tab-info p {
           color: #666;
           margin: 0;
+        }
+
+        .banned-row {
+          opacity: 0.6;
+          background-color: #fef2f2;
+        }
+
+        .banned-badge {
+          color: #dc2626;
+          font-weight: 600;
+          font-size: 0.75rem;
+          margin-left: 8px;
+          padding: 2px 6px;
+          background-color: #fee2e2;
+          border-radius: 3px;
+          border: 1px solid #fecaca;
         }
 
         /* Notification Styles */

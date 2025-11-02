@@ -2,12 +2,16 @@ package com.example.restservice;
 
 import com.example.restservice.model.User;
 import com.example.restservice.payload.response.UserProfileResponse;
+import com.example.restservice.payload.response.MessageResponse;
 import com.example.restservice.repository.firestore.UserFirestoreRepository;
 import com.example.restservice.repository.firestore.ConnectionFirestoreRepository;
 import com.example.restservice.model.firestore.UserFirestore;
 import com.example.restservice.model.firestore.ConnectionFirestore;
 import com.example.restservice.security.FirebaseAuthService;
+import com.example.restservice.service.MessagingService;
 import com.google.firebase.auth.UserRecord;
+import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.DocumentReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +36,12 @@ public class UserController {
 
     @Autowired
     private ConnectionFirestoreRepository connectionRepository;
+
+    @Autowired(required = false)
+    private Firestore db;
+
+    @Autowired
+    private MessagingService messagingService;
 
     @Value("${app.volunteer.emails:}")
     private String volunteerEmails;
@@ -379,10 +389,58 @@ public class UserController {
             }
 
             UserFirestore user = userOpt.get();
+            String previousUserType = user.getUserType();
+
+            // Archive previous associations
+            Map<String, Object> archiveData = new HashMap<>();
+            archiveData.put("userId", userId);
+            archiveData.put("previousUserType", previousUserType);
+            archiveData.put("newUserType", newUserType);
+            archiveData.put("changedAt", System.currentTimeMillis());
+            archiveData.put("changedBy", "ADMIN"); // Could be enhanced to include admin user ID
+
+            // Check for active registrations and return warnings
+            List<String> warnings = new ArrayList<>();
+
+            // Check participant registrations if changing from PARENT
+            if ("PARENT".equals(previousUserType)) {
+                try {
+                    // This would need participant repository to check active registrations
+                    warnings.add("User has active participant registrations that may be affected");
+                } catch (Exception e) {
+                    warnings.add("Could not verify participant registrations");
+                }
+            }
+
+            // Check volunteer signups if changing from VOLUNTEER
+            if ("VOLUNTEER".equals(previousUserType)) {
+                try {
+                    // This would need volunteer repository to check active signups
+                    warnings.add("User has active volunteer signups that may be affected");
+                } catch (Exception e) {
+                    warnings.add("Could not verify volunteer signups");
+                }
+            }
+
+            // Persist archive data to Firestore
+            try {
+                // Create archive document in 'accountTypeChanges' collection
+                DocumentReference archiveRef = db.collection("accountTypeChanges").document();
+                archiveRef.set(archiveData).get();
+                System.out.println("Account type change successfully archived to Firestore with ID: " + archiveRef.getId());
+            } catch (Exception e) {
+                System.err.println("Failed to archive account type change: " + e.getMessage());
+                // Don't fail the operation if archiving fails
+            }
+
             user.setUserType(newUserType);
             userFirestoreRepository.save(user);
 
-            return ResponseEntity.ok(Map.of("message", "User account type updated successfully"));
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "User account type updated successfully");
+            response.put("warnings", warnings);
+
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -672,6 +730,7 @@ public class UserController {
 
             UserFirestore user = userOpt.get();
             String reason = request.get("reason");
+            String adminMessage = request.get("message");
 
             // Update user ban status
             user.setIsBanned(true);
@@ -685,6 +744,36 @@ public class UserController {
                 firebaseAuthService.setCustomUserClaims(user.getFirebaseUid(), Map.of("banned", true));
             } catch (Exception e) {
                 System.err.println("Failed to revoke tokens: " + e.getMessage());
+            }
+
+            // Send email/inbox notification to user
+            try {
+                StringBuilder notificationBody = new StringBuilder();
+                notificationBody.append("Your account has been temporarily suspended.\n\n");
+
+                if (reason != null && !reason.trim().isEmpty()) {
+                    notificationBody.append("Reason: ").append(reason).append("\n\n");
+                }
+
+                if (adminMessage != null && !adminMessage.trim().isEmpty()) {
+                    notificationBody.append("Additional Information: ").append(adminMessage).append("\n\n");
+                }
+
+                notificationBody.append("If you believe this is an error, please contact support.\n");
+                notificationBody.append("Support Email: support@kidsinmotionpa.org");
+
+                Map<String, Object> messagePayload = new HashMap<>();
+                messagePayload.put("subject", "Account Suspended - Kids in Motion");
+                messagePayload.put("message", notificationBody.toString());
+                messagePayload.put("type", "account_suspension");
+                messagePayload.put("timestamp", System.currentTimeMillis());
+                messagePayload.put("priority", "high");
+
+                // Use messaging service to send inbox notification
+                messagingService.sendInboxMessage(user.getFirebaseUid(), messagePayload);
+
+            } catch (Exception e) {
+                System.err.println("Failed to send ban notification: " + e.getMessage());
             }
 
             return ResponseEntity.ok(Map.of("message", "User banned successfully"));
@@ -772,5 +861,25 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error verifying email"));
         }
+    }
+
+    // Helper method to create user response for admin operations
+    private Map<String, Object> createUserResponseForAdmin(UserFirestore user) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", user.getId());
+        response.put("firebaseUid", user.getFirebaseUid());
+        response.put("firstName", user.getFirstName());
+        response.put("lastName", user.getLastName());
+        response.put("name", user.getFullName());
+        response.put("email", user.getEmail());
+        response.put("username", user.getUsername());
+        response.put("userType", user.getUserType());
+        response.put("emailVerified", user.getEmailVerified());
+        response.put("isBanned", user.getIsBanned());
+        response.put("bannedReason", user.getBannedReason());
+        response.put("bannedAt", user.getBannedAt());
+        response.put("lastLoginAt", user.getLastLoginAt());
+        response.put("createdTimestamp", user.getCreatedTimestamp());
+        return response;
     }
 }

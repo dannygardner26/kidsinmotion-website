@@ -36,6 +36,13 @@ const Dashboard = () => {
   const [volunteerApplicationStatus, setVolunteerApplicationStatus] = useState(null);
   const [currentVolunteerApplication, setCurrentVolunteerApplication] = useState(null);
 
+  // Volunteer check-in state
+  const [showVolunteerCheckIn, setShowVolunteerCheckIn] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
   // Verification state
   const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
   const queryParams = new URLSearchParams(location.search);
@@ -880,6 +887,47 @@ const Dashboard = () => {
     setCancelItemType('event-registrations');
     setShowConfirmModal(true);
   };
+
+  // Volunteer check-in handlers
+  const handleVolunteerCheckIn = (event) => {
+    setSelectedEvent(event);
+    setShowVolunteerCheckIn(true);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !selectedEvent) return;
+
+    setSearchLoading(true);
+    try {
+      const results = await apiService.searchParents(searchQuery.trim(), selectedEvent.id);
+      setSearchResults(results.parents || []);
+    } catch (error) {
+      console.error('Search error:', error);
+      setError('Failed to search participants: ' + error.message);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleAttendanceToggle = async (participantId, currentStatus) => {
+    try {
+      const newIsPresent = currentStatus !== 'ATTENDED';
+      await apiService.updateParticipantAttendance(participantId, newIsPresent);
+
+      // Update search results
+      setSearchResults(prev => prev.map(result =>
+        result.participantId === participantId
+          ? { ...result, status: newIsPresent ? 'ATTENDED' : 'REGISTERED', attendanceStatus: newIsPresent ? 'ATTENDED' : 'REGISTERED' }
+          : result
+      ));
+    } catch (error) {
+      console.error('Attendance update error:', error);
+      setError('Failed to update attendance: ' + error.message);
+    }
+  };
   
   // Format date for display
   const formatDate = (dateString) => {
@@ -1139,6 +1187,13 @@ const Dashboard = () => {
                         <i className="fas fa-hands-helping mr-2"></i>
                         Your Volunteer Activities
                       </li>
+                      <li
+                        className={`nav-tab ${activeTab === 'checkin' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('checkin')}
+                      >
+                        <i className="fas fa-clipboard-check mr-2"></i>
+                        Check-In
+                      </li>
                     </>
                   )}
                   {/* Connections tab - available to all users */}
@@ -1362,6 +1417,16 @@ const Dashboard = () => {
                                   >
                                     <i className="fas fa-tachometer-alt"></i>
                                   </Link>
+
+                                  {!isPast && (isVolunteer() || isAdmin()) && (
+                                    <button
+                                      onClick={() => handleVolunteerCheckIn(volunteer)}
+                                      className="action-btn checkin-btn"
+                                      title="Check-in Participants"
+                                    >
+                                      <i className="fas fa-clipboard-check"></i>
+                                    </button>
+                                  )}
                                   
                                   {!isPast && volunteer.status !== 'CANCELED' && (
                                     <button
@@ -1512,6 +1577,102 @@ const Dashboard = () => {
                 )}
 
                 {/* Connections Tab - Available to all users */}
+                {activeTab === 'checkin' && isVolunteer() && (
+                  <div className="tab-content">
+                    <h2>Check-In Search</h2>
+                    <p className="text-muted mb-3">Search for parents and track event attendance</p>
+
+                    <div className="search-section mb-4">
+                      <div className="form-group">
+                        <label htmlFor="parent-search">Search Parents</label>
+                        <div className="search-input-wrapper">
+                          <input
+                            id="parent-search"
+                            type="text"
+                            className="form-control"
+                            placeholder="Search by parent name, username, email, or child name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-primary search-btn"
+                            onClick={handleParentSearch}
+                            disabled={searchLoading || !searchQuery.trim()}
+                          >
+                            {searchLoading ? (
+                              <>
+                                <i className="fas fa-spinner fa-spin mr-2"></i>
+                                Searching...
+                              </>
+                            ) : (
+                              <>
+                                <i className="fas fa-search mr-2"></i>
+                                Search
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {searchResults.length > 0 && (
+                      <div className="search-results">
+                        <h3>Search Results ({searchResults.length} parents found)</h3>
+                        <div className="parents-list">
+                          {searchResults.map((parent) => (
+                            <div key={parent.parentUserId} className="parent-group">
+                              <div className="parent-header">
+                                <h4>{parent.parentUserFullName} (@{parent.parentUserUsername})</h4>
+                                <small className="text-muted">{parent.parentUserEmail}</small>
+                              </div>
+                              <div className="children-list">
+                                {parent.children.map((child) => (
+                                  <div key={child.participantId} className="child-item">
+                                    <div className="child-info">
+                                      <strong>{child.childName}</strong>
+                                      <span className="age-badge">Age {child.childAge}</span>
+                                      <span className="event-info">
+                                        Event: {child.eventName}
+                                      </span>
+                                      <span className={`status-badge ${child.present ? 'present' : 'absent'}`}>
+                                        {child.present ? 'Present' : 'Absent'}
+                                      </span>
+                                    </div>
+                                    <div className="attendance-actions">
+                                      <button
+                                        type="button"
+                                        className={`btn btn-sm ${child.present ? 'btn-success' : 'btn-outline-success'}`}
+                                        onClick={() => handleAttendanceUpdate(child.participantId, true)}
+                                      >
+                                        Mark Present
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className={`btn btn-sm ${!child.present ? 'btn-danger' : 'btn-outline-danger'}`}
+                                        onClick={() => handleAttendanceUpdate(child.participantId, false)}
+                                      >
+                                        Mark Absent
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {searchQuery && searchResults.length === 0 && !searchLoading && (
+                      <div className="no-results">
+                        <i className="fas fa-search text-muted"></i>
+                        <p>No parents found matching your search.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {activeTab === 'connections' && (
                   <div className="tab-content">
                     <ConnectionsSection
@@ -1557,7 +1718,112 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-      
+
+      {/* Volunteer Check-in Modal */}
+      {showVolunteerCheckIn && selectedEvent && (
+        <div className="modal-overlay" onClick={() => setShowVolunteerCheckIn(false)}>
+          <div className="modal-container volunteer-checkin-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-clipboard-check mr-2"></i>
+                Participant Check-in: {selectedEvent.eventName || selectedEvent.name}
+              </h3>
+              <button className="modal-close" onClick={() => setShowVolunteerCheckIn(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="search-section">
+                <div className="search-box">
+                  <input
+                    type="text"
+                    placeholder="Search by parent name, child name, or username..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="search-input"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    disabled={searchLoading || !searchQuery.trim()}
+                    className="search-btn"
+                  >
+                    {searchLoading ? (
+                      <i className="fas fa-spinner fa-spin"></i>
+                    ) : (
+                      <i className="fas fa-search"></i>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="search-results">
+                {searchResults.length === 0 && !searchLoading && searchQuery && (
+                  <div className="empty-state">
+                    <p>No participants found matching "{searchQuery}"</p>
+                  </div>
+                )}
+
+                {searchResults.length > 0 && (
+                  <div className="participants-list">
+                    {searchResults.map((parent) => (
+                      <div key={parent.parentUserId} className="parent-group">
+                        <div className="parent-header">
+                          <div className="parent-info">
+                            <i className="fas fa-user mr-2"></i>
+                            <strong>{parent.parentName}</strong>
+                            {parent.parentUsername && (
+                              <span className="username">(@{parent.parentUsername})</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="children-list">
+                          {parent.children.map((child) => {
+                            const isPresent = child.status === 'ATTENDED' || child.attendanceStatus === 'ATTENDED';
+                            return (
+                              <div key={child.participantId} className={`participant-item ${isPresent ? 'present' : 'absent'}`}>
+                                <div className="participant-info">
+                                  <div className="child-name">
+                                    <i className="fas fa-child mr-2"></i>
+                                    <strong>{child.childName}</strong>
+                                  </div>
+                                  <div className="registration-date">
+                                    <i className="fas fa-calendar mr-1"></i>
+                                    Registered: {child.registrationDate ? new Date(child.registrationDate).toLocaleDateString() : 'N/A'}
+                                  </div>
+                                </div>
+                                <div className="attendance-controls">
+                                  <div className={`attendance-status ${isPresent ? 'present' : 'absent'}`}>
+                                    <i className={`fas ${isPresent ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
+                                    {isPresent ? 'Present' : 'Absent'}
+                                  </div>
+                                  <button
+                                    onClick={() => handleAttendanceToggle(child.participantId, child.status || child.attendanceStatus)}
+                                    className={`attendance-btn ${isPresent ? 'mark-absent' : 'mark-present'}`}
+                                  >
+                                    <i className={`fas ${isPresent ? 'fa-user-times' : 'fa-user-check'}`}></i>
+                                    {isPresent ? 'Mark Absent' : 'Mark Present'}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowVolunteerCheckIn(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Custom CSS for this page */}
       <style>{`
         .profile-card {
@@ -2040,6 +2306,224 @@ const Dashboard = () => {
         
         .modal-body {
           padding: 1.5rem;
+        }
+
+        /* Volunteer Check-in Modal Styles */
+        .volunteer-checkin-modal {
+          max-width: 800px;
+          width: 90%;
+          max-height: 80vh;
+        }
+
+        .search-section {
+          margin-bottom: 20px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .search-box {
+          display: flex;
+          gap: 10px;
+        }
+
+        .search-input {
+          flex: 1;
+          padding: 10px 15px;
+          border: 2px solid #d1d5db;
+          border-radius: 8px;
+          font-size: 16px;
+          transition: border-color 0.2s ease;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: var(--primary);
+        }
+
+        .search-btn {
+          padding: 10px 20px;
+          background: var(--primary);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+          min-width: 60px;
+        }
+
+        .search-btn:hover:not(:disabled) {
+          background: var(--primary-dark);
+        }
+
+        .search-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .search-results {
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .participants-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .participant-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .participant-item.present {
+          border-color: #10b981;
+          background-color: #f0fdf4;
+        }
+
+        .participant-item.absent {
+          border-color: #ef4444;
+          background-color: #fef2f2;
+        }
+
+        .participant-info {
+          flex: 1;
+        }
+
+        .child-name {
+          font-size: 18px;
+          margin-bottom: 5px;
+          color: #1f2937;
+        }
+
+        .parent-info {
+          font-size: 14px;
+          color: #6b7280;
+          margin-bottom: 3px;
+        }
+
+        .username {
+          font-style: italic;
+          margin-left: 5px;
+        }
+
+        .registration-date {
+          font-size: 12px;
+          color: #9ca3af;
+        }
+
+        .attendance-controls {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .attendance-status {
+          font-weight: 600;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .attendance-status.present {
+          background-color: #d1fae5;
+          color: #065f46;
+        }
+
+        .attendance-status.absent {
+          background-color: #fee2e2;
+          color: #991b1b;
+        }
+
+        .attendance-btn {
+          padding: 6px 12px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .attendance-btn.mark-present {
+          background-color: #10b981;
+          color: white;
+        }
+
+        .attendance-btn.mark-present:hover {
+          background-color: #059669;
+        }
+
+        .attendance-btn.mark-absent {
+          background-color: #ef4444;
+          color: white;
+        }
+
+        .attendance-btn.mark-absent:hover {
+          background-color: #dc2626;
+        }
+
+        .checkin-btn {
+          background: #28a745;
+          color: white;
+        }
+
+        .checkin-btn:hover {
+          background: #218838;
+        }
+
+        .parent-group {
+          margin-bottom: 20px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .parent-header {
+          background-color: #f8f9fa;
+          padding: 12px 15px;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .parent-info {
+          font-size: 16px;
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .children-list {
+          padding: 10px;
+        }
+
+        .children-list .participant-item {
+          margin-bottom: 10px;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          padding: 12px;
+        }
+
+        .children-list .participant-item:last-child {
+          margin-bottom: 0;
+        }
+
+        .mr-2 {
+          margin-right: 0.5rem;
+        }
+
+        .mr-1 {
+          margin-right: 0.25rem;
         }
         
         .modal-footer {

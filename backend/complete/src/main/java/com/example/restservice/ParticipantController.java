@@ -310,11 +310,18 @@ public class ParticipantController {
     }
 
     @PutMapping("/{participantId}/attendance")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VOLUNTEER')")
     public ResponseEntity<?> updateParticipantAttendance(
             @PathVariable String participantId,
-            @RequestBody Map<String, Boolean> request) {
+            @RequestBody Map<String, Boolean> request,
+            HttpServletRequest httpRequest) {
         try {
+            String firebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not authenticated"));
+            }
+
             Boolean present = request.get("present");
             if (present == null) {
                 return ResponseEntity.badRequest()
@@ -328,6 +335,28 @@ public class ParticipantController {
             }
 
             ParticipantFirestore participant = participantOpt.get();
+
+            // Verify user is either admin or volunteer for this event
+            Optional<UserFirestore> userOpt = userRepository.findByFirebaseUid(firebaseUid);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(401)
+                    .body(new MessageResponse("Error: User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            boolean isAdmin = "ADMIN".equals(user.getUserType());
+            boolean isVolunteer = false;
+
+            if (!isAdmin) {
+                // Check if user is a volunteer for this event
+                List<VolunteerFirestore> volunteerRecords = volunteerRepository.findByUserIdAndEventId(firebaseUid, participant.getEventId());
+                isVolunteer = !volunteerRecords.isEmpty();
+            }
+
+            if (!isAdmin && !isVolunteer) {
+                return ResponseEntity.status(403)
+                    .body(new MessageResponse("Error: Access denied. Must be admin or volunteer for this event"));
+            }
 
             // Update status based on presence
             String newStatus = present ? "ATTENDED" : "REGISTERED";

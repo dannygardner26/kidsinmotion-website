@@ -88,6 +88,46 @@ class ApiService {
     });
   }
 
+  // Admin network broadcast endpoint
+  async triggerNetworkBroadcast(eventId) {
+    return this.makeRequest(`/admin/events/${eventId}/network-broadcast`, {
+      method: 'POST',
+    });
+  }
+
+  // Volunteer search parents endpoint
+  async searchParents(query, eventId) {
+    return this.makeRequest(`/volunteers/search-parents?query=${encodeURIComponent(query)}&eventId=${encodeURIComponent(eventId)}`);
+  }
+
+  // Admin user management endpoints
+  async banUser(userId, reason, message = '') {
+    return this.makeRequest(`/users/${userId}/ban`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, message }),
+    });
+  }
+
+  async unbanUser(userId) {
+    return this.makeRequest(`/users/${userId}/unban`, {
+      method: 'POST',
+    });
+  }
+
+  async verifyUserEmail(userId) {
+    return this.makeRequest(`/users/${userId}/verify-email`, {
+      method: 'POST',
+    });
+  }
+
+  async changeUserAccountType(userId, userType) {
+    return this.makeRequest(`/users/${userId}/account-type`, {
+      method: 'PUT',
+      body: JSON.stringify({ userType }),
+    });
+  }
+
+
   async loginWithIdentifier(identifier) {
     return this.makeRequest('/auth/login-identifier', {
       method: 'POST',
