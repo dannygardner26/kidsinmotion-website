@@ -195,6 +195,8 @@ public class ParticipantController {
                 participant.setParentUserFirstName(user.getFirstName());
                 participant.setParentUserLastName(user.getLastName());
                 participant.setParentUserPhoneNumber(user.getPhoneNumber());
+                participant.setParentUserUsername(user.getUsername());
+                participant.setParentUserFullName(user.getFullName());
             }
 
             participant.setEventName(event.getName());

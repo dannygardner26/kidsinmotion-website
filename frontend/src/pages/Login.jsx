@@ -3,13 +3,14 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithCredential, onAuthStateChanged } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
 import { useAuth } from '../context/AuthContext';
+import apiService from '../services/api';
 
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setIsGoogleOAuthLogin } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -41,10 +42,8 @@ const Login = () => {
 
   const validateForm = () => {
     const errors = {};
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Email is invalid';
+    if (!identifier.trim()) {
+      errors.identifier = 'Username, email, or phone is required';
     }
     if (!password) {
       errors.password = 'Password is required';
@@ -63,10 +62,11 @@ const Login = () => {
     setError(null);
 
     try {
+      const normalizedIdentifier = identifier.trim().toLowerCase();
+
       // Check if this is the test admin login
-      const normalizedEmail = email.trim().toLowerCase();
       const testAdminEmails = ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com'];
-      if (testAdminEmails.includes(normalizedEmail) && password === 'admin123') {
+      if (testAdminEmails.includes(normalizedIdentifier) && password === 'admin123') {
         // Use test login endpoint
         const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/test-login`, {
           method: 'POST',
@@ -74,7 +74,7 @@ const Login = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: normalizedEmail,
+            email: normalizedIdentifier,
             password: password
           })
         });
@@ -95,7 +95,17 @@ const Login = () => {
         }
       }
 
-      // Fall back to Firebase authentication for other users
+      // Get email from identifier using backend API
+      const identifierResponse = await apiService.loginWithIdentifier(normalizedIdentifier);
+
+      if (!identifierResponse.exists) {
+        setError('No account found with that username, email, or phone number');
+        return;
+      }
+
+      const email = identifierResponse.email;
+
+      // Use Firebase authentication with resolved email
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Email/Password Sign in successful:", userCredential.user);
       // Navigation is handled by onAuthStateChanged effect
@@ -241,20 +251,21 @@ const Login = () => {
 
                 <form onSubmit={handleEmailPasswordLogin}>
                   {/* Use theme form-group */}
-                  <div className="form-group"> 
-                    <label htmlFor="email">Email</label>
+                  <div className="form-group">
+                    <label htmlFor="identifier">Username, Email, or Phone</label>
                     <input
-                      type="email"
-                      id="email"
+                      type="text"
+                      id="identifier"
+                      placeholder="Enter your username, email, or phone number"
                       // Use theme form-control
-                      className={`form-control ${formErrors.email ? 'border-red-500' : ''}`} 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
+                      className={`form-control ${formErrors.identifier ? 'border-red-500' : ''}`}
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      required
                     />
-                    {formErrors.email && (
+                    {formErrors.identifier && (
                       // Simple error text styling
-                      <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p> 
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.identifier}</p>
                     )}
                   </div>
 

@@ -38,7 +38,9 @@ export const AuthProvider = ({ children }) => {
           // Use cached profile immediately, then refresh in background
           setUserProfile(parsed);
           setAuthReady(true);
-          console.log("Using cached user profile:", parsed);
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Using cached user profile:", parsed);
+          }
         }
 
         // For Google OAuth, check if user exists first
@@ -47,14 +49,18 @@ export const AuthProvider = ({ children }) => {
             await apiService.checkUser();
             // User exists, proceed with sync
           } catch (error) {
-            console.log("checkUser error:", error);
+            if (process.env.NODE_ENV !== 'production') {
+              console.log("checkUser error:", error);
+            }
             // Check if it's a 404 response with user info
             if (error.response && error.response.status === 404) {
               let userInfo = null;
               try {
                 userInfo = error.response.data;
               } catch (parseError) {
-                console.warn("Could not parse user info from error response");
+                if (process.env.NODE_ENV !== 'production') {
+                  console.warn("Could not parse user info from error response");
+                }
               }
 
               if (userInfo && userInfo.firstName) {
@@ -85,7 +91,9 @@ export const AuthProvider = ({ children }) => {
         if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
           profile.userType = 'ADMIN';
           profile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
-          console.log("Automatically granted admin privileges to:", user.email);
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Automatically granted admin privileges to:", user.email);
+          }
         }
 
         setUserProfile(profile);
@@ -99,9 +107,13 @@ export const AuthProvider = ({ children }) => {
         // Cache the profile for faster future loads
         localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(profile));
 
-        console.log("User synced with backend:", profile);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("User synced with backend:", profile);
+        }
       } catch (error) {
-        console.error("Failed to sync user with backend:", error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Failed to sync user with backend:", error);
+        }
         // Don't prevent login if backend sync fails
         if (!authReady) {
           setAuthReady(true); // Still allow app to load
@@ -120,7 +132,9 @@ export const AuthProvider = ({ children }) => {
 
       if (testUser && isTestAdmin === 'true') {
         const userData = JSON.parse(testUser);
-        console.log("Found test admin user in localStorage:", userData);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Found test admin user in localStorage:", userData);
+        }
 
         // Create a mock Firebase user object
         const mockUser = {
@@ -137,9 +151,13 @@ export const AuthProvider = ({ children }) => {
             await apiService.syncUser();
             const profile = await apiService.getUserProfile();
             setUserProfile(profile);
-            console.log("Test admin user synced with backend:", profile);
+            if (process.env.NODE_ENV !== 'production') {
+              console.log("Test admin user synced with backend:", profile);
+            }
           } catch (error) {
-            console.error("Failed to sync test admin user with backend:", error);
+            if (process.env.NODE_ENV !== 'production') {
+              console.error("Failed to sync test admin user with backend:", error);
+            }
             // Use cached user data as fallback
             setUserProfile({
               ...userData,
@@ -162,14 +180,18 @@ export const AuthProvider = ({ children }) => {
 
     // Add a timeout to ensure loading state doesn't last forever
     const loadingTimeout = setTimeout(() => {
-      console.warn("Firebase auth loading timeout - setting loading to false");
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn("Firebase auth loading timeout - setting loading to false");
+      }
       setLoading(false);
     }, 5000);
 
     try {
       // Listen for authentication state changes
       const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
+        }
         setCurrentUser(user);
 
         if (user) {
@@ -195,7 +217,9 @@ export const AuthProvider = ({ children }) => {
         unsubscribe();
       };
     } catch (error) {
-      console.error("Firebase auth initialization failed:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error("Firebase auth initialization failed:", error);
+      }
       clearTimeout(loadingTimeout);
       setLoading(false);
     }
@@ -214,16 +238,22 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(null);
         setUserProfile(null);
         setLoading(false);
-        console.log("Test admin signed out successfully.");
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Test admin signed out successfully.");
+        }
         return;
       }
 
       // Regular Firebase logout
       await signOut(auth);
-      console.log("User signed out successfully.");
+      if (process.env.NODE_ENV !== 'production') {
+        console.log("User signed out successfully.");
+      }
       // currentUser will be set to null by onAuthStateChanged listener
     } catch (error) {
-      console.error("Logout failed:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error("Logout failed:", error);
+      }
       setLoading(false); // Stop loading on error
       // Handle logout error (e.g., show a message to the user)
     }
@@ -237,7 +267,9 @@ export const AuthProvider = ({ children }) => {
         const token = await currentUser.getIdToken(true); // Force refresh token if needed
         return token;
       } catch (error) {
-        console.error("Error getting ID token:", error);
+        if (process.env.NODE_ENV !== 'production') {
+          console.error("Error getting ID token:", error);
+        }
         // Handle error, maybe force logout or re-authentication
         if (error.code === 'auth/user-token-expired' || error.code === 'auth/internal-error') {
            await logout(); // Force logout if token is invalid/expired
@@ -256,7 +288,9 @@ export const AuthProvider = ({ children }) => {
       setUserProfile(updatedProfile);
       return updatedProfile;
     } catch (error) {
-      console.error("Failed to update profile:", error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error("Failed to update profile:", error);
+      }
       throw error;
     }
   };
@@ -269,9 +303,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const { sendEmailVerification } = await import('firebase/auth');
       await sendEmailVerification(currentUser);
-      console.log('Email verification sent');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Email verification sent');
+      }
     } catch (error) {
-      console.error('Error sending email verification:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error sending email verification:', error);
+      }
       throw error;
     } finally {
       setVerificationLoading(false);
@@ -283,9 +321,13 @@ export const AuthProvider = ({ children }) => {
       const { sendPasswordResetEmail } = await import('firebase/auth');
       const { auth } = await import('../firebaseConfig');
       await sendPasswordResetEmail(auth, email);
-      console.log('Password reset email sent');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Password reset email sent');
+      }
     } catch (error) {
-      console.error('Error sending password reset email:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error sending password reset email:', error);
+      }
       throw error;
     }
   };
@@ -303,7 +345,9 @@ export const AuthProvider = ({ children }) => {
       const phoneVerified = profile.phoneVerified || false;
       setIsPhoneVerified(phoneVerified);
     } catch (error) {
-      console.error('Error refreshing verification status:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error refreshing verification status:', error);
+      }
     }
   };
 

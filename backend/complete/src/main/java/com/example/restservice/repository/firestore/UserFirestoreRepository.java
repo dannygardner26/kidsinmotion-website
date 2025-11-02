@@ -142,6 +142,94 @@ public class UserFirestoreRepository {
         return findByEmail(email).isPresent();
     }
 
+    public Optional<UserFirestore> findByUsernameLowercase(String usernameLowercase) throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("usernameLowercase", usernameLowercase)
+                .limit(1)
+                .get();
+
+        QuerySnapshot querySnapshot = query.get();
+
+        if (!querySnapshot.getDocuments().isEmpty()) {
+            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+            return Optional.of(UserFirestore.fromMap(document.getData(), document.getId()));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public boolean existsByUsernameLowercase(String usernameLowercase) throws ExecutionException, InterruptedException {
+        return findByUsernameLowercase(usernameLowercase).isPresent();
+    }
+
+    public Optional<UserFirestore> findByPhoneNumber(String phoneNumber) throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("phoneNumber", phoneNumber)
+                .limit(1)
+                .get();
+
+        QuerySnapshot querySnapshot = query.get();
+
+        if (!querySnapshot.getDocuments().isEmpty()) {
+            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+            return Optional.of(UserFirestore.fromMap(document.getData(), document.getId()));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    public Optional<UserFirestore> findByEmailOrPhoneNumber(String email, String phoneNumber) throws ExecutionException, InterruptedException {
+        // Try email first
+        Optional<UserFirestore> byEmail = findByEmail(email);
+        if (byEmail.isPresent()) {
+            return byEmail;
+        }
+
+        // Try phone number
+        return findByPhoneNumber(phoneNumber);
+    }
+
+    public List<UserFirestore> findAllExcludingBanned() throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("isBanned", false)
+                .orderBy("lastName", Query.Direction.ASCENDING)
+                .get();
+
+        QuerySnapshot querySnapshot = query.get();
+        List<UserFirestore> users = new ArrayList<>();
+
+        for (DocumentSnapshot document : querySnapshot.getDocuments()) {
+            UserFirestore user = UserFirestore.fromMap(document.getData(), document.getId());
+            // Double check - only include if not banned
+            if (user.getIsBanned() == null || !user.getIsBanned()) {
+                users.add(user);
+            }
+        }
+
+        return users;
+    }
+
+    public List<UserFirestore> findByUserTypeExcludingBanned(String userType) throws ExecutionException, InterruptedException {
+        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
+                .whereEqualTo("userType", userType)
+                .whereEqualTo("isBanned", false)
+                .orderBy("lastName", Query.Direction.ASCENDING)
+                .get();
+
+        QuerySnapshot querySnapshot = query.get();
+        List<UserFirestore> users = new ArrayList<>();
+
+        for (DocumentSnapshot document : querySnapshot.getDocuments()) {
+            UserFirestore user = UserFirestore.fromMap(document.getData(), document.getId());
+            // Double check - only include if not banned
+            if (user.getIsBanned() == null || !user.getIsBanned()) {
+                users.add(user);
+            }
+        }
+
+        return users;
+    }
+
     public long count() throws ExecutionException, InterruptedException {
         ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME).get();
         QuerySnapshot querySnapshot = query.get();

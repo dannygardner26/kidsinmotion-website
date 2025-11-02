@@ -151,6 +151,8 @@ public class VolunteerController {
                 volunteer.setUserFirstName(user.getFirstName());
                 volunteer.setUserLastName(user.getLastName());
                 volunteer.setUserPhoneNumber(user.getPhoneNumber());
+                volunteer.setUserUsername(user.getUsername());
+                volunteer.setUserFullName(user.getFullName());
             }
 
             EventFirestore event = eventOpt.get();

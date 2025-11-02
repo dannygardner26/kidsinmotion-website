@@ -132,7 +132,7 @@ const UsersAndRegistrations = () => {
       // Update the local state
       setUsers(users.map(user =>
         user.id === editingUser.id
-          ? { ...user, ...editForm, name: `${editForm.firstName} ${editForm.lastName}` }
+          ? { ...user, ...editForm }
           : user
       ));
 
@@ -245,7 +245,7 @@ const UsersAndRegistrations = () => {
                           onClick={() => handleViewUserProfile(user)}
                           title="View full profile"
                         >
-                          {user.name || 'N/A'}
+                          {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name || 'N/A'}
                         </button>
                       </td>
                       <td>{user.email}</td>
@@ -267,8 +267,8 @@ const UsersAndRegistrations = () => {
                           )}
                         </div>
                       </td>
-                      <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
-                      <td>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}</td>
+                      <td>{user.createdTimestamp ? new Date(user.createdTimestamp).toLocaleDateString() : 'N/A'}</td>
+                      <td>{user.lastLoginTimestamp ? new Date(user.lastLoginTimestamp).toLocaleDateString() : 'Never'}</td>
                       <td>
                         <div className="action-buttons">
                           <button
@@ -292,7 +292,7 @@ const UsersAndRegistrations = () => {
         <div className="modal-overlay" onClick={handleCloseUserProfile}>
           <div className="modal-content user-profile-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>User Profile: {selectedUser.name || 'N/A'}</h3>
+              <h3>User Profile: {selectedUser.firstName && selectedUser.lastName ? `${selectedUser.firstName} ${selectedUser.lastName}` : selectedUser.name || 'N/A'}</h3>
               <button className="modal-close" onClick={handleCloseUserProfile}>×</button>
             </div>
             <div className="modal-body">
@@ -301,7 +301,7 @@ const UsersAndRegistrations = () => {
                 <div className="profile-grid">
                   <div className="profile-item">
                     <label>Name:</label>
-                    <span>{selectedUser.name || 'N/A'}</span>
+                    <span>{selectedUser.firstName && selectedUser.lastName ? `${selectedUser.firstName} ${selectedUser.lastName}` : selectedUser.name || 'N/A'}</span>
                   </div>
                   <div className="profile-item">
                     <label>Email:</label>
@@ -329,11 +329,11 @@ const UsersAndRegistrations = () => {
                   </div>
                   <div className="profile-item">
                     <label>Joined:</label>
-                    <span>{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'N/A'}</span>
+                    <span>{selectedUser.createdTimestamp ? new Date(selectedUser.createdTimestamp).toLocaleDateString() : 'N/A'}</span>
                   </div>
                   <div className="profile-item">
                     <label>Last Login:</label>
-                    <span>{selectedUser.lastLoginAt ? new Date(selectedUser.lastLoginAt).toLocaleDateString() : 'Never'}</span>
+                    <span>{selectedUser.lastLoginTimestamp ? new Date(selectedUser.lastLoginTimestamp).toLocaleDateString() : 'Never'}</span>
                   </div>
                   <div className="profile-item">
                     <label>Email Verified:</label>

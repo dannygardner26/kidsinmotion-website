@@ -88,6 +88,20 @@ class ApiService {
     });
   }
 
+  async loginWithIdentifier(identifier) {
+    return this.makeRequest('/auth/login-identifier', {
+      method: 'POST',
+      body: JSON.stringify({ identifier }),
+    });
+  }
+
+  async validateUsername(username) {
+    return this.makeRequest('/users/validate-username', {
+      method: 'POST',
+      body: JSON.stringify({ username }),
+    });
+  }
+
   // Event endpoints
   async getEvents() {
     // Public endpoint - no auth required
@@ -666,6 +680,55 @@ class ApiService {
         throw error; // Throw original API error
       }
     }
+  }
+
+  // User profile and connection endpoints
+  async getUserByUsername(username) {
+    return this.makeRequest(`/users/username/${username}`);
+  }
+
+  async getUserConnections(userId) {
+    return this.makeRequest(`/connections/user/${userId}`);
+  }
+
+  async getPendingConnectionRequests() {
+    return this.makeRequest('/connections/pending');
+  }
+
+  async getSuggestedConnections() {
+    return this.makeRequest('/connections/suggestions');
+  }
+
+  async getConnectionStatus(targetUserId) {
+    return this.makeRequest(`/connections/status/${targetUserId}`);
+  }
+
+  async sendConnectionRequest(targetUserId) {
+    return this.makeRequest('/connections/request', {
+      method: 'POST',
+      body: JSON.stringify({ targetUserId }),
+    });
+  }
+
+  async respondToConnectionRequest(senderUserId, response) {
+    return this.makeRequest('/connections/respond', {
+      method: 'POST',
+      body: JSON.stringify({ senderUserId, response }),
+    });
+  }
+
+  async cancelConnectionRequest(targetUserId) {
+    return this.makeRequest('/connections/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ targetUserId }),
+    });
+  }
+
+  async removeConnection(targetUserId) {
+    return this.makeRequest('/connections/remove', {
+      method: 'POST',
+      body: JSON.stringify({ targetUserId }),
+    });
   }
 
 }

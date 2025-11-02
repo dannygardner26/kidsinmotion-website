@@ -26,16 +26,22 @@ class FirebaseRealtimeService {
           }
         },
         (error) => {
-          console.error('Event listener error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Event listener error:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log(`Started listening to event: ${eventId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Started listening to event: ${eventId}`);
+      }
       return unsubscribe;
     } catch (error) {
-      console.error('Failed to subscribe to event:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to event:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -66,16 +72,22 @@ class FirebaseRealtimeService {
           callback(participants);
         },
         (error) => {
-          console.error('Participants listener error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Participants listener error:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log(`Started listening to participants for event: ${eventId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Started listening to participants for event: ${eventId}`);
+      }
       return unsubscribe;
     } catch (error) {
-      console.error('Failed to subscribe to participants:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to participants:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -106,16 +118,22 @@ class FirebaseRealtimeService {
           callback(volunteers);
         },
         (error) => {
-          console.error('Volunteers listener error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Volunteers listener error:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log(`Started listening to volunteers for event: ${eventId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Started listening to volunteers for event: ${eventId}`);
+      }
       return unsubscribe;
     } catch (error) {
-      console.error('Failed to subscribe to volunteers:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to volunteers:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -142,16 +160,22 @@ class FirebaseRealtimeService {
           callback(events);
         },
         (error) => {
-          console.error('Events listener error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Events listener error:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log('Started listening to all events');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Started listening to all events');
+      }
       return unsubscribe;
     } catch (error) {
-      console.error('Failed to subscribe to events:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to events:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -183,16 +207,22 @@ class FirebaseRealtimeService {
           callback(events);
         },
         (error) => {
-          console.error('Upcoming events listener error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Upcoming events listener error:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log('Started listening to upcoming events');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Started listening to upcoming events');
+      }
       return unsubscribe;
     } catch (error) {
-      console.error('Failed to subscribe to upcoming events:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to upcoming events:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -219,16 +249,22 @@ class FirebaseRealtimeService {
           callback(messages);
         },
         (error) => {
-          console.error('User messages listener error:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('User messages listener error:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log(`Started listening to messages for user: ${userId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Started listening to messages for user: ${userId}`);
+      }
       return unsubscribe;
     } catch (error) {
-      console.error('Failed to subscribe to user messages:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to user messages:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -257,17 +293,23 @@ class FirebaseRealtimeService {
           callback(messages);
         },
         (error) => {
-          console.error('Error in chat subscription:', error);
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Error in chat subscription:', error);
+          }
           if (errorCallback) errorCallback(error);
         }
       );
 
       this.listeners.set(listenerKey, unsubscribe);
-      console.log(`Subscribed to event chat: ${eventId}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Subscribed to event chat: ${eventId}`);
+      }
       return unsubscribe;
 
     } catch (error) {
-      console.error('Failed to subscribe to event chat:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to event chat:', error);
+      }
       if (errorCallback) errorCallback(error);
       return null;
     }
@@ -284,11 +326,15 @@ class FirebaseRealtimeService {
       };
 
       const docRef = await addDoc(chatCollection, messageWithTimestamp);
-      console.log('Chat message sent with ID:', docRef.id);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Chat message sent with ID:', docRef.id);
+      }
       return docRef;
 
     } catch (error) {
-      console.error('Error sending chat message:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error sending chat message:', error);
+      }
       throw new Error(`Failed to send message: ${error.message}`);
     }
   }
@@ -304,10 +350,14 @@ class FirebaseRealtimeService {
       });
 
       await batch.commit();
-      console.log('Marked messages as read:', messageIds);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Marked messages as read:', messageIds);
+      }
 
     } catch (error) {
-      console.error('Error marking messages as read:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error marking messages as read:', error);
+      }
       throw new Error(`Failed to mark messages as read: ${error.message}`);
     }
   }
@@ -318,16 +368,22 @@ class FirebaseRealtimeService {
     if (unsubscribe) {
       unsubscribe();
       this.listeners.delete(listenerKey);
-      console.log(`Unsubscribed from: ${listenerKey}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Unsubscribed from: ${listenerKey}`);
+      }
     }
   }
 
   // Unsubscribe from all listeners
   unsubscribeAll() {
-    console.log(`Cleaning up ${this.listeners.size} Firestore listeners`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Cleaning up ${this.listeners.size} Firestore listeners`);
+    }
     this.listeners.forEach((unsubscribe, key) => {
       unsubscribe();
-      console.log(`Cleaned up listener: ${key}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Cleaned up listener: ${key}`);
+      }
     });
     this.listeners.clear();
   }

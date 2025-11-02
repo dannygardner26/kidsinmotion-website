@@ -26,6 +26,7 @@ const EventCheckIn = lazy(() => import('./pages/EventCheckIn'));
 const EventOverview = lazy(() => import('./pages/EventOverview'));
 const VolunteerEventView = lazy(() => import('./pages/VolunteerEventView'));
 const ParentEventView = lazy(() => import('./pages/ParentEventView'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
 
 // CSS
 import './css/app.css';
@@ -216,6 +217,16 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <EventOverview />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* User Profile Route */}
+                <Route
+                  path="/profile/:username"
+                  element={
+                    <ProtectedRoute>
+                      <UserProfile />
                     </ProtectedRoute>
                   }
                 />

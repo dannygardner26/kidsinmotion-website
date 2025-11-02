@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
@@ -14,6 +14,7 @@ const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -26,6 +27,8 @@ const Register = () => {
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [isGoogleOAuth, setIsGoogleOAuth] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState(''); // '', 'checking', 'available', 'taken'
+  const [usernameValidationTimer, setUsernameValidationTimer] = useState(null);
 
   // Check for Google OAuth registration data
   useEffect(() => {
@@ -57,25 +60,83 @@ const Register = () => {
     }
   }, [location]);
 
+  // Username validation function
+  const validateUsername = useCallback(async (username) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus('');
+      return;
+    }
+
+    setUsernameStatus('checking');
+    try {
+      const response = await apiService.validateUsername(username);
+      setUsernameStatus(response.available ? 'available' : 'taken');
+    } catch (error) {
+      console.error('Username validation error:', error);
+      setUsernameStatus('');
+    }
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (usernameValidationTimer) {
+        clearTimeout(usernameValidationTimer);
+      }
+    };
+  }, [usernameValidationTimer]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prevState => ({
       ...prevState,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    // Handle username validation with debouncing
+    if (name === 'username') {
+      setUsernameStatus('');
+      if (usernameValidationTimer) {
+        clearTimeout(usernameValidationTimer);
+      }
+
+      if (value.trim().length >= 3) {
+        const timer = setTimeout(() => {
+          validateUsername(value.trim());
+        }, 500);
+        setUsernameValidationTimer(timer);
+      }
+    }
   };
 
   const validateForm = () => {
     const errors = {};
-    const { firstName, lastName, email, password, confirmPassword, phoneNumber, agreeToTerms } = formData;
+    const { firstName, lastName, username, email, password, confirmPassword, phoneNumber, agreeToTerms } = formData;
 
     if (!firstName.trim()) errors.firstName = 'First name is required';
     if (!lastName.trim()) errors.lastName = 'Last name is required';
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      errors.email = 'Email is invalid';
+
+    // Username validation
+    if (!username.trim()) {
+      errors.username = 'Username is required';
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      errors.username = 'Username can only contain letters, numbers, underscores, and hyphens';
+    } else if (username.length < 3 || username.length > 20) {
+      errors.username = 'Username must be 3-20 characters long';
+    } else if (usernameStatus === 'taken') {
+      errors.username = 'Username is already taken';
     }
+
+    // Either email or phone is required
+    if (!email.trim() && !phoneNumber.trim()) {
+      errors.email = 'Either email or phone number is required';
+      errors.phoneNumber = 'Either email or phone number is required';
+    } else {
+      if (email.trim() && !/\S+@\S+\.\S+/.test(email)) {
+        errors.email = 'Email is invalid';
+      }
+    }
+
     // Only validate passwords for non-OAuth users
     if (!isGoogleOAuth) {
       if (!password) {
@@ -87,9 +148,7 @@ const Register = () => {
         errors.confirmPassword = 'Passwords do not match';
       }
     }
-    if (!phoneNumber.trim()) { // Basic check, consider more robust validation
-        errors.phoneNumber = 'Phone number is required';
-    }
+
     if (!agreeToTerms) {
       errors.agreeToTerms = 'You must agree to the Terms and Conditions and Privacy Policy';
     }
@@ -113,6 +172,7 @@ const Register = () => {
         const profileData = {
           firstName: formData.firstName,
           lastName: formData.lastName,
+          username: formData.username,
           phoneNumber: formData.phoneNumber,
           userType: formData.role,
           grade: formData.grade || null,
@@ -140,6 +200,7 @@ const Register = () => {
         const profileData = {
           firstName: formData.firstName,
           lastName: formData.lastName,
+          username: formData.username,
           phoneNumber: formData.phoneNumber,
           userType: formData.role,
           grade: formData.grade || null,
@@ -240,14 +301,13 @@ const Register = () => {
                 {isGoogleOAuth && (
                   <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4" role="alert">
                     <span className="block sm:inline">
-                      <strong>Complete Your Google Account Registration:</strong> Please select your role and provide any additional information below. No password is required since you'll sign in with Google.
+                      <strong>Complete Your Google Account Registration:</strong> Please choose a username, select your role, and provide any additional information below. No password is required since you'll sign in with Google.
                     </span>
                   </div>
                 )}
 
                 <form onSubmit={handleSubmit} noValidate>
-                  {/* Use theme heading style */}
-                  <h3 className="text-lg font-semibold mb-4 text-primary">Personal Information</h3> 
+                  <h3 className="text-lg font-bold mb-4 text-black">Personal Information</h3> 
 
                   {/* Use flexbox for row layout, gap for spacing */}
                   <div className="flex flex-wrap -mx-2 mb-3"> 
@@ -290,9 +350,47 @@ const Register = () => {
                     </div>
                   </div>
 
+                  {/* Username field */}
+                  <div className="form-group">
+                    <label htmlFor="username">Username*</label>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      className={`form-control ${
+                        formErrors.username
+                          ? 'border-red-500'
+                          : usernameStatus === 'available'
+                          ? 'border-green-500'
+                          : usernameStatus === 'taken'
+                          ? 'border-red-500'
+                          : ''
+                      }`}
+                      value={formData.username}
+                      onChange={handleChange}
+                      placeholder="Enter a unique username"
+                      required
+                    />
+                    <small className="text-gray-500 text-xs">3–20 characters; letters, numbers, underscore, hyphen</small>
+
+                    {/* Username validation feedback */}
+                    {usernameStatus === 'checking' && (
+                      <p className="text-blue-500 text-xs italic mt-1">Checking availability...</p>
+                    )}
+                    {usernameStatus === 'available' && (
+                      <p className="text-green-500 text-xs italic mt-1">✓ Username is available</p>
+                    )}
+                    {usernameStatus === 'taken' && (
+                      <p className="text-red-500 text-xs italic mt-1">Username is already taken</p>
+                    )}
+                    {formErrors.username && (
+                      <p className="text-red-500 text-xs italic mt-1">{formErrors.username}</p>
+                    )}
+                  </div>
+
                   {/* Use theme form-group */}
-                  <div className="form-group"> 
-                    <label htmlFor="email">Email*</label>
+                  <div className="form-group">
+                    <label htmlFor="email">Email</label>
                     <input
                       type="email"
                       id="email"
@@ -309,8 +407,8 @@ const Register = () => {
                   </div>
 
                   {/* Use theme form-group */}
-                  <div className="form-group"> 
-                    <label htmlFor="phoneNumber">Phone Number*</label>
+                  <div className="form-group">
+                    <label htmlFor="phoneNumber">Phone Number</label>
                     <input
                       type="tel"
                       id="phoneNumber"
@@ -399,8 +497,7 @@ const Register = () => {
                   {/* Only show password fields for non-OAuth users */}
                   {!isGoogleOAuth && (
                     <>
-                      {/* Use theme heading style */}
-                      <h3 className="text-lg font-semibold mt-6 mb-4 text-primary">Account Security</h3>
+                      <h3 className="text-lg font-bold mt-6 mb-4 text-black">Account Security</h3>
 
                       {/* Use theme form-group */}
                       <div className="form-group">

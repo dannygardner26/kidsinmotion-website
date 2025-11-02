@@ -21,6 +21,16 @@ public class UserFirestore {
     private List<String> teams; // List of team/role names
     private String grade; // For volunteers: grade level
     private String school; // For volunteers: school/organization
+    private String username; // unique identifier for profile URLs and login, 3-20 characters
+    private String usernameLowercase; // lowercase version for case-insensitive lookups
+    private Long usernameLastChangedAt; // timestamp of last username change for 3-month cooldown
+    private String profilePictureUrl; // URL to uploaded profile picture in Firebase Storage
+    private String profileColor; // hex color code assigned at creation for avatar background
+    private Long lastLoginAt; // timestamp of last login for admin tracking
+    private Map<String, Object> connectionPrivacySettings; // controls what info to share with connections
+    private Boolean isBanned; // soft delete flag for banned users
+    private Long bannedAt; // timestamp when user was banned
+    private String bannedReason; // admin message explaining ban reason
     private Boolean emailVerified;
     private Boolean phoneVerified;
     private Long createdTimestamp;
@@ -32,6 +42,7 @@ public class UserFirestore {
         this.userType = "PARENT"; // Default
         this.emailVerified = false;
         this.phoneVerified = false;
+        this.isBanned = false;
     }
 
     public UserFirestore(String firebaseUid, String firstName, String lastName, String email, String phoneNumber) {
@@ -58,6 +69,16 @@ public class UserFirestore {
         map.put("teams", teams);
         map.put("grade", grade);
         map.put("school", school);
+        map.put("username", username);
+        map.put("usernameLowercase", usernameLowercase);
+        map.put("usernameLastChangedAt", usernameLastChangedAt);
+        map.put("profilePictureUrl", profilePictureUrl);
+        map.put("profileColor", profileColor);
+        map.put("lastLoginAt", lastLoginAt);
+        map.put("connectionPrivacySettings", connectionPrivacySettings);
+        map.put("isBanned", isBanned);
+        map.put("bannedAt", bannedAt);
+        map.put("bannedReason", bannedReason);
         map.put("emailVerified", emailVerified);
         map.put("phoneVerified", phoneVerified);
         map.put("createdTimestamp", createdTimestamp);
@@ -81,6 +102,16 @@ public class UserFirestore {
         user.setTeams((List<String>) map.get("teams"));
         user.setGrade((String) map.get("grade"));
         user.setSchool((String) map.get("school"));
+        user.setUsername((String) map.get("username"));
+        user.setUsernameLowercase((String) map.get("usernameLowercase"));
+        user.setUsernameLastChangedAt((Long) map.get("usernameLastChangedAt"));
+        user.setProfilePictureUrl((String) map.get("profilePictureUrl"));
+        user.setProfileColor((String) map.get("profileColor"));
+        user.setLastLoginAt((Long) map.get("lastLoginAt"));
+        user.setConnectionPrivacySettings((Map<String, Object>) map.get("connectionPrivacySettings"));
+        user.setIsBanned(map.get("isBanned") != null ? (Boolean) map.get("isBanned") : false);
+        user.setBannedAt((Long) map.get("bannedAt"));
+        user.setBannedReason((String) map.get("bannedReason"));
         user.setEmailVerified(map.get("emailVerified") != null ? (Boolean) map.get("emailVerified") : false);
         user.setPhoneVerified(map.get("phoneVerified") != null ? (Boolean) map.get("phoneVerified") : false);
         user.setCreatedTimestamp(map.get("createdTimestamp") != null ? (Long) map.get("createdTimestamp") : System.currentTimeMillis());
@@ -91,6 +122,18 @@ public class UserFirestore {
     // Helper method to check if user is admin
     public boolean isAdmin() {
         return "ADMIN".equals(userType);
+    }
+
+    // Helper method to get full name
+    public String getFullName() {
+        if (firstName != null && lastName != null) {
+            return firstName + " " + lastName;
+        } else if (firstName != null) {
+            return firstName;
+        } else if (lastName != null) {
+            return lastName;
+        }
+        return "";
     }
 
     // Getters and Setters
@@ -145,4 +188,34 @@ public class UserFirestore {
     public boolean isVerified() {
         return (emailVerified != null && emailVerified) || (phoneVerified != null && phoneVerified);
     }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public String getUsernameLowercase() { return usernameLowercase; }
+    public void setUsernameLowercase(String usernameLowercase) { this.usernameLowercase = usernameLowercase; }
+
+    public Long getUsernameLastChangedAt() { return usernameLastChangedAt; }
+    public void setUsernameLastChangedAt(Long usernameLastChangedAt) { this.usernameLastChangedAt = usernameLastChangedAt; }
+
+    public String getProfilePictureUrl() { return profilePictureUrl; }
+    public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }
+
+    public String getProfileColor() { return profileColor; }
+    public void setProfileColor(String profileColor) { this.profileColor = profileColor; }
+
+    public Long getLastLoginAt() { return lastLoginAt; }
+    public void setLastLoginAt(Long lastLoginAt) { this.lastLoginAt = lastLoginAt; }
+
+    public Map<String, Object> getConnectionPrivacySettings() { return connectionPrivacySettings; }
+    public void setConnectionPrivacySettings(Map<String, Object> connectionPrivacySettings) { this.connectionPrivacySettings = connectionPrivacySettings; }
+
+    public Boolean getIsBanned() { return isBanned; }
+    public void setIsBanned(Boolean isBanned) { this.isBanned = isBanned; }
+
+    public Long getBannedAt() { return bannedAt; }
+    public void setBannedAt(Long bannedAt) { this.bannedAt = bannedAt; }
+
+    public String getBannedReason() { return bannedReason; }
+    public void setBannedReason(String bannedReason) { this.bannedReason = bannedReason; }
 }

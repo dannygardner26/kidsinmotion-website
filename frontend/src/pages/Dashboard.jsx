@@ -8,6 +8,7 @@ import { collection, doc as firestoreDoc, getDoc, getDocs, setDoc } from 'fireba
 import { db } from '../firebaseConfig';
 import ChildrenManagement from '../components/ChildrenManagement';
 import VerificationPrompt from '../components/VerificationPrompt';
+import ConnectionsSection from '../components/ConnectionsSection';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -1140,6 +1141,14 @@ const Dashboard = () => {
                       </li>
                     </>
                   )}
+                  {/* Connections tab - available to all users */}
+                  <li
+                    className={`nav-tab ${activeTab === 'connections' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('connections')}
+                  >
+                    <i className="fas fa-users mr-2"></i>
+                    Connections
+                  </li>
                 </ul>
               </div>
               <div className="card-body">
@@ -1499,6 +1508,16 @@ const Dashboard = () => {
                         })}
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Connections Tab - Available to all users */}
+                {activeTab === 'connections' && (
+                  <div className="tab-content">
+                    <ConnectionsSection
+                      userId={currentUser?.uid}
+                      isOwnProfile={true}
+                    />
                   </div>
                 )}
 
