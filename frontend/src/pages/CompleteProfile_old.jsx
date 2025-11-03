@@ -28,56 +28,28 @@ const CompleteProfile = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // Admin accounts are exempt from profile completion
-    if (userProfile?.userType === 'ADMIN') {
-      navigate('/dashboard');
-      return;
-    }
-
-    // If user already has a complete profile, redirect to dashboard
+      // If user already has a complete profile, redirect to dashboard
     if (userProfile && userProfile.firstName && userProfile.lastName && userProfile.username &&
         userProfile.userType && (userProfile.email || userProfile.phoneNumber)) {
       navigate('/dashboard');
       return;
     }
 
-    // Check for pending OAuth registration data
-    const pendingRegistration = localStorage.getItem('pendingRegistration');
-    let oauthData = null;
-    if (pendingRegistration) {
-      try {
-        oauthData = JSON.parse(pendingRegistration);
-        // Clear it so it's only used once
-        localStorage.removeItem('pendingRegistration');
-      } catch (e) {
-        console.warn('Failed to parse pending registration data');
-      }
-    }
-
-    // Function to generate username from email
-    const generateUsernameFromEmail = (email) => {
-      if (!email) return '';
-      // Remove everything after @ and remove dots/special chars
-      return email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-    };
-
-    // Pre-populate form with existing user data or OAuth data
-    if (userProfile || oauthData) {
-      const data = userProfile || {};
+    // Pre-populate form with existing user data
+    if (userProfile) {
       setFormData(prevData => ({
         ...prevData,
-        firstName: data.firstName || oauthData?.firstName || '',
-        lastName: data.lastName || oauthData?.lastName || '',
-        // Auto-generate username from email for OAuth users
-        username: data.username || (oauthData?.email ? generateUsernameFromEmail(oauthData.email) : ''),
-        phoneNumber: data.phoneNumber || '',
-        accountType: data.userType || '',
-        grade: data.grade || '',
-        school: data.school || '',
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        // Don't pre-fill username - user must create one
+        phoneNumber: userProfile.phoneNumber || '',
+        accountType: userProfile.userType || '',
+        grade: userProfile.grade || '',
+        school: userProfile.school || '',
         // Don't pre-fill password - user must create one
-        emergencyContactName: data.emergencyContactName || '',
-        emergencyContactPhone: data.emergencyContactPhone || '',
-        emergencyContactRelationship: data.emergencyContactRelationship || ''
+        emergencyContactName: userProfile.emergencyContactName || '',
+        emergencyContactPhone: userProfile.emergencyContactPhone || '',
+        emergencyContactRelationship: userProfile.emergencyContactRelationship || ''
       }));
     }
   }, [userProfile, navigate]);
@@ -188,24 +160,19 @@ const CompleteProfile = () => {
 
     setIsLoading(true);
     try {
-      // For OAuth users, attempt to link credentials but don't block on failure
+      // Link Firebase credentials for OAuth users
       if (userProfile?.email && formData.password) {
         try {
-          // Ensure we have a current user and refresh the token
-          const currentUser = auth.currentUser;
-          if (currentUser) {
-            await currentUser.getIdToken(true); // Force refresh token
-            const credential = EmailAuthProvider.credential(userProfile.email, formData.password);
-            await linkWithCredential(currentUser, credential);
-            console.log('Firebase credentials linked successfully');
-          }
+          const credential = EmailAuthProvider.credential(userProfile.email, formData.password);
+          await linkWithCredential(auth.currentUser, credential);
+          console.log('Firebase credentials linked successfully');
         } catch (credentialError) {
           console.warn('Failed to link credentials (may already exist):', credentialError);
-          // Continue with profile completion even if linking fails
+          // Don't block profile completion if credential linking fails
         }
       }
 
-      // Update profile in backend with retry logic
+      // Update profile in backend
       const profileData = {
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -219,47 +186,16 @@ const CompleteProfile = () => {
         emergencyContactRelationship: formData.emergencyContactRelationship
       };
 
-      let retryCount = 0;
-      const maxRetries = 2;
-
-      while (retryCount <= maxRetries) {
-        try {
-          await apiService.updateUserProfile(profileData);
-          break; // Success, exit retry loop
-        } catch (error) {
-          retryCount++;
-          console.warn(`Profile update attempt ${retryCount} failed:`, error);
-
-          if (retryCount > maxRetries) {
-            throw error; // Re-throw if all retries failed
-          }
-
-          // Wait before retry and refresh token
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          if (auth.currentUser) {
-            await auth.currentUser.getIdToken(true);
-          }
-        }
-      }
+      await apiService.updateUserProfile(profileData);
 
       // Refresh user profile
-      const updatedProfile = await fetchUserProfile();
-
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Profile updated and refreshed:', updatedProfile);
-      }
+      await fetchUserProfile();
 
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (error) {
       console.error('Error updating profile:', error);
-
-      let errorMessage = 'Failed to update profile. Please try again.';
-      if (error.message === 'User not authenticated') {
-        errorMessage = 'Authentication expired. Please log out and log back in.';
-      }
-
-      alert(errorMessage);
+      alert('Failed to update profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -267,13 +203,13 @@ const CompleteProfile = () => {
 
   const getUsernameStatusIcon = () => {
     if (usernameCheckLoading) {
-      return <i className="fas fa-spinner fa-spin text-gray-500"></i>;
+      return <span className="text-gray-500">🔄</span>;
     }
     if (usernameAvailable === true) {
-      return <i className="fas fa-check text-green-500"></i>;
+      return <span className="text-green-500">✓</span>;
     }
     if (usernameAvailable === false) {
-      return <i className="fas fa-times text-red-500"></i>;
+      return <span className="text-red-500">✗</span>;
     }
     return null;
   };
@@ -296,38 +232,34 @@ const CompleteProfile = () => {
 
   if (!userProfile) {
     return (
-      <div className="container mt-4 text-center">
+      <div className="container mt-4">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading profile...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row justify-content-center">
-        <div className="col-lg-8 col-md-10">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-4">
-            <h1 className="h2 mb-3">Complete Your Profile</h1>
-            <p className="text-muted">Just a few more details to get you started</p>
+          <div className="text-center mb-8 animate-fade-in">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
+            <p className="text-gray-600">Just a few more details to get you started</p>
 
             {/* Progress Bar */}
-            <div className="mt-3">
-              <div className="d-flex justify-content-between text-muted mb-2">
-                <small>Progress</small>
-                <small>{getProgressPercentage()}%</small>
+            <div className="mt-6">
+              <div className="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Progress</span>
+                <span>{getProgressPercentage()}%</span>
               </div>
-              <div className="progress">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className="progress-bar"
-                  role="progressbar"
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${getProgressPercentage()}%` }}
-                  aria-valuenow={getProgressPercentage()}
-                  aria-valuemin="0"
-                  aria-valuemax="100"
                 ></div>
               </div>
             </div>
@@ -335,26 +267,26 @@ const CompleteProfile = () => {
 
           {/* Pre-filled Data Notice */}
           {userProfile?.email && (
-            <div className="alert alert-info d-flex align-items-center mb-4">
-              <i className="fas fa-info-circle mr-3"></i>
-              <div>
-                <strong>Welcome back!</strong>
-                <br />
-                <small>We've pre-filled some information from your Google account ({userProfile.email})</small>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 animate-slide-in">
+              <div className="flex items-center">
+                <span className="text-blue-600 mr-2">ℹ️</span>
+                <div>
+                  <p className="text-blue-800 font-medium">Welcome back!</p>
+                  <p className="text-blue-700 text-sm">
+                    We've pre-filled some information from your Google account ({userProfile.email})
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
           {/* Main Form Card */}
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title mb-0">Complete Your Profile</h3>
-            </div>
-            <div className="card-body">
-              <form onSubmit={handleSubmit}>
-                {/* Personal Information Section */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-slide-up">
+            <div className="p-8">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Personal Information */}
                 <div className="section-header">
-                  <h4><i className="fas fa-user mr-2"></i>Personal Information</h4>
+                  <h4>Personal Information</h4>
                 </div>
 
                 <div className="row">
@@ -363,11 +295,11 @@ const CompleteProfile = () => {
                       <label htmlFor="firstName">First Name *</label>
                       <input
                         type="text"
+                        className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
                         id="firstName"
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
                         required
                       />
                       {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
@@ -378,11 +310,11 @@ const CompleteProfile = () => {
                       <label htmlFor="lastName">Last Name *</label>
                       <input
                         type="text"
+                        className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
                         id="lastName"
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
                         required
                       />
                       {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
@@ -393,30 +325,38 @@ const CompleteProfile = () => {
                 <div className="row">
                   <div className="col-md-6">
                     <div className="form-group">
-                      <label htmlFor="username">Username * {getUsernameStatusIcon()}</label>
-                      <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
-                        className={`form-control ${errors.username ? 'is-invalid' : ''}`}
-                        placeholder="Choose a unique username"
-                        required
-                      />
-                      {errors.username && <div className="invalid-feedback">{errors.username}</div>}
-                      <small className="form-text text-muted">3-20 characters, letters, numbers, hyphens, underscores only</small>
+                      <label htmlFor="username">Username *</label>
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          className={`form-control ${errors.username ? 'is-invalid' : ''}`}
+                          id="username"
+                          name="username"
+                          value={formData.username}
+                          onChange={handleInputChange}
+                          required
+                        />
+                        <div className="input-group-append">
+                          <span className="input-group-text">
+                            {getUsernameStatusIcon()}
+                          </span>
+                        </div>
+                        {errors.username && <div className="invalid-feedback">{errors.username}</div>}
+                      </div>
+                      <small className="form-text text-muted">
+                        Username can only contain letters, numbers, hyphens, and underscores.
+                      </small>
                     </div>
                   </div>
                   <div className="col-md-6">
                     <div className="form-group">
                       <label htmlFor="accountType">Account Type *</label>
                       <select
+                        className={`form-control ${errors.accountType ? 'is-invalid' : ''}`}
                         id="accountType"
                         name="accountType"
                         value={formData.accountType}
                         onChange={handleInputChange}
-                        className={`form-control ${errors.accountType ? 'is-invalid' : ''}`}
                         required
                       >
                         <option value="">Select Account Type</option>
@@ -428,160 +368,231 @@ const CompleteProfile = () => {
                   </div>
                 </div>
 
-                {/* Security Section */}
-                <div className="section-header">
-                  <h4><i className="fas fa-lock mr-2"></i>Account Security</h4>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="password">Password *</label>
-                      <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
-                        required
-                      />
-                      {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                      <small className="form-text text-muted">Minimum 6 characters</small>
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="confirmPassword">Confirm Password *</label>
-                      <input
-                        type="password"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleInputChange}
-                        className={`form-control ${errors.confirmPassword ? 'is-invalid' : ''}`}
-                        required
-                      />
-                      {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Contact Information Section */}
-                <div className="section-header">
-                  <h4><i className="fas fa-phone mr-2"></i>Contact Information</h4>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="phoneNumber">Phone Number {!userProfile?.email && '*'}</label>
-                      <input
-                        type="tel"
-                        id="phoneNumber"
-                        name="phoneNumber"
-                        value={formData.phoneNumber}
-                        onChange={handleInputChange}
-                        className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
-                        placeholder="(555) 123-4567"
-                      />
-                      {errors.phoneNumber && <div className="invalid-feedback">{errors.phoneNumber}</div>}
-                      {!userProfile?.email && <small className="form-text text-muted">Required since no email provided</small>}
-                    </div>
-                  </div>
-                  {userProfile?.email && (
-                    <div className="col-md-6">
-                      <div className="form-group">
-                        <label>Email Address</label>
-                        <div className="form-control-plaintext bg-light border rounded p-2">
-                          {userProfile.email}
-                        </div>
-                        <small className="form-text text-muted">From your Google account</small>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* Volunteer-specific fields */}
                 {formData.accountType === 'VOLUNTEER' && (
-                  <div>
-                    <div className="section-header">
-                      <h4><i className="fas fa-graduation-cap mr-2"></i>Volunteer Information</h4>
-                    </div>
-
-                    <div className="row">
-                      <div className="col-md-6">
-                        <div className="form-group">
-                          <label htmlFor="grade">Grade *</label>
-                          <select
-                            id="grade"
-                            name="grade"
-                            value={formData.grade}
-                            onChange={handleInputChange}
-                            className={`form-control ${errors.grade ? 'is-invalid' : ''}`}
-                            required
-                          >
-                            <option value="">Select Grade</option>
-                            <option value="9">9th Grade</option>
-                            <option value="10">10th Grade</option>
-                            <option value="11">11th Grade</option>
-                            <option value="12">12th Grade</option>
-                            <option value="College">College</option>
-                          </select>
-                          {errors.grade && <div className="invalid-feedback">{errors.grade}</div>}
-                        </div>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label htmlFor="grade">Grade *</label>
+                        <select
+                          className={`form-control ${errors.grade ? 'is-invalid' : ''}`}
+                          id="grade"
+                          name="grade"
+                          value={formData.grade}
+                          onChange={handleInputChange}
+                          required
+                        >
+                          <option value="">Select Grade</option>
+                          <option value="9">9th Grade</option>
+                          <option value="10">10th Grade</option>
+                          <option value="11">11th Grade</option>
+                          <option value="12">12th Grade</option>
+                          <option value="College">College</option>
+                        </select>
+                        {errors.grade && <div className="invalid-feedback">{errors.grade}</div>}
                       </div>
-                      <div className="col-md-6">
-                        <div className="form-group">
-                          <label htmlFor="school">School *</label>
-                          <input
-                            type="text"
-                            id="school"
-                            name="school"
-                            value={formData.school}
-                            onChange={handleInputChange}
-                            className={`form-control ${errors.school ? 'is-invalid' : ''}`}
-                            placeholder="e.g., Great Valley High School"
-                            required
-                          />
-                          {errors.school && <div className="invalid-feedback">{errors.school}</div>}
-                        </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label htmlFor="school">School *</label>
+                        <input
+                          type="text"
+                          className={`form-control ${errors.school ? 'is-invalid' : ''}`}
+                          id="school"
+                          name="school"
+                          value={formData.school}
+                          onChange={handleInputChange}
+                          placeholder="e.g., Great Valley High School"
+                          required
+                        />
+                        {errors.school && <div className="invalid-feedback">{errors.school}</div>}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Emergency Contact Section */}
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="phoneNumber">Phone Number</label>
+                      <input
+                        type="tel"
+                        className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
+                        id="phoneNumber"
+                        name="phoneNumber"
+                        value={formData.phoneNumber}
+                        onChange={handleInputChange}
+                        placeholder="(555) 123-4567"
+                      />
+                      {errors.phoneNumber && <div className="invalid-feedback">{errors.phoneNumber}</div>}
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    {/* Empty column for layout */}
+                  </div>
+                </div>
+
+                {/* Address Information */}
                 <div className="section-header">
-                  <h4><i className="fas fa-exclamation-triangle mr-2"></i>Emergency Contact <small className="text-muted">(Optional)</small></h4>
+                  <h4>Address Information</h4>
+                  <small className="text-muted">Optional but helpful for local events</small>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="address">Street Address</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                  />
                 </div>
 
                 <div className="row">
                   <div className="col-md-4">
                     <div className="form-group">
-                      <label htmlFor="emergencyContactName">Contact Name</label>
+                      <label htmlFor="city">City</label>
                       <input
                         type="text"
+                        className="form-control"
+                        id="city"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="form-group">
+                      <label htmlFor="state">State</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="state"
+                        name="state"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        placeholder="PA"
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="form-group">
+                      <label htmlFor="zipCode">ZIP Code</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="zipCode"
+                        name="zipCode"
+                        value={formData.zipCode}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Parent Information */}
+                <div className="section-header">
+                  <h4>Parent/Guardian Information</h4>
+                  <small className="text-muted">Required for participants under 18</small>
+                </div>
+
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="parentFirstName">Parent First Name</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.parentFirstName ? 'is-invalid' : ''}`}
+                        id="parentFirstName"
+                        name="parentFirstName"
+                        value={formData.parentFirstName}
+                        onChange={handleInputChange}
+                      />
+                      {errors.parentFirstName && <div className="invalid-feedback">{errors.parentFirstName}</div>}
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="parentLastName">Parent Last Name</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.parentLastName ? 'is-invalid' : ''}`}
+                        id="parentLastName"
+                        name="parentLastName"
+                        value={formData.parentLastName}
+                        onChange={handleInputChange}
+                      />
+                      {errors.parentLastName && <div className="invalid-feedback">{errors.parentLastName}</div>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="row">
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="parentPhoneNumber">Parent Phone Number</label>
+                      <input
+                        type="tel"
+                        className={`form-control ${errors.parentPhoneNumber ? 'is-invalid' : ''}`}
+                        id="parentPhoneNumber"
+                        name="parentPhoneNumber"
+                        value={formData.parentPhoneNumber}
+                        onChange={handleInputChange}
+                        placeholder="(555) 123-4567"
+                      />
+                      {errors.parentPhoneNumber && <div className="invalid-feedback">{errors.parentPhoneNumber}</div>}
+                    </div>
+                  </div>
+                  <div className="col-md-6">
+                    <div className="form-group">
+                      <label htmlFor="parentEmail">Parent Email</label>
+                      <input
+                        type="email"
+                        className={`form-control ${errors.parentEmail ? 'is-invalid' : ''}`}
+                        id="parentEmail"
+                        name="parentEmail"
+                        value={formData.parentEmail}
+                        onChange={handleInputChange}
+                      />
+                      {errors.parentEmail && <div className="invalid-feedback">{errors.parentEmail}</div>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Emergency Contact */}
+                <div className="section-header">
+                  <h4>Emergency Contact</h4>
+                  <small className="text-muted">Someone to contact in case of emergency</small>
+                </div>
+
+                <div className="row">
+                  <div className="col-md-4">
+                    <div className="form-group">
+                      <label htmlFor="emergencyContactName">Emergency Contact Name</label>
+                      <input
+                        type="text"
+                        className={`form-control ${errors.emergencyContactName ? 'is-invalid' : ''}`}
                         id="emergencyContactName"
                         name="emergencyContactName"
                         value={formData.emergencyContactName}
                         onChange={handleInputChange}
-                        className={`form-control ${errors.emergencyContactName ? 'is-invalid' : ''}`}
-                        placeholder="Full name"
                       />
                       {errors.emergencyContactName && <div className="invalid-feedback">{errors.emergencyContactName}</div>}
                     </div>
                   </div>
                   <div className="col-md-4">
                     <div className="form-group">
-                      <label htmlFor="emergencyContactPhone">Phone Number</label>
+                      <label htmlFor="emergencyContactPhone">Emergency Contact Phone</label>
                       <input
                         type="tel"
+                        className={`form-control ${errors.emergencyContactPhone ? 'is-invalid' : ''}`}
                         id="emergencyContactPhone"
                         name="emergencyContactPhone"
                         value={formData.emergencyContactPhone}
                         onChange={handleInputChange}
-                        className={`form-control ${errors.emergencyContactPhone ? 'is-invalid' : ''}`}
                         placeholder="(555) 123-4567"
                       />
                       {errors.emergencyContactPhone && <div className="invalid-feedback">{errors.emergencyContactPhone}</div>}
@@ -592,24 +603,23 @@ const CompleteProfile = () => {
                       <label htmlFor="emergencyContactRelationship">Relationship</label>
                       <input
                         type="text"
+                        className={`form-control ${errors.emergencyContactRelationship ? 'is-invalid' : ''}`}
                         id="emergencyContactRelationship"
                         name="emergencyContactRelationship"
                         value={formData.emergencyContactRelationship}
                         onChange={handleInputChange}
-                        className={`form-control ${errors.emergencyContactRelationship ? 'is-invalid' : ''}`}
-                        placeholder="e.g., Parent, Sibling"
+                        placeholder="e.g., Parent, Sibling, Friend"
                       />
                       {errors.emergencyContactRelationship && <div className="invalid-feedback">{errors.emergencyContactRelationship}</div>}
                     </div>
                   </div>
                 </div>
 
-                {/* Submit Button */}
                 <div className="form-actions">
                   <button
                     type="submit"
+                    className="btn btn-primary"
                     disabled={isLoading || usernameAvailable === false}
-                    className="btn btn-primary btn-lg btn-block"
                   >
                     {isLoading ? (
                       <>
@@ -617,10 +627,7 @@ const CompleteProfile = () => {
                         Completing Profile...
                       </>
                     ) : (
-                      <>
-                        <i className="fas fa-check mr-2"></i>
-                        Complete Profile
-                      </>
+                      'Complete Profile'
                     )}
                   </button>
                 </div>
@@ -654,6 +661,11 @@ const CompleteProfile = () => {
           margin-top: 2rem;
           padding-top: 1rem;
           border-top: 1px solid #eee;
+        }
+
+        .input-group-text {
+          width: 40px;
+          justify-content: center;
         }
 
         .loading-container {

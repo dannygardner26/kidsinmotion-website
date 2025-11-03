@@ -7,9 +7,35 @@ const AuthContext = createContext();
 
 // Utility function to compute if profile completion is needed
 const computeNeedsProfileCompletion = (profile) => {
-  if (!profile?.username || !profile?.firstName || !profile?.lastName) return true;
-  if (!profile?.email && !profile?.phoneNumber) return true;
-  // Note: Password check is handled by Firebase auth providers
+  // Admin accounts are exempt from profile completion requirements
+  if (profile?.userType === 'ADMIN') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Admin account - no profile completion needed:', profile.userType);
+    }
+    return false;
+  }
+
+  const hasRequiredFields = profile?.username && profile?.firstName && profile?.lastName;
+  const hasContact = profile?.email || profile?.phoneNumber;
+
+  if (!hasRequiredFields) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Missing required fields:', { username: !!profile?.username, firstName: !!profile?.firstName, lastName: !!profile?.lastName });
+    }
+    return true;
+  }
+
+  if (!hasContact) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Missing contact info:', { email: !!profile?.email, phoneNumber: !!profile?.phoneNumber });
+    }
+    return true;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Profile is complete:', profile);
+  }
+
   return false;
 };
 

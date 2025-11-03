@@ -117,7 +117,10 @@
       "WebFetch(domain:console.firebase.google.com)",
       "Bash(gcloud firebase databases create:*)",
       "WebFetch(domain:kids-in-motion-website-b1c09.web.app)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebFetch(domain:kidsinmotion-website-njttenedja-uk.a.run.app)",
+      "Bash(firebase functions:config:get:*)",
+      "Bash(firebase auth:export:*)"
     ],
     "deny": []
   }
