@@ -1425,7 +1425,7 @@ const VolunteerApplication = () => {
                     color: '#0c4a6e'
                   }}>
                     <i className="fas fa-envelope" style={{ marginRight: '0.5rem' }}></i>
-                    <strong>Email resumes to:</strong> <a href="mailto:kidsinmotion0@gmail.com" style={{ color: '#0369a1', textDecoration: 'underline' }}>kidsinmotion0@gmail.com</a>
+                    <strong>Email resumes to:</strong> <a href="mailto:info@kidsinmotionpa.org" style={{ color: '#0369a1', textDecoration: 'underline' }}>info@kidsinmotionpa.org</a>
                   </div>
                 </div>
               </div>

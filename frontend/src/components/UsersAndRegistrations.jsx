@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 
 const getTeamDisplayName = (team) => {
@@ -476,13 +477,12 @@ const UsersAndRegistrations = () => {
                       <td>{user.lastLoginTimestamp ? new Date(user.lastLoginTimestamp).toLocaleDateString() : 'Never'}</td>
                       <td>
                         <div className="action-buttons">
-                          <button
-                            onClick={() => handleEditUser(user)}
+                          <Link
+                            to={`/edit/${user.username}`}
                             className="btn btn-sm btn-primary"
-                            disabled={actionLoading[user.id]}
                           >
-                            {actionLoading[user.id] ? <i className="fas fa-spinner fa-spin"></i> : 'Edit'}
-                          </button>
+                            Edit Profile
+                          </Link>
 
                           {!user.emailVerified && (
                             <button

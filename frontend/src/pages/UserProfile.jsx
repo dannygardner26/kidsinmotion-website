@@ -3,16 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import ProfileAvatar from '../components/ProfileAvatar';
-import ConnectionsSection from '../components/ConnectionsSection';
 
 const UserProfile = () => {
   const { username } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, userProfile } = useAuth();
   const [profileUser, setProfileUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [connectionStatus, setConnectionStatus] = useState(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
 
@@ -33,14 +31,6 @@ const UserProfile = () => {
       const isOwn = currentUser && response.user.firebaseUid === currentUser.uid;
       setIsOwnProfile(isOwn);
 
-      if (!isOwn && currentUser) {
-        try {
-          const connectionResp = await apiService.getConnectionStatus(response.user.firebaseUid);
-          setConnectionStatus(connectionResp.status);
-        } catch (err) {
-          console.warn('Failed to fetch connection status:', err);
-        }
-      }
     } catch (err) {
       console.error('Error fetching user profile:', err);
       setError(err.message || 'Failed to load user profile');
@@ -49,104 +39,14 @@ const UserProfile = () => {
     }
   };
 
-  const handleConnectionAction = async (action) => {
-    if (!currentUser || !profileUser) return;
 
-    try {
-      let response;
-      switch (action) {
-        case 'send':
-          response = await apiService.sendConnectionRequest(profileUser.firebaseUid);
-          setConnectionStatus('PENDING_OUTGOING');
-          break;
-        case 'accept':
-          response = await apiService.respondToConnectionRequest(profileUser.firebaseUid, 'ACCEPTED');
-          setConnectionStatus('CONNECTED');
-          break;
-        case 'decline':
-          response = await apiService.respondToConnectionRequest(profileUser.firebaseUid, 'DECLINED');
-          setConnectionStatus(null);
-          break;
-        case 'remove':
-          response = await apiService.removeConnection(profileUser.firebaseUid);
-          setConnectionStatus(null);
-          break;
-        case 'cancel':
-          response = await apiService.cancelConnectionRequest(profileUser.firebaseUid);
-          setConnectionStatus(null);
-          break;
-        default:
-          return;
-      }
-    } catch (err) {
-      console.error('Connection action error:', err);
-    }
-  };
-
-  const getConnectionButton = () => {
-    if (isOwnProfile || !currentUser) return null;
-
-    switch (connectionStatus) {
-      case 'CONNECTED':
-        return (
-          <button
-            onClick={() => handleConnectionAction('remove')}
-            className="btn btn-outline-danger btn-sm"
-          >
-            <i className="fas fa-user-minus mr-2"></i>
-            Remove Connection
-          </button>
-        );
-      case 'PENDING_OUTGOING':
-        return (
-          <button
-            onClick={() => handleConnectionAction('cancel')}
-            className="btn btn-outline-secondary btn-sm"
-          >
-            <i className="fas fa-clock mr-2"></i>
-            Cancel Request
-          </button>
-        );
-      case 'PENDING_INCOMING':
-        return (
-          <div className="d-flex gap-2">
-            <button
-              onClick={() => handleConnectionAction('accept')}
-              className="btn btn-success btn-sm"
-            >
-              <i className="fas fa-check mr-2"></i>
-              Accept
-            </button>
-            <button
-              onClick={() => handleConnectionAction('decline')}
-              className="btn btn-outline-secondary btn-sm"
-            >
-              <i className="fas fa-times mr-2"></i>
-              Decline
-            </button>
-          </div>
-        );
-      default:
-        return (
-          <button
-            onClick={() => handleConnectionAction('send')}
-            className="btn btn-primary btn-sm"
-          >
-            <i className="fas fa-user-plus mr-2"></i>
-            Connect
-          </button>
-        );
-    }
-  };
 
   const canViewPrivateInfo = () => {
-    return isOwnProfile || connectionStatus === 'CONNECTED' || profileUser?.privacySettings?.profileVisibility === 'PUBLIC';
+    return isOwnProfile || (profileUser?.profileVisibility || 'PUBLIC') === 'PUBLIC';
   };
 
   const canViewContactInfo = () => {
-    return isOwnProfile ||
-           (connectionStatus === 'CONNECTED' && profileUser?.privacySettings?.contactInfoVisibility !== 'PRIVATE') ||
-           profileUser?.privacySettings?.contactInfoVisibility === 'PUBLIC';
+    return isOwnProfile || (profileUser?.profileVisibility || 'PUBLIC') === 'PUBLIC';
   };
 
   if (loading) {
@@ -213,15 +113,19 @@ const UserProfile = () => {
                 </span>
               </div>
 
-              {getConnectionButton()}
+              {(isOwnProfile || userProfile?.userType === 'ADMIN') && (
+                <button
+                  onClick={() => navigate(`/edit/${profileUser.username}`)}
+                  className="btn btn-outline btn-sm"
+                >
+                  <i className="fas fa-edit mr-2"></i>
+                  {isOwnProfile ? 'Edit Profile' : 'Edit User'}
+                </button>
+              )}
 
               {canViewPrivateInfo() && (
                 <div className="mt-4">
                   <div className="profile-stats">
-                    <div className="stat-item">
-                      <strong>{profileUser.connectionsCount || 0}</strong>
-                      <small className="d-block text-muted">Connections</small>
-                    </div>
                     <div className="stat-item">
                       <strong>{profileUser.eventsAttended || 0}</strong>
                       <small className="d-block text-muted">Events</small>
@@ -250,17 +154,6 @@ const UserProfile = () => {
                     Profile
                   </a>
                 </li>
-                {canViewPrivateInfo() && (
-                  <li className="nav-item">
-                    <a
-                      className={`nav-link ${activeTab === 'connections' ? 'active' : ''}`}
-                      href="#"
-                      onClick={(e) => { e.preventDefault(); setActiveTab('connections'); }}
-                    >
-                      Connections
-                    </a>
-                  </li>
-                )}
               </ul>
             </div>
 
@@ -326,9 +219,6 @@ const UserProfile = () => {
                 </div>
               )}
 
-              {activeTab === 'connections' && canViewPrivateInfo() && (
-                <ConnectionsSection userId={profileUser.firebaseUid} isOwnProfile={isOwnProfile} />
-              )}
             </div>
           </div>
         </div>

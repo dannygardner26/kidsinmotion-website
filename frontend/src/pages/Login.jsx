@@ -200,6 +200,19 @@ const Login = () => {
     }
   };
 
+  const handleTestLogin = async (email, password) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate(redirectUrl);
+    } catch (error) {
+      console.error('Test login error:', error);
+      setError('Test login failed. Account may not exist yet.');
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const initializeGoogleSignIn = () => {
       if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
@@ -353,6 +366,35 @@ const Login = () => {
                     </div>
                  )}
 
+                {/* Test Account Buttons - Only in development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 mb-4">
+                    <div className="text-center text-xs uppercase text-gray-400 font-semibold mb-3">
+                      Quick Test Accounts
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTestLogin('parent@gmail.com', 'parent')}
+                        className="w-full px-3 py-2 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                        disabled={isLoading}
+                      >
+                        Test Parent
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTestLogin('volunteer@gmail.com', 'volunteer')}
+                        className="w-full px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        disabled={isLoading}
+                      >
+                        Test Volunteer
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 text-center mt-2">
+                      For testing purposes only
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-6 text-center">
                   <p className="text-sm text-gray-600">

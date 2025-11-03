@@ -24,14 +24,34 @@ public class UserFirestore {
     private String username; // unique identifier for profile URLs and login, 3-20 characters
     private String usernameLowercase; // lowercase version for case-insensitive lookups
     private Long usernameLastChangedAt; // timestamp of last username change for 3-month cooldown
+
+    // Address information
+    private String address;
+    private String city;
+    private String state;
+    private String zipCode;
+
+    // Parent information (for minors)
+    private String parentFirstName;
+    private String parentLastName;
+    private String parentPhoneNumber;
+    private String parentEmail;
+
+    // Emergency contact information
+    private String emergencyContactName;
+    private String emergencyContactPhone;
+    private String emergencyContactRelationship;
+
+    // Profile settings
+    private String profileVisibility; // PUBLIC, PRIVATE
     private String profilePictureUrl; // URL to uploaded profile picture in Firebase Storage
     private String profileColor; // hex color code assigned at creation for avatar background
     private Long lastLoginAt; // timestamp of last login for admin tracking
-    private Map<String, Object> connectionPrivacySettings; // controls what info to share with connections
     private Boolean isBanned; // soft delete flag for banned users
     private Long bannedAt; // timestamp when user was banned
     private String bannedReason; // admin message explaining ban reason
     private Boolean emailVerified;
+    private Boolean isEmailVerified; // Alternative naming
     private Boolean phoneVerified;
     private Long createdTimestamp;
     private Long updatedTimestamp;
@@ -72,14 +92,34 @@ public class UserFirestore {
         map.put("username", username);
         map.put("usernameLowercase", usernameLowercase);
         map.put("usernameLastChangedAt", usernameLastChangedAt);
+
+        // Address information
+        map.put("address", address);
+        map.put("city", city);
+        map.put("state", state);
+        map.put("zipCode", zipCode);
+
+        // Parent information
+        map.put("parentFirstName", parentFirstName);
+        map.put("parentLastName", parentLastName);
+        map.put("parentPhoneNumber", parentPhoneNumber);
+        map.put("parentEmail", parentEmail);
+
+        // Emergency contact information
+        map.put("emergencyContactName", emergencyContactName);
+        map.put("emergencyContactPhone", emergencyContactPhone);
+        map.put("emergencyContactRelationship", emergencyContactRelationship);
+
+        // Profile settings
+        map.put("profileVisibility", profileVisibility);
         map.put("profilePictureUrl", profilePictureUrl);
         map.put("profileColor", profileColor);
         map.put("lastLoginAt", lastLoginAt);
-        map.put("connectionPrivacySettings", connectionPrivacySettings);
         map.put("isBanned", isBanned);
         map.put("bannedAt", bannedAt);
         map.put("bannedReason", bannedReason);
         map.put("emailVerified", emailVerified);
+        map.put("isEmailVerified", isEmailVerified);
         map.put("phoneVerified", phoneVerified);
         map.put("createdTimestamp", createdTimestamp);
         map.put("updatedTimestamp", System.currentTimeMillis());
@@ -105,14 +145,34 @@ public class UserFirestore {
         user.setUsername((String) map.get("username"));
         user.setUsernameLowercase((String) map.get("usernameLowercase"));
         user.setUsernameLastChangedAt((Long) map.get("usernameLastChangedAt"));
+
+        // Address information
+        user.setAddress((String) map.get("address"));
+        user.setCity((String) map.get("city"));
+        user.setState((String) map.get("state"));
+        user.setZipCode((String) map.get("zipCode"));
+
+        // Parent information
+        user.setParentFirstName((String) map.get("parentFirstName"));
+        user.setParentLastName((String) map.get("parentLastName"));
+        user.setParentPhoneNumber((String) map.get("parentPhoneNumber"));
+        user.setParentEmail((String) map.get("parentEmail"));
+
+        // Emergency contact information
+        user.setEmergencyContactName((String) map.get("emergencyContactName"));
+        user.setEmergencyContactPhone((String) map.get("emergencyContactPhone"));
+        user.setEmergencyContactRelationship((String) map.get("emergencyContactRelationship"));
+
+        // Profile settings
+        user.setProfileVisibility((String) map.get("profileVisibility"));
         user.setProfilePictureUrl((String) map.get("profilePictureUrl"));
         user.setProfileColor((String) map.get("profileColor"));
         user.setLastLoginAt((Long) map.get("lastLoginAt"));
-        user.setConnectionPrivacySettings((Map<String, Object>) map.get("connectionPrivacySettings"));
         user.setIsBanned(map.get("isBanned") != null ? (Boolean) map.get("isBanned") : false);
         user.setBannedAt((Long) map.get("bannedAt"));
         user.setBannedReason((String) map.get("bannedReason"));
         user.setEmailVerified(map.get("emailVerified") != null ? (Boolean) map.get("emailVerified") : false);
+        user.setIsEmailVerified(map.get("isEmailVerified") != null ? (Boolean) map.get("isEmailVerified") : false);
         user.setPhoneVerified(map.get("phoneVerified") != null ? (Boolean) map.get("phoneVerified") : false);
         user.setCreatedTimestamp(map.get("createdTimestamp") != null ? (Long) map.get("createdTimestamp") : System.currentTimeMillis());
         user.setUpdatedTimestamp(map.get("updatedTimestamp") != null ? (Long) map.get("updatedTimestamp") : System.currentTimeMillis());
@@ -207,8 +267,48 @@ public class UserFirestore {
     public Long getLastLoginAt() { return lastLoginAt; }
     public void setLastLoginAt(Long lastLoginAt) { this.lastLoginAt = lastLoginAt; }
 
-    public Map<String, Object> getConnectionPrivacySettings() { return connectionPrivacySettings; }
-    public void setConnectionPrivacySettings(Map<String, Object> connectionPrivacySettings) { this.connectionPrivacySettings = connectionPrivacySettings; }
+    // Address information getters and setters
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+
+    public String getZipCode() { return zipCode; }
+    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
+
+    // Parent information getters and setters
+    public String getParentFirstName() { return parentFirstName; }
+    public void setParentFirstName(String parentFirstName) { this.parentFirstName = parentFirstName; }
+
+    public String getParentLastName() { return parentLastName; }
+    public void setParentLastName(String parentLastName) { this.parentLastName = parentLastName; }
+
+    public String getParentPhoneNumber() { return parentPhoneNumber; }
+    public void setParentPhoneNumber(String parentPhoneNumber) { this.parentPhoneNumber = parentPhoneNumber; }
+
+    public String getParentEmail() { return parentEmail; }
+    public void setParentEmail(String parentEmail) { this.parentEmail = parentEmail; }
+
+    // Emergency contact getters and setters
+    public String getEmergencyContactName() { return emergencyContactName; }
+    public void setEmergencyContactName(String emergencyContactName) { this.emergencyContactName = emergencyContactName; }
+
+    public String getEmergencyContactPhone() { return emergencyContactPhone; }
+    public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
+
+    public String getEmergencyContactRelationship() { return emergencyContactRelationship; }
+    public void setEmergencyContactRelationship(String emergencyContactRelationship) { this.emergencyContactRelationship = emergencyContactRelationship; }
+
+    // Profile settings getters and setters
+    public String getProfileVisibility() { return profileVisibility; }
+    public void setProfileVisibility(String profileVisibility) { this.profileVisibility = profileVisibility; }
+
+    public Boolean getIsEmailVerified() { return isEmailVerified; }
+    public void setIsEmailVerified(Boolean isEmailVerified) { this.isEmailVerified = isEmailVerified; }
 
     public Boolean getIsBanned() { return isBanned; }
     public void setIsBanned(Boolean isBanned) { this.isBanned = isBanned; }

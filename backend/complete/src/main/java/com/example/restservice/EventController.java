@@ -4,12 +4,10 @@ import com.example.restservice.model.firestore.EventFirestore;
 import com.example.restservice.model.firestore.VolunteerFirestore;
 import com.example.restservice.model.firestore.ParticipantFirestore;
 import com.example.restservice.model.firestore.UserFirestore;
-import com.example.restservice.model.firestore.ConnectionFirestore;
 import com.example.restservice.repository.firestore.EventFirestoreRepository;
 import com.example.restservice.repository.firestore.VolunteerFirestoreRepository;
 import com.example.restservice.repository.firestore.ParticipantFirestoreRepository;
 import com.example.restservice.repository.firestore.UserFirestoreRepository;
-import com.example.restservice.repository.firestore.ConnectionFirestoreRepository;
 import com.example.restservice.service.MessagingService;
 import com.example.restservice.service.EmailDeliveryService;
 import com.example.restservice.service.CalendarInviteService;
@@ -59,8 +57,6 @@ public class EventController {
     @Autowired
     private UserFirestoreRepository userRepository;
 
-    @Autowired
-    private ConnectionFirestoreRepository connectionRepository;
 
     // Fetch all events, ordered by date
     @GetMapping
@@ -702,116 +698,4 @@ public class EventController {
                changes.containsKey("location");
     }
 
-    @GetMapping("/{eventId}/suggested-connections")
-    public ResponseEntity<?> getSuggestedConnections(@PathVariable String eventId, HttpServletRequest request) {
-        try {
-            String firebaseUid = (String) request.getAttribute("firebaseUid");
-            if (firebaseUid == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-            }
-
-            // Check if user is registered for this event (as participant or volunteer)
-            boolean isRegistered = false;
-            try {
-                List<ParticipantFirestore> userParticipations = participantRepository.findByParentUserIdAndEventId(firebaseUid, eventId);
-                if (!userParticipations.isEmpty()) {
-                    isRegistered = true;
-                }
-            } catch (Exception e) {
-                // Continue to check volunteer registration
-            }
-
-            if (!isRegistered) {
-                try {
-                    List<VolunteerFirestore> userVolunteering = volunteerRepository.findByUserIdAndEventId(firebaseUid, eventId);
-                    if (!userVolunteering.isEmpty()) {
-                        isRegistered = true;
-                    }
-                } catch (Exception e) {
-                    // User not registered as volunteer either
-                }
-            }
-
-            if (!isRegistered) {
-                return ResponseEntity.ok(new ArrayList<>()); // Return empty array if not registered
-            }
-
-            // Get all participants and volunteers for this event
-            Set<String> allRegisteredUserIds = new HashSet<>();
-
-            try {
-                List<ParticipantFirestore> participants = participantRepository.findByEventId(eventId);
-                for (ParticipantFirestore participant : participants) {
-                    if (participant.getParentUserId() != null && !participant.getParentUserId().equals(firebaseUid)) {
-                        allRegisteredUserIds.add(participant.getParentUserId());
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("Error fetching participants for event " + eventId, e);
-            }
-
-            try {
-                List<VolunteerFirestore> volunteers = volunteerRepository.findByEventId(eventId);
-                for (VolunteerFirestore volunteer : volunteers) {
-                    if (volunteer.getUserId() != null && !volunteer.getUserId().equals(firebaseUid)) {
-                        allRegisteredUserIds.add(volunteer.getUserId());
-                    }
-                }
-            } catch (Exception e) {
-                logger.error("Error fetching volunteers for event " + eventId, e);
-            }
-
-            // Get current user's connections to exclude them
-            Set<String> connectedUserIds = new HashSet<>();
-            try {
-                List<ConnectionFirestore> connections = connectionRepository.findAcceptedConnectionsForUser(firebaseUid);
-                for (ConnectionFirestore connection : connections) {
-                    String otherUserId = firebaseUid.equals(connection.getRequesterId()) ?
-                        connection.getReceiverId() : connection.getRequesterId();
-                    connectedUserIds.add(otherUserId);
-                }
-            } catch (Exception e) {
-                logger.error("Error fetching connections for user " + firebaseUid, e);
-            }
-
-            // Filter out connected users
-            allRegisteredUserIds.removeAll(connectedUserIds);
-
-            // Convert to list and shuffle for randomization
-            List<String> availableUserIds = new ArrayList<>(allRegisteredUserIds);
-            Collections.shuffle(availableUserIds);
-
-            // Limit to 3-5 users
-            int maxSuggestions = Math.min(5, availableUserIds.size());
-            List<String> selectedUserIds = availableUserIds.subList(0, maxSuggestions);
-
-            // Fetch user profiles for selected users
-            List<Map<String, Object>> suggestedUsers = new ArrayList<>();
-            for (String userId : selectedUserIds) {
-                try {
-                    Optional<UserFirestore> userOpt = userRepository.findByFirebaseUid(userId);
-                    if (userOpt.isPresent()) {
-                        UserFirestore user = userOpt.get();
-                        Map<String, Object> userProfile = new HashMap<>();
-                        userProfile.put("firebaseUid", user.getFirebaseUid());
-                        userProfile.put("firstName", user.getFirstName());
-                        userProfile.put("lastName", user.getLastName());
-                        userProfile.put("username", user.getUsername());
-                        userProfile.put("profilePictureUrl", user.getProfilePictureUrl());
-                        userProfile.put("profileColor", user.getProfileColor());
-                        userProfile.put("userType", user.getUserType());
-                        suggestedUsers.add(userProfile);
-                    }
-                } catch (Exception e) {
-                    logger.error("Error fetching user profile for " + userId, e);
-                }
-            }
-
-            return ResponseEntity.ok(suggestedUsers);
-
-        } catch (Exception e) {
-            logger.error("Error getting suggested connections for event " + eventId, e);
-            return ResponseEntity.status(500).body(Map.of("error", "Failed to get suggested connections"));
-        }
-    }
 }

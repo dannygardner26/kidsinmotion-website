@@ -27,13 +27,15 @@ const EventOverview = lazy(() => import('./pages/EventOverview'));
 const VolunteerEventView = lazy(() => import('./pages/VolunteerEventView'));
 const ParentEventView = lazy(() => import('./pages/ParentEventView'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
+const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
+const ProfileEdit = lazy(() => import('./pages/ProfileEdit'));
 
 // CSS
 import './css/app.css';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, needsProfileCompletion } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -42,6 +44,11 @@ const ProtectedRoute = ({ children }) => {
 
   if (!currentUser) {
     return <Navigate to={`/login?redirect=${location.pathname}`} replace />;
+  }
+
+  // Redirect to profile completion if needed (except when already on completion page)
+  if (needsProfileCompletion && location.pathname !== '/complete-profile') {
+    return <Navigate to="/complete-profile" replace />;
   }
 
   return children;
@@ -227,6 +234,26 @@ const App = () => {
                   element={
                     <ProtectedRoute>
                       <UserProfile />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Complete Profile Route */}
+                <Route
+                  path="/complete-profile"
+                  element={
+                    <ProtectedRoute>
+                      <CompleteProfile />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Profile Edit Route */}
+                <Route
+                  path="/edit/:username"
+                  element={
+                    <ProtectedRoute>
+                      <ProfileEdit />
                     </ProtectedRoute>
                   }
                 />

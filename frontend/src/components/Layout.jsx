@@ -281,7 +281,7 @@ const Layout = ({ children }) => {
             <div className="col-third">
               <h4 style={{ color: 'white' }}>Contact Us</h4>
               <ul className="footer-links" style={{ listStyle: 'none' }}>
-                <li><strong>Email:</strong> kidsinmotion0@gmail.com</li>
+                <li><strong>Email:</strong> info@kidsinmotionpa.org</li>
                 <li><strong>Phone:</strong> (484) 885-6284</li>
               </ul>
             </div>

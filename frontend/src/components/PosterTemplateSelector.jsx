@@ -129,12 +129,23 @@ const PosterTemplateSelector = ({ event, onClose }) => {
 
   const generatePoster = async () => {
     try {
+      // Preload logo image before capturing
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      logoImg.src = assetUrls['realKIMlogo-transparent.png'];
+
+      await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = reject;
+      });
+
       const element = posterRef.current;
       const canvas = await html2canvas(element, {
         backgroundColor: null,
         scale: 2,
         useCORS: true,
-        allowTaint: true
+        allowTaint: false,
+        logging: false
       });
 
       canvas.toBlob((blob) => {
@@ -201,8 +212,10 @@ const PosterTemplateSelector = ({ event, onClose }) => {
                 className="poster-logo"
                 style={{
                   background: 'white',
-                  border: `2px solid ${selectedTheme.accent}`
+                  border: `3px solid ${selectedTheme.accent}`,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
                 }}
+                crossOrigin="anonymous"
               />
               <div className="header-text">
                 <h1>KIDS IN MOTION</h1>
@@ -468,18 +481,21 @@ const PosterTemplateSelector = ({ event, onClose }) => {
           border-radius: 50%;
           padding: 8px;
           object-fit: contain;
+          filter: contrast(1.1) brightness(1.05);
         }
 
         .header-text h1 {
           margin: 0;
           font-size: 24px;
           font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .header-text p {
           margin: 3px 0 0 0;
           font-size: 12px;
-          opacity: 0.9;
+          opacity: 0.95;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .poster-main {
@@ -492,6 +508,8 @@ const PosterTemplateSelector = ({ event, onClose }) => {
           margin: 0 0 15px 0;
           text-transform: uppercase;
           letter-spacing: 1px;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+          font-weight: bold;
         }
 
         .event-details {
@@ -506,6 +524,7 @@ const PosterTemplateSelector = ({ event, onClose }) => {
           align-items: center;
           margin-bottom: 8px;
           font-size: 14px;
+          font-weight: 600;
         }
 
         .detail-row:last-child {
@@ -551,6 +570,8 @@ const PosterTemplateSelector = ({ event, onClose }) => {
         .call-to-action h3 {
           margin: 0 0 5px 0;
           font-size: 16px;
+          font-weight: bold;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .call-to-action p {
@@ -592,6 +613,8 @@ const PosterTemplateSelector = ({ event, onClose }) => {
           margin: 0;
           font-size: 14px;
           text-align: center;
+          font-weight: 600;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .footer-decoration {

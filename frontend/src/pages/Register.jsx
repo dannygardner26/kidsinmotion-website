@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -261,6 +261,19 @@ const Register = () => {
     } catch (error) {
       console.error('Google Sign in error:', error);
       setError(error.message || 'Google Sign-in failed.');
+      setIsLoading(false);
+    }
+  };
+
+  const handleTestLogin = async (email, password) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Test login error:', error);
+      setError('Test login failed. Account may not exist yet.');
       setIsLoading(false);
     }
   };
@@ -612,6 +625,36 @@ const Register = () => {
                 {isLoading && (
                   <div className="text-center text-sm text-gray-500">
                     <span>Processing Google Sign-In...</span>
+                  </div>
+                )}
+
+                {/* Test Account Buttons - Only in development */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="mt-4 mb-4">
+                    <div className="text-center text-xs uppercase text-gray-400 font-semibold mb-3">
+                      Quick Test Accounts
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTestLogin('parent@gmail.com', 'parent')}
+                        className="w-full px-3 py-2 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                        disabled={isLoading}
+                      >
+                        Test Parent
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleTestLogin('volunteer@gmail.com', 'volunteer')}
+                        className="w-full px-3 py-2 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        disabled={isLoading}
+                      >
+                        Test Volunteer
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 text-center mt-2">
+                      For testing purposes only
+                    </div>
                   </div>
                 )}
 

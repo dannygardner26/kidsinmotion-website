@@ -88,12 +88,8 @@ class ApiService {
     });
   }
 
-  // Admin network broadcast endpoint
-  async triggerNetworkBroadcast(eventId) {
-    return this.makeRequest(`/admin/events/${eventId}/network-broadcast`, {
-      method: 'POST',
-    });
-  }
+  // DEPRECATED: Network broadcast functionality removed
+  // async triggerNetworkBroadcast(eventId) - removed as connections feature was deleted
 
   // Volunteer search parents endpoint
   async searchParents(query, eventId) {
@@ -722,54 +718,31 @@ class ApiService {
     }
   }
 
-  // User profile and connection endpoints
+  // User profile endpoints
   async getUserByUsername(username) {
     return this.makeRequest(`/users/username/${username}`);
   }
 
-  async getUserConnections(userId) {
-    return this.makeRequest(`/connections/user/${userId}`);
-  }
-
-  async getPendingConnectionRequests() {
-    return this.makeRequest('/connections/pending');
-  }
-
-  async getSuggestedConnections() {
-    return this.makeRequest('/connections/suggestions');
-  }
-
-  async getConnectionStatus(targetUserId) {
-    return this.makeRequest(`/connections/status/${targetUserId}`);
-  }
-
-  async sendConnectionRequest(targetUserId) {
-    return this.makeRequest('/connections/request', {
-      method: 'POST',
-      body: JSON.stringify({ targetUserId }),
+  async updateUserProfileByUsername(username, profileData) {
+    return this.makeRequest(`/users/username/${username}`, {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
     });
   }
 
-  async respondToConnectionRequest(senderUserId, response) {
-    return this.makeRequest('/connections/respond', {
-      method: 'POST',
-      body: JSON.stringify({ senderUserId, response }),
-    });
+  async checkUsernameAvailability(username) {
+    try {
+      const response = await this.makeRequest('/users/validate-username', {
+        method: 'POST',
+        body: JSON.stringify({ username }),
+      });
+      return response.available;
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      return false;
+    }
   }
 
-  async cancelConnectionRequest(targetUserId) {
-    return this.makeRequest('/connections/cancel', {
-      method: 'POST',
-      body: JSON.stringify({ targetUserId }),
-    });
-  }
-
-  async removeConnection(targetUserId) {
-    return this.makeRequest('/connections/remove', {
-      method: 'POST',
-      body: JSON.stringify({ targetUserId }),
-    });
-  }
 
 }
 

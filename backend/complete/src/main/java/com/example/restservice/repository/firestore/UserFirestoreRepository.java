@@ -91,7 +91,6 @@ public class UserFirestoreRepository {
 
     public List<UserFirestore> findAll() throws ExecutionException, InterruptedException {
         ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
-                .orderBy("lastName", Query.Direction.ASCENDING)
                 .get();
 
         QuerySnapshot querySnapshot = query.get();
@@ -100,6 +99,16 @@ public class UserFirestoreRepository {
         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
             users.add(UserFirestore.fromMap(document.getData(), document.getId()));
         }
+
+        // Sort in-memory with null-safe comparison
+        users.sort((u1, u2) -> {
+            String lastName1 = u1.getLastName();
+            String lastName2 = u2.getLastName();
+            if (lastName1 == null && lastName2 == null) return 0;
+            if (lastName1 == null) return 1;
+            if (lastName2 == null) return -1;
+            return lastName1.compareToIgnoreCase(lastName2);
+        });
 
         return users;
     }
@@ -107,7 +116,6 @@ public class UserFirestoreRepository {
     public List<UserFirestore> findByUserType(String userType) throws ExecutionException, InterruptedException {
         ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
                 .whereEqualTo("userType", userType)
-                .orderBy("lastName", Query.Direction.ASCENDING)
                 .get();
 
         QuerySnapshot querySnapshot = query.get();
@@ -116,6 +124,16 @@ public class UserFirestoreRepository {
         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
             users.add(UserFirestore.fromMap(document.getData(), document.getId()));
         }
+
+        // Sort in-memory with null-safe comparison
+        users.sort((u1, u2) -> {
+            String lastName1 = u1.getLastName();
+            String lastName2 = u2.getLastName();
+            if (lastName1 == null && lastName2 == null) return 0;
+            if (lastName1 == null) return 1;
+            if (lastName2 == null) return -1;
+            return lastName1.compareToIgnoreCase(lastName2);
+        });
 
         return users;
     }
@@ -192,7 +210,6 @@ public class UserFirestoreRepository {
     public List<UserFirestore> findAllExcludingBanned() throws ExecutionException, InterruptedException {
         ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
                 .whereEqualTo("isBanned", false)
-                .orderBy("lastName", Query.Direction.ASCENDING)
                 .get();
 
         QuerySnapshot querySnapshot = query.get();
@@ -205,6 +222,16 @@ public class UserFirestoreRepository {
                 users.add(user);
             }
         }
+
+        // Sort in-memory with null-safe comparison
+        users.sort((u1, u2) -> {
+            String lastName1 = u1.getLastName();
+            String lastName2 = u2.getLastName();
+            if (lastName1 == null && lastName2 == null) return 0;
+            if (lastName1 == null) return 1;
+            if (lastName2 == null) return -1;
+            return lastName1.compareToIgnoreCase(lastName2);
+        });
 
         return users;
     }
@@ -213,7 +240,6 @@ public class UserFirestoreRepository {
         ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
                 .whereEqualTo("userType", userType)
                 .whereEqualTo("isBanned", false)
-                .orderBy("lastName", Query.Direction.ASCENDING)
                 .get();
 
         QuerySnapshot querySnapshot = query.get();
@@ -226,6 +252,16 @@ public class UserFirestoreRepository {
                 users.add(user);
             }
         }
+
+        // Sort in-memory with null-safe comparison
+        users.sort((u1, u2) -> {
+            String lastName1 = u1.getLastName();
+            String lastName2 = u2.getLastName();
+            if (lastName1 == null && lastName2 == null) return 0;
+            if (lastName1 == null) return 1;
+            if (lastName2 == null) return -1;
+            return lastName1.compareToIgnoreCase(lastName2);
+        });
 
         return users;
     }

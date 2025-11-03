@@ -5,6 +5,10 @@ import { apiService } from '../services/api';
 
 const AuthContext = createContext();
 
+// Utility function to compute if profile completion is needed
+const computeNeedsProfileCompletion = (profile) =>
+  !profile?.username || !profile?.userType || !profile?.firstName || !profile?.lastName;
+
 export const useAuth = () => {
   return useContext(AuthContext);
 };
@@ -20,6 +24,9 @@ export const AuthProvider = ({ children }) => {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [verificationLoading, setVerificationLoading] = useState(false);
+
+  // Profile completion state
+  const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
 
   const syncUserWithBackend = async (user, isGoogleOAuth = false) => {
     if (user) {
@@ -97,6 +104,9 @@ export const AuthProvider = ({ children }) => {
         }
 
         setUserProfile(profile);
+
+        // Check if profile completion is needed
+        setNeedsProfileCompletion(computeNeedsProfileCompletion(profile));
 
         // Update verification status
         const emailVerified = user.emailVerified;
@@ -351,6 +361,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const fetchUserProfile = async () => {
+    if (!currentUser) return null;
+
+    try {
+      const profile = await apiService.getUserProfile();
+      setUserProfile(profile);
+
+      // Check if profile completion is needed
+      setNeedsProfileCompletion(computeNeedsProfileCompletion(profile));
+
+      // Update cache
+      localStorage.setItem(`userProfile_${currentUser.uid}`, JSON.stringify(profile));
+
+      return profile;
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error fetching user profile:', error);
+      }
+      throw error;
+    }
+  };
+
+  const isProfileComplete = () => {
+    if (!userProfile) return false;
+
+    // Check for required fields for profile completion
+    return Boolean(
+      userProfile.firstName &&
+      userProfile.lastName &&
+      userProfile.username &&
+      userProfile.phoneNumber
+    );
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -368,7 +412,11 @@ export const AuthProvider = ({ children }) => {
     verificationLoading,
     sendEmailVerification,
     sendPasswordResetEmail,
-    refreshVerificationStatus
+    refreshVerificationStatus,
+    // Profile completion
+    fetchUserProfile,
+    isProfileComplete,
+    needsProfileCompletion
   };
 
   // Don't render children until loading is false to prevent rendering protected routes prematurely

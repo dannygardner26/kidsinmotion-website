@@ -25,12 +25,23 @@ const EventPosterGenerator = ({ event, onClose }) => {
 
   const generatePoster = async () => {
     try {
+      // Preload logo image before capturing
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      logoImg.src = assetUrls['realKIMlogo-transparent.png'];
+
+      await new Promise((resolve, reject) => {
+        logoImg.onload = resolve;
+        logoImg.onerror = reject;
+      });
+
       const element = posterRef.current;
       const canvas = await html2canvas(element, {
         backgroundColor: null,
         scale: 2, // Higher quality
         useCORS: true,
-        allowTaint: true
+        allowTaint: false,
+        logging: false
       });
 
       // Convert to blob and download
@@ -111,6 +122,7 @@ const EventPosterGenerator = ({ event, onClose }) => {
                 src={assetUrls['realKIMlogo-transparent.png']}
                 alt="Kids in Motion Logo"
                 className="poster-logo"
+                crossOrigin="anonymous"
               />
               <div className="header-text">
                 <h1>KIDS IN MOTION</h1>
@@ -304,7 +316,10 @@ const EventPosterGenerator = ({ event, onClose }) => {
           border-radius: 50%;
           background: white;
           padding: 8px;
-          border: 2px solid #2f506a;
+          border: 3px solid #2f506a;
+          object-fit: contain;
+          filter: contrast(1.1) brightness(1.05);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         .header-text h1 {
@@ -317,7 +332,8 @@ const EventPosterGenerator = ({ event, onClose }) => {
         .header-text p {
           margin: 3px 0 0 0;
           font-size: 12px;
-          opacity: 0.9;
+          opacity: 0.95;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
         }
 
         .poster-main {
@@ -347,6 +363,7 @@ const EventPosterGenerator = ({ event, onClose }) => {
           align-items: center;
           margin-bottom: 8px;
           font-size: 14px;
+          font-weight: 600;
         }
 
         .detail-row:last-child {
@@ -443,6 +460,8 @@ const EventPosterGenerator = ({ event, onClose }) => {
           margin: 0;
           font-size: 14px;
           text-align: center;
+          font-weight: 600;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
         }
 
         .footer-decoration {

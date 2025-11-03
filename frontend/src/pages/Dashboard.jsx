@@ -8,7 +8,6 @@ import { collection, doc as firestoreDoc, getDoc, getDocs, setDoc } from 'fireba
 import { db } from '../firebaseConfig';
 import ChildrenManagement from '../components/ChildrenManagement';
 import VerificationPrompt from '../components/VerificationPrompt';
-import ConnectionsSection from '../components/ConnectionsSection';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -1033,6 +1032,15 @@ const Dashboard = () => {
                       <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
                       <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
                       <p><strong>Phone:</strong> {(userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : 'Not provided'}</p>
+                      <div className="profile-actions mt-3">
+                        <button
+                          onClick={() => navigate(`/edit/${userProfile?.username}`)}
+                          className="btn btn-outline btn-sm"
+                        >
+                          <i className="fas fa-user-edit mr-2"></i>
+                          Edit Profile
+                        </button>
+                      </div>
                     </>
                   ) : (
                     <div className="edit-profile-form">
@@ -1196,14 +1204,6 @@ const Dashboard = () => {
                       </li>
                     </>
                   )}
-                  {/* Connections tab - available to all users */}
-                  <li
-                    className={`nav-tab ${activeTab === 'connections' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('connections')}
-                  >
-                    <i className="fas fa-users mr-2"></i>
-                    Connections
-                  </li>
                 </ul>
               </div>
               <div className="card-body">
@@ -1673,14 +1673,6 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {activeTab === 'connections' && (
-                  <div className="tab-content">
-                    <ConnectionsSection
-                      userId={currentUser?.uid}
-                      isOwnProfile={true}
-                    />
-                  </div>
-                )}
 
         </div>
       </div>

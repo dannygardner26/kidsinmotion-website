@@ -4,9 +4,7 @@ import com.example.restservice.model.User;
 import com.example.restservice.payload.response.UserProfileResponse;
 import com.example.restservice.payload.response.MessageResponse;
 import com.example.restservice.repository.firestore.UserFirestoreRepository;
-import com.example.restservice.repository.firestore.ConnectionFirestoreRepository;
 import com.example.restservice.model.firestore.UserFirestore;
-import com.example.restservice.model.firestore.ConnectionFirestore;
 import com.example.restservice.security.FirebaseAuthService;
 import com.example.restservice.service.MessagingService;
 import com.google.firebase.auth.UserRecord;
@@ -34,8 +32,6 @@ public class UserController {
     @Autowired
     private FirebaseAuthService firebaseAuthService;
 
-    @Autowired
-    private ConnectionFirestoreRepository connectionRepository;
 
     @Autowired(required = false)
     private Firestore db;
@@ -273,9 +269,6 @@ public class UserController {
             }
             if (updates.containsKey("profileColor")) {
                 user.setProfileColor((String) updates.get("profileColor"));
-            }
-            if (updates.containsKey("connectionPrivacySettings")) {
-                user.setConnectionPrivacySettings((Map<String, Object>) updates.get("connectionPrivacySettings"));
             }
 
             // Handle email change with Firebase Auth integration
@@ -660,7 +653,6 @@ public class UserController {
                 profileData.put("phoneVerified", targetUser.getPhoneVerified());
                 profileData.put("createdTimestamp", targetUser.getCreatedTimestamp());
                 profileData.put("lastLoginAt", targetUser.getLastLoginAt());
-                profileData.put("connectionPrivacySettings", targetUser.getConnectionPrivacySettings());
 
                 if (isAdmin) {
                     profileData.put("isBanned", targetUser.getIsBanned());
@@ -668,43 +660,188 @@ public class UserController {
                     profileData.put("bannedReason", targetUser.getBannedReason());
                 }
             } else {
-                // Check if users are connected
-                boolean isConnected = false;
-                try {
-                    Optional<ConnectionFirestore> connection1 = connectionRepository.findByRequesterIdAndReceiverId(viewerFirebaseUid, targetUser.getFirebaseUid());
-                    Optional<ConnectionFirestore> connection2 = connectionRepository.findByRequesterIdAndReceiverId(targetUser.getFirebaseUid(), viewerFirebaseUid);
-
-                    isConnected = (connection1.isPresent() && "ACCEPTED".equals(connection1.get().getStatus())) ||
-                                  (connection2.isPresent() && "ACCEPTED".equals(connection2.get().getStatus()));
-                } catch (Exception e) {
-                    // Log error but continue with non-connected view
-                    System.err.println("Error checking connection status: " + e.getMessage());
-                }
-
-                if (isConnected) {
-                    // Connected users get privacy-filtered view
-                    Map<String, Object> privacySettings = targetUser.getConnectionPrivacySettings();
-                    if (privacySettings != null) {
-                        if (Boolean.TRUE.equals(privacySettings.get("shareEmail"))) {
-                            profileData.put("email", targetUser.getEmail());
-                        }
-                        if (Boolean.TRUE.equals(privacySettings.get("sharePhone"))) {
-                            profileData.put("phoneNumber", targetUser.getPhoneNumber());
-                        }
-                        // Always include professional info for volunteers
-                        if ("VOLUNTEER".equals(targetUser.getUserType())) {
-                            profileData.put("grade", targetUser.getGrade());
-                            profileData.put("school", targetUser.getSchool());
-                        }
-                    }
-                }
-                // Non-connected users only get basic info (already set above)
+                // Public users only get basic info (already set above)
+                // Future: Add public privacy settings check here if needed
             }
 
             return ResponseEntity.ok(profileData);
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error retrieving user profile"));
+        }
+    }
+
+    // New endpoint that returns user profile by username with user wrapper
+    @GetMapping("/users/username/{username}")
+    public ResponseEntity<?> getUserByUsername(@PathVariable String username, HttpServletRequest request) {
+        try {
+            String viewerFirebaseUid = (String) request.getAttribute("firebaseUid");
+            if (viewerFirebaseUid == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+            }
+
+            Optional<UserFirestore> targetUserOpt = userFirestoreRepository.findByUsernameLowercase(username.toLowerCase());
+            if (!targetUserOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            UserFirestore targetUser = targetUserOpt.get();
+            Optional<UserFirestore> viewerOpt = userFirestoreRepository.findByFirebaseUid(viewerFirebaseUid);
+
+            // Check viewer permissions
+            boolean isOwnProfile = viewerFirebaseUid.equals(targetUser.getFirebaseUid());
+            boolean isAdmin = viewerOpt.isPresent() && viewerOpt.get().isAdmin();
+
+            Map<String, Object> profileData = new HashMap<>();
+
+            // Basic info always available
+            profileData.put("firebaseUid", targetUser.getFirebaseUid());
+            profileData.put("firstName", targetUser.getFirstName());
+            profileData.put("lastName", targetUser.getLastName());
+            profileData.put("username", targetUser.getUsername());
+            profileData.put("profilePictureUrl", targetUser.getProfilePictureUrl());
+            profileData.put("profileColor", targetUser.getProfileColor());
+            profileData.put("userType", targetUser.getUserType());
+
+            if (isOwnProfile || isAdmin) {
+                // Full access for own profile or admin
+                profileData.put("email", targetUser.getEmail());
+                profileData.put("phoneNumber", targetUser.getPhoneNumber());
+                profileData.put("grade", targetUser.getGrade());
+                profileData.put("school", targetUser.getSchool());
+                profileData.put("teams", targetUser.getTeams());
+                profileData.put("emailVerified", targetUser.getEmailVerified());
+                profileData.put("phoneVerified", targetUser.getPhoneVerified());
+                profileData.put("createdTimestamp", targetUser.getCreatedTimestamp());
+                profileData.put("lastLoginAt", targetUser.getLastLoginAt());
+
+                if (isAdmin) {
+                    profileData.put("isBanned", targetUser.getIsBanned());
+                    profileData.put("bannedAt", targetUser.getBannedAt());
+                    profileData.put("bannedReason", targetUser.getBannedReason());
+                }
+            }
+
+            // Return with user wrapper expected by UserProfile.jsx
+            return ResponseEntity.ok(Map.of("user", profileData));
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error retrieving user profile"));
+        }
+    }
+
+    @PutMapping("/users/username/{username}")
+    public ResponseEntity<?> updateUserProfileByUsername(@PathVariable String username, @RequestBody Map<String, Object> updates, HttpServletRequest request) {
+        try {
+            String firebaseUid = (String) request.getAttribute("firebaseUid");
+            if (firebaseUid == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+            }
+
+            // Find user by username
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByUsernameLowercase(username.toLowerCase());
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore targetUser = userOpt.get();
+
+            // Check permissions: user can edit own profile or admin can edit any profile
+            Optional<UserFirestore> requesterOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
+            if (!requesterOpt.isPresent()) {
+                return ResponseEntity.status(403).body(Map.of("error", "User profile not found"));
+            }
+
+            UserFirestore requester = requesterOpt.get();
+            boolean isOwnProfile = targetUser.getFirebaseUid().equals(firebaseUid);
+            boolean isAdmin = requester.isAdmin();
+
+            if (!isOwnProfile && !isAdmin) {
+                return ResponseEntity.status(403).body(Map.of("error", "Permission denied"));
+            }
+
+            // Update allowed fields
+            if (updates.containsKey("firstName")) {
+                targetUser.setFirstName((String) updates.get("firstName"));
+            }
+            if (updates.containsKey("lastName")) {
+                targetUser.setLastName((String) updates.get("lastName"));
+            }
+            if (updates.containsKey("username")) {
+                String newUsername = (String) updates.get("username");
+                // Check if username is available (unless it's the same)
+                if (!newUsername.equalsIgnoreCase(targetUser.getUsername())) {
+                    if (userFirestoreRepository.existsByUsernameLowercase(newUsername.toLowerCase())) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Username already taken"));
+                    }
+                    targetUser.setUsername(newUsername);
+                    targetUser.setUsernameLowercase(newUsername.toLowerCase());
+                }
+            }
+            if (updates.containsKey("phoneNumber")) {
+                targetUser.setPhoneNumber((String) updates.get("phoneNumber"));
+            }
+            if (updates.containsKey("address")) {
+                targetUser.setAddress((String) updates.get("address"));
+            }
+            if (updates.containsKey("city")) {
+                targetUser.setCity((String) updates.get("city"));
+            }
+            if (updates.containsKey("state")) {
+                targetUser.setState((String) updates.get("state"));
+            }
+            if (updates.containsKey("zipCode")) {
+                targetUser.setZipCode((String) updates.get("zipCode"));
+            }
+            if (updates.containsKey("parentFirstName")) {
+                targetUser.setParentFirstName((String) updates.get("parentFirstName"));
+            }
+            if (updates.containsKey("parentLastName")) {
+                targetUser.setParentLastName((String) updates.get("parentLastName"));
+            }
+            if (updates.containsKey("parentPhoneNumber")) {
+                targetUser.setParentPhoneNumber((String) updates.get("parentPhoneNumber"));
+            }
+            if (updates.containsKey("parentEmail")) {
+                targetUser.setParentEmail((String) updates.get("parentEmail"));
+            }
+            if (updates.containsKey("emergencyContactName")) {
+                targetUser.setEmergencyContactName((String) updates.get("emergencyContactName"));
+            }
+            if (updates.containsKey("emergencyContactPhone")) {
+                targetUser.setEmergencyContactPhone((String) updates.get("emergencyContactPhone"));
+            }
+            if (updates.containsKey("emergencyContactRelationship")) {
+                targetUser.setEmergencyContactRelationship((String) updates.get("emergencyContactRelationship"));
+            }
+            if (updates.containsKey("profileVisibility")) {
+                targetUser.setProfileVisibility((String) updates.get("profileVisibility"));
+            }
+
+            // Admin-only fields
+            if (isAdmin && !isOwnProfile) {
+                if (updates.containsKey("email")) {
+                    targetUser.setEmail((String) updates.get("email"));
+                }
+                if (updates.containsKey("userType")) {
+                    targetUser.setUserType((String) updates.get("userType"));
+                }
+                if (updates.containsKey("isBanned")) {
+                    targetUser.setIsBanned((Boolean) updates.get("isBanned"));
+                }
+                if (updates.containsKey("isEmailVerified")) {
+                    targetUser.setIsEmailVerified((Boolean) updates.get("isEmailVerified"));
+                }
+            }
+
+            targetUser.setUpdatedTimestamp(System.currentTimeMillis());
+            userFirestoreRepository.save(targetUser);
+
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to update profile"));
         }
     }
 
@@ -760,7 +897,7 @@ public class UserController {
                 }
 
                 notificationBody.append("If you believe this is an error, please contact support.\n");
-                notificationBody.append("Support Email: support@kidsinmotionpa.org");
+                notificationBody.append("Support Email: info@kidsinmotionpa.org");
 
                 Map<String, Object> messagePayload = new HashMap<>();
                 messagePayload.put("subject", "Account Suspended - Kids in Motion");
