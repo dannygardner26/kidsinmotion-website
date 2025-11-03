@@ -25,17 +25,6 @@ public class UserFirestore {
     private String usernameLowercase; // lowercase version for case-insensitive lookups
     private Long usernameLastChangedAt; // timestamp of last username change for 3-month cooldown
 
-    // Address information
-    private String address;
-    private String city;
-    private String state;
-    private String zipCode;
-
-    // Parent information (for minors)
-    private String parentFirstName;
-    private String parentLastName;
-    private String parentPhoneNumber;
-    private String parentEmail;
 
     // Emergency contact information
     private String emergencyContactName;
@@ -93,17 +82,6 @@ public class UserFirestore {
         map.put("usernameLowercase", usernameLowercase);
         map.put("usernameLastChangedAt", usernameLastChangedAt);
 
-        // Address information
-        map.put("address", address);
-        map.put("city", city);
-        map.put("state", state);
-        map.put("zipCode", zipCode);
-
-        // Parent information
-        map.put("parentFirstName", parentFirstName);
-        map.put("parentLastName", parentLastName);
-        map.put("parentPhoneNumber", parentPhoneNumber);
-        map.put("parentEmail", parentEmail);
 
         // Emergency contact information
         map.put("emergencyContactName", emergencyContactName);
@@ -146,17 +124,6 @@ public class UserFirestore {
         user.setUsernameLowercase((String) map.get("usernameLowercase"));
         user.setUsernameLastChangedAt((Long) map.get("usernameLastChangedAt"));
 
-        // Address information
-        user.setAddress((String) map.get("address"));
-        user.setCity((String) map.get("city"));
-        user.setState((String) map.get("state"));
-        user.setZipCode((String) map.get("zipCode"));
-
-        // Parent information
-        user.setParentFirstName((String) map.get("parentFirstName"));
-        user.setParentLastName((String) map.get("parentLastName"));
-        user.setParentPhoneNumber((String) map.get("parentPhoneNumber"));
-        user.setParentEmail((String) map.get("parentEmail"));
 
         // Emergency contact information
         user.setEmergencyContactName((String) map.get("emergencyContactName"));
@@ -267,31 +234,6 @@ public class UserFirestore {
     public Long getLastLoginAt() { return lastLoginAt; }
     public void setLastLoginAt(Long lastLoginAt) { this.lastLoginAt = lastLoginAt; }
 
-    // Address information getters and setters
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-
-    public String getCity() { return city; }
-    public void setCity(String city) { this.city = city; }
-
-    public String getState() { return state; }
-    public void setState(String state) { this.state = state; }
-
-    public String getZipCode() { return zipCode; }
-    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
-
-    // Parent information getters and setters
-    public String getParentFirstName() { return parentFirstName; }
-    public void setParentFirstName(String parentFirstName) { this.parentFirstName = parentFirstName; }
-
-    public String getParentLastName() { return parentLastName; }
-    public void setParentLastName(String parentLastName) { this.parentLastName = parentLastName; }
-
-    public String getParentPhoneNumber() { return parentPhoneNumber; }
-    public void setParentPhoneNumber(String parentPhoneNumber) { this.parentPhoneNumber = parentPhoneNumber; }
-
-    public String getParentEmail() { return parentEmail; }
-    public void setParentEmail(String parentEmail) { this.parentEmail = parentEmail; }
 
     // Emergency contact getters and setters
     public String getEmergencyContactName() { return emergencyContactName; }

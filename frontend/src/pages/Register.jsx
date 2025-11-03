@@ -26,39 +26,8 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false); // Renamed for clarity
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
-  const [isGoogleOAuth, setIsGoogleOAuth] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState(''); // '', 'checking', 'available', 'taken'
   const [usernameValidationTimer, setUsernameValidationTimer] = useState(null);
-
-  // Check for Google OAuth registration data
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const isOAuthFlow = queryParams.get('oauth') === 'google';
-
-    if (isOAuthFlow) {
-      setIsGoogleOAuth(true);
-      const pendingRegistration = localStorage.getItem('pendingRegistration');
-
-      if (pendingRegistration) {
-        try {
-          const userInfo = JSON.parse(pendingRegistration);
-          setFormData(prevState => ({
-            ...prevState,
-            firstName: userInfo.firstName || '',
-            lastName: userInfo.lastName || '',
-            email: userInfo.email || '',
-            // Don't pre-fill password fields for OAuth users
-            password: '',
-            confirmPassword: ''
-          }));
-          // Clear the pending registration data
-          localStorage.removeItem('pendingRegistration');
-        } catch (error) {
-          console.error('Error parsing pending registration data:', error);
-        }
-      }
-    }
-  }, [location]);
 
   // Username validation function
   const validateUsername = useCallback(async (username) => {
@@ -137,16 +106,14 @@ const Register = () => {
       }
     }
 
-    // Only validate passwords for non-OAuth users
-    if (!isGoogleOAuth) {
-      if (!password) {
-        errors.password = 'Password is required';
-      } else if (password.length < 6) {
-        errors.password = 'Password must be at least 6 characters';
-      }
-      if (password !== confirmPassword) {
-        errors.confirmPassword = 'Passwords do not match';
-      }
+    // Validate passwords
+    if (!password) {
+      errors.password = 'Password is required';
+    } else if (password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    if (password !== confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
     }
 
     if (!agreeToTerms) {
@@ -167,24 +134,6 @@ const Register = () => {
     setError(null);
 
     try {
-      if (isGoogleOAuth) {
-        // For Google OAuth users, just sync with backend (they're already authenticated)
-        const profileData = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          username: formData.username,
-          phoneNumber: formData.phoneNumber,
-          userType: formData.role,
-          grade: formData.grade || null,
-          school: formData.school || null
-        };
-
-        await apiService.syncUser();
-        await apiService.updateUserProfile(profileData);
-
-        console.log("Google OAuth user profile created successfully.");
-        navigate('/dashboard');
-      } else {
         // 1. Create user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         const user = userCredential.user;
@@ -227,7 +176,6 @@ const Register = () => {
 
         // 5. Redirect to dashboard with verification prompt
         navigate('/dashboard?verify=true');
-      }
 
     } catch (error) {
       console.error('Registration error:', error);
@@ -343,13 +291,6 @@ const Register = () => {
                   </div>
                 )}
 
-                {isGoogleOAuth && (
-                  <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <span className="block sm:inline">
-                      <strong>Complete Your Google Account Registration:</strong> Please choose a username, select your role, and provide any additional information below. No password is required since you'll sign in with Google.
-                    </span>
-                  </div>
-                )}
 
                 <form onSubmit={handleSubmit} noValidate>
                   <h3 className="text-lg font-bold mb-4 text-black">Personal Information</h3> 
@@ -441,10 +382,9 @@ const Register = () => {
                       id="email"
                       name="email"
                       // Use theme form-control
-                      className={`form-control ${formErrors.email ? 'border-red-500' : ''}`} 
+                      className={`form-control ${formErrors.email ? 'border-red-500' : ''}`}
                       value={formData.email}
                       onChange={handleChange}
-                      required
                     />
                     {formErrors.email && (
                       <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p>
@@ -459,11 +399,10 @@ const Register = () => {
                       id="phoneNumber"
                       name="phoneNumber"
                       // Use theme form-control
-                      className={`form-control ${formErrors.phoneNumber ? 'border-red-500' : ''}`} 
+                      className={`form-control ${formErrors.phoneNumber ? 'border-red-500' : ''}`}
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       placeholder="XXX-XXX-XXXX"
-                      required
                     />
                     {formErrors.phoneNumber && (
                       <p className="text-red-500 text-xs italic mt-1">{formErrors.phoneNumber}</p>
@@ -539,9 +478,7 @@ const Register = () => {
                     </>
                   )}
 
-                  {/* Only show password fields for non-OAuth users */}
-                  {!isGoogleOAuth && (
-                    <>
+                  {/* Password fields */}
                       <h3 className="text-lg font-bold mt-6 mb-4 text-black">Account Security</h3>
 
                       {/* Use theme form-group */}
@@ -581,8 +518,6 @@ const Register = () => {
                           <p className="text-red-500 text-xs italic mt-1">{formErrors.confirmPassword}</p>
                         )}
                       </div>
-                    </>
-                  )}
 
                   {/* Agreement checkbox with validation */}
                   <div className="mt-4 mb-4">

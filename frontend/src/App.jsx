@@ -46,10 +46,7 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to={`/login?redirect=${location.pathname}`} replace />;
   }
 
-  // Redirect to profile completion if needed (except when already on completion page)
-  if (needsProfileCompletion && location.pathname !== '/complete-profile') {
-    return <Navigate to="/complete-profile" replace />;
-  }
+  // Allow normal navigation - profile completion banner will be shown on Dashboard
 
   return children;
 };

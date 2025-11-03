@@ -6,8 +6,12 @@ import { apiService } from '../services/api';
 const AuthContext = createContext();
 
 // Utility function to compute if profile completion is needed
-const computeNeedsProfileCompletion = (profile) =>
-  !profile?.username || !profile?.userType || !profile?.firstName || !profile?.lastName;
+const computeNeedsProfileCompletion = (profile) => {
+  if (!profile?.username || !profile?.firstName || !profile?.lastName) return true;
+  if (!profile?.email && !profile?.phoneNumber) return true;
+  // Note: Password check is handled by Firebase auth providers
+  return false;
+};
 
 export const useAuth = () => {
   return useContext(AuthContext);
@@ -79,9 +83,8 @@ export const AuthProvider = ({ children }) => {
                   fromGoogleOAuth: true
                 }));
               }
-              // Sign out the user and redirect to registration
-              await auth.signOut();
-              window.location.href = '/register?oauth=google';
+              // Redirect to complete profile for OAuth users
+              window.location.href = '/complete-profile';
               return;
             }
             throw error;
@@ -391,7 +394,7 @@ export const AuthProvider = ({ children }) => {
       userProfile.firstName &&
       userProfile.lastName &&
       userProfile.username &&
-      userProfile.phoneNumber
+      (userProfile.email || userProfile.phoneNumber)
     );
   };
 

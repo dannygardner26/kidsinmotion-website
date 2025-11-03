@@ -15,17 +15,9 @@ const ProfileEdit = () => {
     username: '',
     email: '',
     phoneNumber: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
     userType: '',
     isBanned: false,
     isEmailVerified: false,
-    parentFirstName: '',
-    parentLastName: '',
-    parentPhoneNumber: '',
-    parentEmail: '',
     emergencyContactName: '',
     emergencyContactPhone: '',
     emergencyContactRelationship: '',
@@ -36,6 +28,7 @@ const ProfileEdit = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
   const [usernameCheckLoading, setUsernameCheckLoading] = useState(false);
+  const [usernameCooldown, setUsernameCooldown] = useState(null);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -77,22 +70,34 @@ const ProfileEdit = () => {
         username: userData.username || '',
         email: userData.email || '',
         phoneNumber: userData.phoneNumber || '',
-        address: userData.address || '',
-        city: userData.city || '',
-        state: userData.state || '',
-        zipCode: userData.zipCode || '',
         userType: userData.userType || 'USER',
         isBanned: userData.isBanned || false,
         isEmailVerified: userData.isEmailVerified || false,
-        parentFirstName: userData.parentFirstName || '',
-        parentLastName: userData.parentLastName || '',
-        parentPhoneNumber: userData.parentPhoneNumber || '',
-        parentEmail: userData.parentEmail || '',
         emergencyContactName: userData.emergencyContactName || '',
         emergencyContactPhone: userData.emergencyContactPhone || '',
         emergencyContactRelationship: userData.emergencyContactRelationship || '',
         profileVisibility: userData.profileVisibility || 'PUBLIC'
       });
+
+      // Set username cooldown info
+      if (userData.usernameLastChangedAt) {
+        const lastChangedDate = new Date(userData.usernameLastChangedAt);
+        const cooldownEndDate = new Date(lastChangedDate.getTime() + (90 * 24 * 60 * 60 * 1000)); // 90 days
+        const now = new Date();
+
+        if (now < cooldownEndDate) {
+          const remainingDays = Math.ceil((cooldownEndDate - now) / (24 * 60 * 60 * 1000));
+          setUsernameCooldown({
+            active: true,
+            remainingDays,
+            cooldownEndDate: cooldownEndDate.toLocaleDateString()
+          });
+        } else {
+          setUsernameCooldown({ active: false });
+        }
+      } else {
+        setUsernameCooldown({ active: false });
+      }
     } catch (error) {
       console.error('Error fetching profile data:', error);
       alert('Failed to load profile data');
@@ -149,7 +154,12 @@ const ProfileEdit = () => {
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.username.trim()) newErrors.username = 'Username is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
+
+    // Require either email or phone number
+    if (!formData.email.trim() && !formData.phoneNumber.trim()) {
+      newErrors.email = 'Either email or phone number is required';
+      newErrors.phoneNumber = 'Either email or phone number is required';
+    }
 
     // Username validation
     if (formData.username.length < 3) {
@@ -193,14 +203,6 @@ const ProfileEdit = () => {
         lastName: formData.lastName,
         username: formData.username,
         phoneNumber: formData.phoneNumber,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zipCode: formData.zipCode,
-        parentFirstName: formData.parentFirstName,
-        parentLastName: formData.parentLastName,
-        parentPhoneNumber: formData.parentPhoneNumber,
-        parentEmail: formData.parentEmail,
         emergencyContactName: formData.emergencyContactName,
         emergencyContactPhone: formData.emergencyContactPhone,
         emergencyContactRelationship: formData.emergencyContactRelationship,
@@ -388,11 +390,19 @@ const ProfileEdit = () => {
                       <small className="form-text text-muted">
                         Username can only contain letters, numbers, hyphens, and underscores.
                       </small>
+                      {usernameCooldown?.active && (
+                        <div className="alert alert-warning mt-2 mb-0 py-2 px-3">
+                          <i className="fas fa-clock mr-2"></i>
+                          <small>
+                            <strong>Username Change Cooldown:</strong> You can change your username again in {usernameCooldown.remainingDays} day{usernameCooldown.remainingDays !== 1 ? 's' : ''} (after {usernameCooldown.cooldownEndDate}).
+                          </small>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="col-md-6">
                     <div className="form-group">
-                      <label htmlFor="email">Email Address *</label>
+                      <label htmlFor="email">Email Address</label>
                       <input
                         type="email"
                         className={`form-control ${errors.email ? 'is-invalid' : ''}`}
@@ -401,7 +411,6 @@ const ProfileEdit = () => {
                         value={formData.email}
                         onChange={handleInputChange}
                         disabled={!isAdmin || isSelfEdit}
-                        required
                       />
                       {errors.email && <div className="invalid-feedback">{errors.email}</div>}
                       {(!isAdmin || isSelfEdit) && (
@@ -513,131 +522,6 @@ const ProfileEdit = () => {
                   </>
                 )}
 
-                {/* Address Information */}
-                <div className="section-header">
-                  <h4>Address Information</h4>
-                  <small className="text-muted">Optional but helpful for local events</small>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="address">Street Address</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                  />
-                </div>
-
-                <div className="row">
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label htmlFor="city">City</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="city"
-                        name="city"
-                        value={formData.city}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label htmlFor="state">State</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="state"
-                        name="state"
-                        value={formData.state}
-                        onChange={handleInputChange}
-                        placeholder="PA"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="form-group">
-                      <label htmlFor="zipCode">ZIP Code</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="zipCode"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Parent Information */}
-                <div className="section-header">
-                  <h4>Parent/Guardian Information</h4>
-                  <small className="text-muted">For participants under 18</small>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="parentFirstName">Parent First Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="parentFirstName"
-                        name="parentFirstName"
-                        value={formData.parentFirstName}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="parentLastName">Parent Last Name</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="parentLastName"
-                        name="parentLastName"
-                        value={formData.parentLastName}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="parentPhoneNumber">Parent Phone Number</label>
-                      <input
-                        type="tel"
-                        className="form-control"
-                        id="parentPhoneNumber"
-                        name="parentPhoneNumber"
-                        value={formData.parentPhoneNumber}
-                        onChange={handleInputChange}
-                        placeholder="(555) 123-4567"
-                      />
-                    </div>
-                  </div>
-                  <div className="col-md-6">
-                    <div className="form-group">
-                      <label htmlFor="parentEmail">Parent Email</label>
-                      <input
-                        type="email"
-                        className="form-control"
-                        id="parentEmail"
-                        name="parentEmail"
-                        value={formData.parentEmail}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                </div>
 
                 {/* Emergency Contact */}
                 <div className="section-header">

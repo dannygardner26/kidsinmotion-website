@@ -37,7 +37,6 @@ public class User {
     @Size(max = 50)
     private String lastName;
 
-    @NotBlank
     @Size(max = 20) // Adjust size as needed
     private String phoneNumber;
 

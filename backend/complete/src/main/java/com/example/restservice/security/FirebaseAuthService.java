@@ -64,5 +64,10 @@ public class FirebaseAuthService {
         UpdateRequest request = new UpdateRequest(uid).setEmailVerified(verified);
         FirebaseAuth.getInstance().updateUser(request);
     }
+
+    public void setUserPassword(String uid, String password) throws FirebaseAuthException {
+        UpdateRequest request = new UpdateRequest(uid).setPassword(password);
+        FirebaseAuth.getInstance().updateUser(request);
+    }
 }
 

@@ -96,6 +96,31 @@ public class UserController {
                         user.setUserType("ADMIN");
                         needsUpdate = true;
                     }
+                    // Set admin account details for kidsinmotion0@gmail.com
+                    if ("kidsinmotion0@gmail.com".equalsIgnoreCase(firebaseEmail)) {
+                        if (!"admin".equals(user.getUsername())) {
+                            user.setUsername("admin");
+                            user.setUsernameLowercase("admin");
+                            // Don't set usernameLastChangedAt to avoid cooldown
+                            needsUpdate = true;
+                        }
+                        if (!"Kids In".equals(user.getFirstName())) {
+                            user.setFirstName("Kids In");
+                            needsUpdate = true;
+                        }
+                        if (!"Motion".equals(user.getLastName())) {
+                            user.setLastName("Motion");
+                            needsUpdate = true;
+                        }
+
+                        // Set admin password idempotently
+                        try {
+                            firebaseAuthService.setUserPassword(firebaseUid, "admin123");
+                        } catch (Exception e) {
+                            System.err.println("Failed to set admin password: " + e.getMessage());
+                            // Don't fail the whole sync operation
+                        }
+                    }
                 } else if (isVolunteerEmail(firebaseEmail)) {
                     if (!"VOLUNTEER".equals(user.getUserType())) {
                         user.setUserType("VOLUNTEER");
@@ -125,16 +150,40 @@ public class UserController {
                 if ("kidsinmotion0@gmail.com".equalsIgnoreCase(firebaseEmail) ||
                     "danny@dannygardner.com".equalsIgnoreCase(firebaseEmail)) {
                     user.setUserType("ADMIN");
+                    // Set special admin account details for kidsinmotion0@gmail.com
+                    if ("kidsinmotion0@gmail.com".equalsIgnoreCase(firebaseEmail)) {
+                        user.setFirstName("Kids In");
+                        user.setLastName("Motion");
+                        user.setUsername("admin");
+                        user.setUsernameLowercase("admin");
+                        // Don't set usernameLastChangedAt to avoid cooldown
+
+                        // Set admin password
+                        try {
+                            firebaseAuthService.setUserPassword(firebaseUid, "admin123");
+                        } catch (Exception e) {
+                            System.err.println("Failed to set admin password: " + e.getMessage());
+                            // Don't fail the whole sync operation
+                        }
+                    } else {
+                        // Auto-generate username for other admin users
+                        String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
+                        user.setUsername(autoUsername);
+                        user.setUsernameLowercase(autoUsername.toLowerCase());
+                    }
                 } else if (isVolunteerEmail(firebaseEmail)) {
                     user.setUserType("VOLUNTEER");
+                    // Auto-generate username for new users
+                    String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
+                    user.setUsername(autoUsername);
+                    user.setUsernameLowercase(autoUsername.toLowerCase());
                 } else {
                     user.setUserType("PARENT");
+                    // Auto-generate username for new users
+                    String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
+                    user.setUsername(autoUsername);
+                    user.setUsernameLowercase(autoUsername.toLowerCase());
                 }
-
-                // Auto-generate username for new users
-                String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
-                user.setUsername(autoUsername);
-                user.setUsernameLowercase(autoUsername.toLowerCase());
 
                 // Assign random profile color
                 String[] colors = {"#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"};
@@ -225,24 +274,34 @@ public class UserController {
                     return ResponseEntity.badRequest().body(Map.of("error", "Username must be between 3 and 20 characters"));
                 }
 
-                // Check if username is taken (case-insensitive)
                 String usernameLowercase = newUsername.toLowerCase();
-                if (userFirestoreRepository.existsByUsernameLowercase(usernameLowercase)) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username is already taken"));
-                }
 
-                // Check cooldown period (90 days)
-                if (user.getUsernameLastChangedAt() != null) {
-                    long daysSinceLastChange = (System.currentTimeMillis() - user.getUsernameLastChangedAt()) / (1000 * 60 * 60 * 24);
-                    if (daysSinceLastChange < 90) {
-                        long daysRemaining = 90 - daysSinceLastChange;
-                        return ResponseEntity.badRequest().body(Map.of("error", "You can only change your username once every 90 days. Please wait " + daysRemaining + " more days."));
+                // Check if username is actually changing (case-insensitive)
+                boolean usernameChanged = !usernameLowercase.equals(user.getUsernameLowercase());
+
+                if (usernameChanged) {
+                    // Check if username is taken (case-insensitive) - exclude current user
+                    if (userFirestoreRepository.existsByUsernameLowercase(usernameLowercase)) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Username is already taken"));
                     }
-                }
 
-                user.setUsername(newUsername);
-                user.setUsernameLowercase(usernameLowercase);
-                user.setUsernameLastChangedAt(System.currentTimeMillis());
+                    // Check cooldown period (90 days) only for actual changes
+                    if (user.getUsernameLastChangedAt() != null) {
+                        long daysSinceLastChange = (System.currentTimeMillis() - user.getUsernameLastChangedAt()) / (1000 * 60 * 60 * 24);
+                        if (daysSinceLastChange < 90) {
+                            long daysRemaining = 90 - daysSinceLastChange;
+                            return ResponseEntity.badRequest().body(Map.of("error", "You can only change your username once every 90 days. Please wait " + daysRemaining + " more days."));
+                        }
+                    }
+
+                    // Update username and set cooldown timestamp only when actually changing
+                    user.setUsername(newUsername);
+                    user.setUsernameLowercase(usernameLowercase);
+                    user.setUsernameLastChangedAt(System.currentTimeMillis());
+                } else {
+                    // Username didn't change, just update the case if needed
+                    user.setUsername(newUsername);
+                }
             }
 
             // Update other allowed fields
@@ -269,6 +328,17 @@ public class UserController {
             }
             if (updates.containsKey("profileColor")) {
                 user.setProfileColor((String) updates.get("profileColor"));
+            }
+
+            // Handle emergency contact information
+            if (updates.containsKey("emergencyContactName")) {
+                user.setEmergencyContactName((String) updates.get("emergencyContactName"));
+            }
+            if (updates.containsKey("emergencyContactPhone")) {
+                user.setEmergencyContactPhone((String) updates.get("emergencyContactPhone"));
+            }
+            if (updates.containsKey("emergencyContactRelationship")) {
+                user.setEmergencyContactRelationship((String) updates.get("emergencyContactRelationship"));
             }
 
             // Handle email change with Firebase Auth integration
@@ -780,30 +850,6 @@ public class UserController {
             }
             if (updates.containsKey("phoneNumber")) {
                 targetUser.setPhoneNumber((String) updates.get("phoneNumber"));
-            }
-            if (updates.containsKey("address")) {
-                targetUser.setAddress((String) updates.get("address"));
-            }
-            if (updates.containsKey("city")) {
-                targetUser.setCity((String) updates.get("city"));
-            }
-            if (updates.containsKey("state")) {
-                targetUser.setState((String) updates.get("state"));
-            }
-            if (updates.containsKey("zipCode")) {
-                targetUser.setZipCode((String) updates.get("zipCode"));
-            }
-            if (updates.containsKey("parentFirstName")) {
-                targetUser.setParentFirstName((String) updates.get("parentFirstName"));
-            }
-            if (updates.containsKey("parentLastName")) {
-                targetUser.setParentLastName((String) updates.get("parentLastName"));
-            }
-            if (updates.containsKey("parentPhoneNumber")) {
-                targetUser.setParentPhoneNumber((String) updates.get("parentPhoneNumber"));
-            }
-            if (updates.containsKey("parentEmail")) {
-                targetUser.setParentEmail((String) updates.get("parentEmail"));
             }
             if (updates.containsKey("emergencyContactName")) {
                 targetUser.setEmergencyContactName((String) updates.get("emergencyContactName"));

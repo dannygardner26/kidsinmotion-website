@@ -48,6 +48,50 @@ const Dashboard = () => {
   const shouldShowVerifyPrompt = queryParams.get('verify') === 'true';
   const verificationRef = useRef(null);
 
+  // Profile completion banner state
+  const [showProfileBanner, setShowProfileBanner] = useState(() => {
+    return localStorage.getItem('profileBannerDismissed') !== 'true';
+  });
+
+  // Check if profile needs completion
+  const isProfileIncomplete = () => {
+    if (!userProfile) return false;
+
+    // Critical fields - always show banner if missing
+    const criticalFields = ['firstName', 'lastName', 'username'];
+    const hasCriticalMissing = criticalFields.some(field => !userProfile[field]);
+
+    // Non-critical fields - respect dismissal
+    const hasEmail = userProfile.email;
+    const hasPhone = userProfile.phoneNumber;
+    const hasContact = hasEmail || hasPhone;
+
+    return hasCriticalMissing || (!hasContact && showProfileBanner);
+  };
+
+  // Get missing fields for banner message
+  const getMissingFields = () => {
+    if (!userProfile) return [];
+
+    const missing = [];
+    if (!userProfile.firstName) missing.push('first name');
+    if (!userProfile.lastName) missing.push('last name');
+    if (!userProfile.username) missing.push('username');
+    if (!userProfile.email && !userProfile.phoneNumber) missing.push('contact method (email or phone)');
+
+    return missing;
+  };
+
+  // Handle banner dismissal
+  const handleBannerDismiss = () => {
+    const criticalMissing = ['firstName', 'lastName', 'username'].some(field => !userProfile?.[field]);
+
+    if (!criticalMissing) {
+      localStorage.setItem('profileBannerDismissed', 'true');
+      setShowProfileBanner(false);
+    }
+  };
+
   // Determine user type based on email or role
   const isVolunteer = () => {
     if (!userProfile) return false;
@@ -1012,6 +1056,47 @@ const Dashboard = () => {
             userPhone={userProfile?.phoneNumber}
             onClose={() => setShowVerificationPrompt(false)}
           />
+        </div>
+      )}
+
+      {/* Profile Completion Banner */}
+      {userProfile && isProfileIncomplete() && (
+        <div className="container mt-4">
+          <div className="alert alert-warning alert-dismissible fade show animate-slide-in" role="alert">
+            <div className="d-flex align-items-center">
+              <i className="fas fa-exclamation-triangle text-warning me-3" style={{ fontSize: '1.5rem' }}></i>
+              <div className="flex-grow-1">
+                <h5 className="alert-heading mb-1">Complete Your Profile</h5>
+                <p className="mb-2">
+                  Complete your profile to unlock all features. Missing: {getMissingFields().join(', ')}
+                </p>
+                <Link
+                  to="/complete-profile"
+                  className="btn btn-warning btn-sm me-2"
+                >
+                  Complete Profile
+                </Link>
+                {getMissingFields().every(field => !['first name', 'last name', 'username'].includes(field)) && (
+                  <button
+                    type="button"
+                    onClick={handleBannerDismiss}
+                    className="btn btn-outline-secondary btn-sm"
+                  >
+                    Don't show again
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                aria-label="Close"
+                onClick={handleBannerDismiss}
+                style={{
+                  display: getMissingFields().some(field => ['first name', 'last name', 'username'].includes(field)) ? 'none' : 'block'
+                }}
+              ></button>
+            </div>
+          </div>
         </div>
       )}
 

@@ -10,6 +10,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setIsGoogleOAuthLogin } = useAuth();
+  const [activeTab, setActiveTab] = useState('auto');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +26,13 @@ const Login = () => {
 
   const queryParams = new URLSearchParams(location.search);
   const redirectUrl = queryParams.get('redirect') || '/dashboard';
+
+  // Clear identifier when tab changes
+  useEffect(() => {
+    setIdentifier('');
+    setFormErrors({});
+    setError(null);
+  }, [activeTab]);
 
   // Firebase auth state listener
   useEffect(() => {
@@ -43,7 +51,15 @@ const Login = () => {
   const validateForm = () => {
     const errors = {};
     if (!identifier.trim()) {
-      errors.identifier = 'Username, email, or phone is required';
+      if (activeTab === 'auto') {
+        errors.identifier = 'Email, username, or phone number is required';
+      } else if (activeTab === 'email') {
+        errors.identifier = 'Email is required';
+      } else if (activeTab === 'username') {
+        errors.identifier = 'Username is required';
+      } else if (activeTab === 'phone') {
+        errors.identifier = 'Phone number is required';
+      }
     }
     if (!password) {
       errors.password = 'Password is required';
@@ -289,82 +305,172 @@ const Login = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleEmailPasswordLogin}>
-                  {/* Use theme form-group */}
-                  <div className="form-group">
-                    <label htmlFor="identifier">Username, Email, or Phone</label>
-                    <input
-                      type="text"
-                      id="identifier"
-                      placeholder="Enter your username, email, or phone number"
-                      // Use theme form-control
-                      className={`form-control ${formErrors.identifier ? 'border-red-500' : ''}`}
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      required
-                    />
-                    {formErrors.identifier && (
-                      // Simple error text styling
-                      <p className="text-red-500 text-xs italic mt-1">{formErrors.identifier}</p>
-                    )}
-                  </div>
+                {/* Tab Navigation */}
+                <div className="flex mb-4 border-b border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('auto')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
+                      activeTab === 'auto'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Auto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('email')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
+                      activeTab === 'email'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Email
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('username')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
+                      activeTab === 'username'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Username
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('phone')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
+                      activeTab === 'phone'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Phone
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('oauth')}
+                    className={`flex-1 py-2 px-4 text-sm font-medium text-center border-b-2 transition-colors ${
+                      activeTab === 'oauth'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    OAuth
+                  </button>
+                </div>
 
-                  {/* Use theme form-group */}
-                  <div className="form-group"> 
-                    <label htmlFor="password">Password</label>
-                    <input
-                      type="password"
-                      id="password"
-                      // Use theme form-control
-                      className={`form-control ${formErrors.password ? 'border-red-500' : ''}`} 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required 
-                    />
-                    {formErrors.password && (
-                      // Simple error text styling
-                      <p className="text-red-500 text-xs italic mt-1">{formErrors.password}</p> 
-                    )}
-                  </div>
+                {/* Tab Content */}
+                {activeTab !== 'oauth' && (
+                  <form onSubmit={handleEmailPasswordLogin}>
+                    {/* Use theme form-group */}
+                    <div className="form-group">
+                      <label htmlFor="identifier">
+                        {activeTab === 'auto' && 'Email, Username, or Phone'}
+                        {activeTab === 'email' && 'Email Address'}
+                        {activeTab === 'username' && 'Username'}
+                        {activeTab === 'phone' && 'Phone Number'}
+                      </label>
+                      <input
+                        type={activeTab === 'email' ? 'email' : 'text'}
+                        id="identifier"
+                        placeholder={
+                          activeTab === 'auto' ? 'Enter your email, username, or phone number' :
+                          activeTab === 'email' ? 'Enter your email address' :
+                          activeTab === 'username' ? 'Enter your username' :
+                          'Enter your phone number'
+                        }
+                        className={`form-control ${formErrors.identifier ? 'border-red-500' : ''}`}
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        required
+                      />
+                      {formErrors.identifier && (
+                        <p className="text-red-500 text-xs italic mt-1">{formErrors.identifier}</p>
+                      )}
+                    </div>
 
-                  {/* Forgot Password Link */}
-                  <div className="text-right mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswordReset(true)}
-                      className="text-blue-600 text-sm hover:text-blue-800"
-                    >
-                      Forgot your password?
-                    </button>
-                  </div>
+                    <div className="form-group">
+                      <label htmlFor="password">Password</label>
+                      <input
+                        type="password"
+                        id="password"
+                        className={`form-control ${formErrors.password ? 'border-red-500' : ''}`}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      {formErrors.password && (
+                        <p className="text-red-500 text-xs italic mt-1">{formErrors.password}</p>
+                      )}
+                    </div>
 
-                  {/* Use theme button styles, add w-full for block display */}
-                  <div className="mt-4">
-                    <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
-                      {isLoading ? 'Logging in...' : 'Login with Email'}
-                    </button>
-                  </div>
-                </form>
+                    {/* Forgot Password Link */}
+                    <div className="text-right mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordReset(true)}
+                        className="text-blue-600 text-sm hover:text-blue-800"
+                      >
+                        Forgot your password?
+                      </button>
+                    </div>
 
-                 <div className="my-4 text-center">
-                   <span className="text-xs uppercase text-gray-400 font-semibold">OR</span>
-                 </div>
+                    <div className="mt-4">
+                      <button type="submit" className="btn btn-primary w-full" disabled={isLoading}>
+                        {isLoading ? 'Logging in...' :
+                         activeTab === 'auto' ? 'Login' :
+                         activeTab === 'email' ? 'Login with Email' :
+                         activeTab === 'username' ? 'Login with Username' :
+                         'Login with Phone'
+                        }
+                      </button>
+                    </div>
+                  </form>
+                )}
 
-                 {/* Google Sign-in Button - Rendered by Google Identity Services */}
-                 <div className="mb-4 flex justify-center">
-                    <div id="googleSignInButtonDiv" ref={googleButtonDivRef}>
-                      {/* Fallback button if Google script doesn't load */}
-                      <div className="text-center text-sm text-gray-500 p-3">
-                        <span>Loading Google Sign-In...</span>
+                {/* OAuth Tab Content */}
+                {activeTab === 'oauth' && (
+                  <div className="text-center py-4">
+                    <h3 className="text-lg font-medium mb-4">Sign in with Google</h3>
+                    <div className="mb-4 flex justify-center">
+                      <div id="googleSignInButtonDiv" ref={googleButtonDivRef}>
+                        <div className="text-center text-sm text-gray-500 p-3">
+                          <span>Loading Google Sign-In...</span>
+                        </div>
                       </div>
                     </div>
-                    {/* The Google button will be rendered here. Ensure this div is visible. */}
-                 </div>
-                 {isLoading && (
-                    <div className="text-center text-sm text-gray-500">
+                    {isLoading && (
+                      <div className="text-center text-sm text-gray-500">
                         <span>Processing Google Sign-In...</span>
-                    </div>
-                 )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Divider for non-OAuth tabs */}
+                {activeTab !== 'oauth' && (
+                  <div className="my-4 text-center">
+                    <span className="text-xs uppercase text-gray-400 font-semibold">OR</span>
+                  </div>
+                )}
+
+                {/* Google Sign-in Button for non-OAuth tabs */}
+                {activeTab !== 'oauth' && (
+                  <div className="mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('oauth')}
+                      className="w-full py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                    >
+                      Sign in with Google
+                    </button>
+                  </div>
+                )}
 
                 {/* Test Account Buttons - Only in development */}
                 {process.env.NODE_ENV === 'development' && (
