@@ -18,6 +18,7 @@ const ProfileEdit = () => {
     userType: '',
     isBanned: false,
     isEmailVerified: false,
+    phoneVerified: false,
     emergencyContactName: '',
     emergencyContactPhone: '',
     emergencyContactRelationship: '',
@@ -73,6 +74,7 @@ const ProfileEdit = () => {
         userType: userData.userType || 'USER',
         isBanned: userData.isBanned || false,
         isEmailVerified: userData.isEmailVerified || false,
+        phoneVerified: userData.phoneVerified || false,
         emergencyContactName: userData.emergencyContactName || '',
         emergencyContactPhone: userData.emergencyContactPhone || '',
         emergencyContactRelationship: userData.emergencyContactRelationship || '',
@@ -245,6 +247,11 @@ const ProfileEdit = () => {
         // Handle email verification change
         if (formData.isEmailVerified !== profileData.isEmailVerified && formData.isEmailVerified) {
           await apiService.verifyUserEmail(userId);
+        }
+
+        // Handle phone verification change
+        if (formData.phoneVerified !== profileData.phoneVerified && formData.phoneVerified) {
+          await apiService.adminVerifyPhone(userId);
         }
       }
 
@@ -437,7 +444,20 @@ const ProfileEdit = () => {
                 <div className="row">
                   <div className="col-md-6">
                     <div className="form-group">
-                      <label htmlFor="phoneNumber">Phone Number</label>
+                      <label htmlFor="phoneNumber">
+                        Phone Number
+                        {profileData?.phoneVerified ? (
+                          <span className="badge badge-success ml-2">
+                            <i className="fas fa-check-circle mr-1"></i>
+                            Verified
+                          </span>
+                        ) : profileData?.phoneNumber ? (
+                          <span className="badge badge-danger ml-2">
+                            <i className="fas fa-times-circle mr-1"></i>
+                            Not Verified
+                          </span>
+                        ) : null}
+                      </label>
                       <input
                         type="tel"
                         className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
@@ -506,6 +526,19 @@ const ProfileEdit = () => {
                             />
                             <label className="form-check-label" htmlFor="isEmailVerified">
                               Email Verified
+                            </label>
+                          </div>
+                          <div className="form-check mt-2">
+                            <input
+                              type="checkbox"
+                              className="form-check-input"
+                              id="phoneVerified"
+                              name="phoneVerified"
+                              checked={formData.phoneVerified || false}
+                              onChange={handleInputChange}
+                            />
+                            <label className="form-check-label" htmlFor="phoneVerified">
+                              Phone Verified
                             </label>
                           </div>
                         </div>

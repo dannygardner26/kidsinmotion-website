@@ -14,6 +14,10 @@ This document provides instructions for setting up test accounts for the Kids in
 ### 2. Parent Test Account
 - **Email**: `parent@gmail.com`
 - **Password**: `parent`
+- **Username**: `parent`
+- **Phone**: `4848856284`
+- **First Name**: `Parent`
+- **Last Name**: `Parent`
 - **Role**: USER
 - **Type**: Parent/Guardian
 - **Usage**: Testing child registration, parent dashboard features, and family-oriented functionality
@@ -21,6 +25,10 @@ This document provides instructions for setting up test accounts for the Kids in
 ### 3. Volunteer Test Account
 - **Email**: `volunteer@gmail.com`
 - **Password**: `volunteer`
+- **Username**: `volunteer`
+- **Phone**: `4848856284`
+- **First Name**: `Volunteer`
+- **Last Name**: `Volunteer`
 - **Role**: USER
 - **Type**: Volunteer
 - **Usage**: Testing volunteer signup, event management from volunteer perspective
@@ -57,6 +65,46 @@ This document provides instructions for setting up test accounts for the Kids in
    e. After creation, click on the user to edit:
       - Check "Email verified" if you want to skip email verification during testing
       - Add custom claims if needed (see Custom Claims section below)
+
+## Automated Test Account Creation
+
+### Using the Create Test Accounts Script
+
+For convenience, you can use the automated script to create both test accounts:
+
+**Prerequisites:**
+- Firebase Admin SDK service account JSON must be present at: `backend/complete/src/main/resources/firebase-service-account.json`
+- Node.js installed on your system
+
+**Command:**
+```bash
+node scripts/create-test-accounts.js
+```
+
+**Script Features:**
+- Creates both Parent and Volunteer test accounts
+- Sets up Firebase Authentication users with email verification enabled
+- Creates corresponding Firestore user documents with complete profile data
+- Handles existing accounts gracefully (updates instead of failing)
+- Phone verification set to false for testing the verification system
+
+**Expected Output:**
+```
+🚀 Starting test account creation...
+
+Creating parent test account...
+✅ Firebase Auth user created: [Firebase UID]
+✅ Firestore user document created/updated for PARENT
+
+Creating volunteer test account...
+✅ Firebase Auth user created: [Firebase UID]
+✅ Firestore user document created/updated for VOLUNTEER
+
+🎉 Test account creation completed successfully!
+```
+
+**Safe Re-running:**
+The script can be run multiple times safely. If accounts already exist, it will update the Firestore documents instead of failing.
 
 ### Setting Custom Claims (Admin Accounts)
 

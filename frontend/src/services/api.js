@@ -144,7 +144,54 @@ class ApiService {
   async validateUsername(username) {
     return this.makeRequest('/users/validate-username', {
       method: 'POST',
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({ username: username.toLowerCase() }),
+    });
+  }
+
+  // Duplicate checking method (public endpoint)
+  async checkDuplicate(email, phoneNumber, username) {
+    try {
+      const response = await fetch(`${this.baseURL}/auth/check-duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          phoneNumber,
+          username: username ? username.toLowerCase() : null
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Duplicate check failed:', error);
+      throw error;
+    }
+  }
+
+  // Phone verification methods
+  async sendPhoneVerification() {
+    return this.makeRequest('/users/send-phone-verification', {
+      method: 'POST'
+    });
+  }
+
+  async verifyPhoneCode(code) {
+    return this.makeRequest('/users/verify-phone', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  }
+
+  async adminVerifyPhone(userId) {
+    return this.makeRequest(`/users/${userId}/verify-phone`, {
+      method: 'POST'
     });
   }
 

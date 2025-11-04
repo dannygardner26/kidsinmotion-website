@@ -428,6 +428,35 @@ export const AuthProvider = ({ children }) => {
     );
   };
 
+  // Phone verification methods
+  const sendPhoneVerification = async () => {
+    try {
+      setVerificationLoading(true);
+      const result = await apiService.sendPhoneVerification();
+      return result;
+    } catch (error) {
+      console.error('Error sending phone verification:', error);
+      throw error;
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  const verifyPhoneCode = async (code) => {
+    try {
+      setVerificationLoading(true);
+      const result = await apiService.verifyPhoneCode(code);
+      // Refresh verification status after successful verification
+      await refreshVerificationStatus();
+      return result;
+    } catch (error) {
+      console.error('Error verifying phone code:', error);
+      throw error;
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -444,6 +473,8 @@ export const AuthProvider = ({ children }) => {
     isVerified: isEmailVerified || isPhoneVerified,
     verificationLoading,
     sendEmailVerification,
+    sendPhoneVerification,
+    verifyPhoneCode,
     sendPasswordResetEmail,
     refreshVerificationStatus,
     // Profile completion

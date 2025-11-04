@@ -60,6 +60,9 @@ const Dashboard = () => {
     // Admin accounts are exempt from profile completion checks
     if (isAdmin()) return false;
 
+    // Check if there are any missing fields first
+    if (getMissingFields().length === 0) return false;
+
     // Check if user has all essential information
     const hasFirstName = userProfile.firstName && userProfile.firstName.trim() !== '';
     const hasLastName = userProfile.lastName && userProfile.lastName.trim() !== '';
@@ -1096,8 +1099,15 @@ const Dashboard = () => {
                   <p><strong>Phone:</strong> {(userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : 'Not provided'}</p>
                   <div className="profile-actions mt-3">
                     <button
-                      onClick={() => navigate(`/edit/${userProfile?.username}`)}
-                      className="btn btn-outline btn-sm"
+                      onClick={() => {
+                        if (userProfile?.username) {
+                          navigate(`/edit/${userProfile.username}`);
+                        } else {
+                          navigate('/dashboard');
+                        }
+                      }}
+                      className={`btn btn-outline btn-sm ${!userProfile?.username ? 'disabled' : ''}`}
+                      title={!userProfile?.username ? 'Please complete your profile first' : 'Edit your profile'}
                     >
                       <i className="fas fa-user-edit mr-2"></i>
                       Edit Profile
@@ -1589,7 +1599,7 @@ const Dashboard = () => {
                           <button
                             type="button"
                             className="btn btn-primary search-btn"
-                            onClick={handleParentSearch}
+                            onClick={handleSearch}
                             disabled={searchLoading || !searchQuery.trim()}
                           >
                             {searchLoading ? (
@@ -1635,14 +1645,14 @@ const Dashboard = () => {
                                       <button
                                         type="button"
                                         className={`btn btn-sm ${child.present ? 'btn-success' : 'btn-outline-success'}`}
-                                        onClick={() => handleAttendanceUpdate(child.participantId, true)}
+                                        onClick={() => handleAttendanceToggle(child.participantId, child.present ? 'ATTENDED' : 'NOT_ATTENDED')}
                                       >
                                         Mark Present
                                       </button>
                                       <button
                                         type="button"
                                         className={`btn btn-sm ${!child.present ? 'btn-danger' : 'btn-outline-danger'}`}
-                                        onClick={() => handleAttendanceUpdate(child.participantId, false)}
+                                        onClick={() => handleAttendanceToggle(child.participantId, child.present ? 'ATTENDED' : 'NOT_ATTENDED')}
                                       >
                                         Mark Absent
                                       </button>

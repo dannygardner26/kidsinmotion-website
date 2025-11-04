@@ -7,6 +7,7 @@ import com.example.restservice.repository.firestore.UserFirestoreRepository;
 import com.example.restservice.model.firestore.UserFirestore;
 import com.example.restservice.security.FirebaseAuthService;
 import com.example.restservice.service.MessagingService;
+import com.example.restservice.service.SmsDeliveryService;
 import com.google.firebase.auth.UserRecord;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.DocumentReference;
@@ -18,6 +19,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.concurrent.TimeUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -38,6 +43,9 @@ public class UserController {
 
     @Autowired
     private MessagingService messagingService;
+
+    @Autowired
+    private SmsDeliveryService smsDeliveryService;
 
     @Value("${app.volunteer.emails:}")
     private String volunteerEmails;
@@ -662,6 +670,48 @@ public class UserController {
         }
     }
 
+    // Duplicate Account Check Endpoint
+    @PostMapping("/auth/check-duplicate")
+    public ResponseEntity<?> checkDuplicate(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String phoneNumber = request.get("phoneNumber");
+            String username = request.get("username");
+
+            Map<String, Boolean> duplicates = new HashMap<>();
+
+            // Check email duplicate
+            if (email != null && !email.trim().isEmpty()) {
+                Optional<UserFirestore> emailUser = userFirestoreRepository.findByEmail(email.trim());
+                duplicates.put("email", emailUser.isPresent());
+            } else {
+                duplicates.put("email", false);
+            }
+
+            // Check phone duplicate
+            if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
+                Optional<UserFirestore> phoneUser = userFirestoreRepository.findByPhoneNumber(phoneNumber.trim());
+                duplicates.put("phone", phoneUser.isPresent());
+            } else {
+                duplicates.put("phone", false);
+            }
+
+            // Check username duplicate (case-insensitive)
+            if (username != null && !username.trim().isEmpty()) {
+                boolean usernameExists = userFirestoreRepository.existsByUsernameLowercase(username.trim().toLowerCase());
+                duplicates.put("username", usernameExists);
+            } else {
+                duplicates.put("username", false);
+            }
+
+            return ResponseEntity.ok(Map.of("duplicates", duplicates));
+        } catch (Exception e) {
+            System.err.println("Error checking duplicates: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error checking for duplicate accounts"));
+        }
+    }
+
     // Authentication Enhancement
     @PostMapping("/auth/login-identifier")
     public ResponseEntity<?> loginWithIdentifier(@RequestBody Map<String, String> request) {
@@ -1075,6 +1125,184 @@ public class UserController {
 
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error verifying email"));
+        }
+    }
+
+    // Phone Verification Endpoints
+    @PostMapping("/users/send-phone-verification")
+    public ResponseEntity<?> sendPhoneVerification(Authentication authentication) {
+        try {
+            String firebaseUid = authentication.getName();
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
+
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            String phoneNumber = user.getPhoneNumber();
+
+            if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No phone number found for user"));
+            }
+
+            // Check rate limiting - max 3 codes per phone per hour
+            long currentTime = System.currentTimeMillis();
+            long oneHourAgo = currentTime - TimeUnit.HOURS.toMillis(1);
+
+            // Query recent verification attempts
+            try {
+                var recentAttemptsQuery = db.collection("phoneVerificationCodes")
+                    .whereEqualTo("phoneNumber", phoneNumber)
+                    .whereGreaterThan("createdAt", oneHourAgo);
+
+                var recentAttempts = recentAttemptsQuery.get().get();
+                if (recentAttempts.size() >= 3) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Too many verification attempts. Please try again later."));
+                }
+            } catch (Exception e) {
+                System.err.println("Error checking rate limit: " + e.getMessage());
+            }
+
+            // Generate 6-digit code
+            SecureRandom random = new SecureRandom();
+            String code = String.format("%06d", random.nextInt(1000000));
+
+            // Store verification code in Firestore
+            long expiresAt = currentTime + TimeUnit.MINUTES.toMillis(10); // 10 minutes
+            Map<String, Object> verificationData = new HashMap<>();
+            verificationData.put("userId", firebaseUid);
+            verificationData.put("code", code);
+            verificationData.put("phoneNumber", phoneNumber);
+            verificationData.put("expiresAt", expiresAt);
+            verificationData.put("attempts", 0);
+            verificationData.put("createdAt", currentTime);
+
+            // Save to Firestore
+            db.collection("phoneVerificationCodes").add(verificationData).get();
+
+            // Send SMS
+            String message = "Your Kids in Motion verification code is: " + code + ". Valid for 10 minutes.";
+            boolean smsSent = smsDeliveryService.sendSms(phoneNumber, message);
+
+            if (!smsSent) {
+                return ResponseEntity.internalServerError().body(Map.of("error", "Failed to send verification code"));
+            }
+
+            return ResponseEntity.ok(Map.of("message", "Verification code sent successfully"));
+
+        } catch (Exception e) {
+            System.err.println("Error sending phone verification: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error sending verification code"));
+        }
+    }
+
+    @PostMapping("/users/verify-phone")
+    public ResponseEntity<?> verifyPhoneCode(@RequestBody Map<String, String> request, Authentication authentication) {
+        try {
+            String firebaseUid = authentication.getName();
+            String inputCode = request.get("code");
+
+            if (inputCode == null || inputCode.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Verification code is required"));
+            }
+
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            long currentTime = System.currentTimeMillis();
+
+            // Find verification record
+            var verificationQuery = db.collection("phoneVerificationCodes")
+                .whereEqualTo("userId", firebaseUid)
+                .whereGreaterThan("expiresAt", currentTime)
+                .orderBy("expiresAt", com.google.cloud.firestore.Query.Direction.DESCENDING)
+                .limit(1);
+
+            var verificationDocs = verificationQuery.get().get();
+
+            if (verificationDocs.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No valid verification code found or code expired"));
+            }
+
+            var verificationDoc = verificationDocs.getDocuments().get(0);
+            Map<String, Object> verificationData = verificationDoc.getData();
+
+            String storedCode = (String) verificationData.get("code");
+            Long attempts = (Long) verificationData.get("attempts");
+
+            if (attempts >= 5) {
+                // Delete verification record
+                verificationDoc.getReference().delete();
+                return ResponseEntity.badRequest().body(Map.of("error", "Too many attempts. Please request a new code."));
+            }
+
+            if (!inputCode.equals(storedCode)) {
+                // Increment attempts
+                verificationDoc.getReference().update("attempts", attempts + 1);
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid verification code"));
+            }
+
+            // Code is valid - verify phone and delete verification record
+            user.setPhoneVerified(true);
+            user.setUpdatedTimestamp(currentTime);
+            userFirestoreRepository.save(user);
+
+            // Delete verification record
+            verificationDoc.getReference().delete();
+
+            return ResponseEntity.ok(Map.of("message", "Phone verified successfully"));
+
+        } catch (Exception e) {
+            System.err.println("Error verifying phone: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error verifying phone"));
+        }
+    }
+
+    @PostMapping("/users/{userId}/verify-phone")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> adminVerifyPhone(@PathVariable String userId, Authentication authentication) {
+        try {
+            String adminFirebaseUid = authentication.getName();
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
+
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            long currentTime = System.currentTimeMillis();
+
+            // Update phone verification status
+            user.setPhoneVerified(true);
+            user.setUpdatedTimestamp(currentTime);
+            userFirestoreRepository.save(user);
+
+            // Log admin action
+            Map<String, Object> adminAction = new HashMap<>();
+            adminAction.put("adminUserId", adminFirebaseUid);
+            adminAction.put("targetUserId", userId);
+            adminAction.put("action", "VERIFY_PHONE");
+            adminAction.put("timestamp", currentTime);
+
+            try {
+                db.collection("adminActions").add(adminAction);
+            } catch (Exception e) {
+                System.err.println("Failed to log admin action: " + e.getMessage());
+            }
+
+            // Return updated user profile
+            return ResponseEntity.ok(buildUserProfileResponse(user, userId));
+
+        } catch (Exception e) {
+            System.err.println("Error in admin phone verification: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error verifying phone"));
         }
     }
 

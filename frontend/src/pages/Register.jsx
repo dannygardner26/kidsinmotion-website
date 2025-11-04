@@ -38,7 +38,7 @@ const Register = () => {
 
     setUsernameStatus('checking');
     try {
-      const response = await apiService.validateUsername(username);
+      const response = await apiService.validateUsername(username.toLowerCase());
       setUsernameStatus(response.available ? 'available' : 'taken');
     } catch (error) {
       console.error('Username validation error:', error);
@@ -134,7 +134,52 @@ const Register = () => {
     setError(null);
 
     try {
-        // 1. Create user in Firebase Auth
+        // 1. Check for duplicate accounts before creating Firebase user
+        const duplicateResponse = await fetch(`${process.env.REACT_APP_API_URL}/auth/check-duplicate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            phoneNumber: formData.phoneNumber,
+            username: formData.username.toLowerCase()
+          })
+        });
+
+        if (!duplicateResponse.ok) {
+          throw new Error('Failed to check for duplicate accounts');
+        }
+
+        const duplicateData = await duplicateResponse.json();
+        const duplicates = duplicateData.duplicates;
+
+        // Check if any duplicates exist
+        if (duplicates.email || duplicates.phone || duplicates.username) {
+          let errorMessage = 'An account already exists with this ';
+          const duplicateFields = [];
+
+          if (duplicates.email) duplicateFields.push('email');
+          if (duplicates.phone) duplicateFields.push('phone number');
+          if (duplicates.username) duplicateFields.push('username');
+
+          errorMessage += duplicateFields.join(' and ');
+          errorMessage += '. Please ';
+
+          if (duplicates.email || duplicates.phone) {
+            errorMessage += 'log in instead';
+          } else {
+            errorMessage += 'choose a different ' + duplicateFields.join(' and ');
+          }
+
+          errorMessage += '.';
+
+          setError(errorMessage);
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Create user in Firebase Auth
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         const user = userCredential.user;
         console.log("Firebase user created:", user);
