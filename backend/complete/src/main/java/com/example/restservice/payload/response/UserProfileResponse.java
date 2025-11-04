@@ -15,6 +15,7 @@ public class UserProfileResponse {
     private String portfolioLink;
     private Boolean emailVerified;
     private Boolean phoneVerified;
+    private Boolean hasPassword;
 
     public UserProfileResponse(Long id, String email, List<String> roles) {
         this.id = id;
@@ -126,6 +127,14 @@ public class UserProfileResponse {
 
     public void setPhoneVerified(Boolean phoneVerified) {
         this.phoneVerified = phoneVerified;
+    }
+
+    public Boolean getHasPassword() {
+        return hasPassword;
+    }
+
+    public void setHasPassword(Boolean hasPassword) {
+        this.hasPassword = hasPassword;
     }
 
     public boolean isVerified() {

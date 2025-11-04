@@ -463,7 +463,7 @@ const Login = () => {
                     id="resetEmail"
                     value={resetEmail}
                     onChange={(e) => setResetEmail(e.target.value)}
-                    placeholder={email || "Enter your email address"}
+                    placeholder="Enter your email address"
                     required
                     style={{
                       width: '100%',

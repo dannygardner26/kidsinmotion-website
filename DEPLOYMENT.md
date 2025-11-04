@@ -106,6 +106,142 @@ REACT_APP_FIREBASE_PROJECT_ID=your-project-id
    - Go to Storage → Get Started
    - Set up security rules for public read access to images
 
+### Firebase Storage CORS Configuration
+
+To resolve CORS issues with logo images and other assets served from Firebase Storage, you need to configure CORS rules.
+
+**Steps to configure CORS:**
+
+1. **Install Google Cloud SDK** (if not already installed):
+   - Download from: https://cloud.google.com/sdk/docs/install
+   - Follow installation instructions for your platform
+
+2. **Authenticate with Google Cloud:**
+   ```bash
+   gcloud auth login
+   gcloud config set project kids-in-motion-website-b1c09
+   ```
+
+3. **Deploy CORS configuration:**
+   ```bash
+   gsutil cors set cors.json gs://kids-in-motion-website-b1c09.appspot.com
+   ```
+
+4. **Verify CORS configuration:**
+   ```bash
+   gsutil cors get gs://kids-in-motion-website-b1c09.appspot.com
+   ```
+
+**Troubleshooting CORS issues:**
+- Ensure all your frontend domains are listed in the `cors.json` file
+- Wait 5-10 minutes for CORS changes to propagate
+- Clear browser cache and test again
+- Check browser console for specific CORS error messages
+- Verify Firebase Storage bucket name matches your project
+
+**Common issues:**
+- Missing trailing slash in bucket URL
+- Incorrect project ID in bucket name
+- Frontend domain not matching exactly (include/exclude www)
+- Using HTTP instead of HTTPS in production
+
+### Twilio SMS Configuration
+
+The application supports phone number verification via SMS using Twilio. This feature is optional but recommended for enhanced security.
+
+**Prerequisites:**
+1. **Create a Twilio Account:**
+   - Sign up at https://www.twilio.com/
+   - Verify your account and phone number
+   - Note your Account SID and Auth Token from the Console Dashboard
+
+2. **Obtain a Twilio Phone Number:**
+   - Go to Phone Numbers → Manage → Buy a number
+   - Select a phone number capable of SMS (usually US numbers work best)
+   - Note the phone number in E.164 format (e.g., +15551234567)
+
+**Environment Variables Setup:**
+
+**For Cloud Run/Production:**
+```bash
+# Enable SMS functionality
+SMS_ENABLED=true
+
+# Twilio credentials (store these in Google Secret Manager for Cloud Run)
+TWILIO_ACCOUNT_SID=your_account_sid_from_twilio_console
+TWILIO_AUTH_TOKEN=your_auth_token_from_twilio_console
+TWILIO_FROM_NUMBER=+15551234567  # Your Twilio phone number in E.164 format
+```
+
+**For Local Development:**
+Add to your `application.properties`:
+```properties
+# SMS Configuration
+app.messaging.sms.enabled=true
+twilio.account-sid=${TWILIO_ACCOUNT_SID:your_account_sid}
+twilio.auth-token=${TWILIO_AUTH_TOKEN:your_auth_token}
+twilio.from-number=${TWILIO_FROM_NUMBER:+15551234567}
+```
+
+**Cloud Run Secret Manager Setup:**
+```bash
+# Store Twilio credentials as secrets
+gcloud secrets create twilio-account-sid --data-file=- <<< "your_account_sid"
+gcloud secrets create twilio-auth-token --data-file=- <<< "your_auth_token"
+gcloud secrets create twilio-from-number --data-file=- <<< "+15551234567"
+
+# Update Cloud Run service to use secrets
+gcloud run services update kidsinmotion-website \
+  --update-env-vars SMS_ENABLED=true \
+  --update-secrets TWILIO_ACCOUNT_SID=twilio-account-sid:latest \
+  --update-secrets TWILIO_AUTH_TOKEN=twilio-auth-token:latest \
+  --update-secrets TWILIO_FROM_NUMBER=twilio-from-number:latest \
+  --region us-east4
+```
+
+**Testing SMS Delivery:**
+1. **Test via Application:**
+   - Register or login as a user
+   - Go to Account Details page
+   - Enter a phone number
+   - Try the phone verification flow
+
+2. **Check Twilio Console:**
+   - Go to Twilio Console → Messaging → Logs
+   - Verify SMS messages are being sent successfully
+   - Check for any error messages or delivery failures
+
+**Troubleshooting Common Issues:**
+
+1. **SMS not sending:**
+   - Verify TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN are correct
+   - Check Twilio Console for error logs
+   - Ensure your Twilio account is not in trial mode for production use
+   - Verify the FROM number is a valid Twilio phone number
+
+2. **Phone number format issues:**
+   - Ensure phone numbers are in E.164 format (+1XXXXXXXXXX for US)
+   - The application normalizes US numbers automatically
+   - International numbers should include proper country codes
+
+3. **Rate limiting:**
+   - Twilio has rate limits on SMS sending
+   - The application limits users to 3 verification codes per hour
+   - Consider implementing exponential backoff for failed attempts
+
+**Security Notes:**
+- Never commit Twilio credentials to version control
+- Use environment variables or secret management systems
+- Monitor Twilio usage to prevent abuse
+- Consider implementing additional rate limiting for production
+- Review Twilio's security best practices documentation
+
+**Cost Considerations:**
+- SMS messages cost approximately $0.0075 per message in the US
+- Monitor usage in Twilio Console to track costs
+- Consider setting up billing alerts in Twilio
+- International SMS rates vary significantly
+
 ### Database Setup
 
 **For Production (PostgreSQL):**

@@ -9,6 +9,7 @@ import com.example.restservice.security.FirebaseAuthService;
 import com.example.restservice.service.MessagingService;
 import com.example.restservice.service.SmsDeliveryService;
 import com.google.firebase.auth.UserRecord;
+import com.google.firebase.auth.UserInfo;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.DocumentReference;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -400,6 +401,54 @@ public class UserController {
         }
     }
 
+    @PostMapping("/auth/set-password")
+    public ResponseEntity<?> setUserPassword(HttpServletRequest request, @RequestBody Map<String, String> requestBody) {
+        try {
+            String firebaseUid = (String) request.getAttribute("firebaseUid");
+
+            if (firebaseUid == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Missing Firebase authentication data"));
+            }
+
+            String password = requestBody.get("password");
+            if (password == null || password.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Password is required"));
+            }
+
+            if (password.length() < 6) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Password must be at least 6 characters long"));
+            }
+
+            try {
+                // Use Firebase Admin SDK to update the user's password
+                firebaseAuthService.setUserPassword(firebaseUid, password);
+
+                return ResponseEntity.ok(Map.of("message", "Password set successfully"));
+
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Failed to set password: " + e.getMessage()));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to set password: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/auth/sms-availability")
+    public ResponseEntity<?> getSmsAvailability() {
+        try {
+            boolean smsEnabled = smsDeliveryService.isEnabled();
+
+            return ResponseEntity.ok(Map.of(
+                "smsEnabled", smsEnabled,
+                "message", smsEnabled ? "SMS verification is available" : "SMS verification is not configured"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to check SMS availability: " + e.getMessage()));
+        }
+    }
+
     @GetMapping("/users/all")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllUsers() {
@@ -426,7 +475,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateUserAccount(@PathVariable String userId, @RequestBody Map<String, Object> updates) {
         try {
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findById(userId);
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
 
             if (userOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
@@ -472,7 +521,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid user type"));
             }
 
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findById(userId);
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
             if (userOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
@@ -584,13 +633,23 @@ public class UserController {
         response.setTeams(user.getTeams());
         response.setPhoneNumber(user.getPhoneNumber());
 
-        // Get verification status from Firebase and Firestore
+        // Get verification status and password status from Firebase
         boolean emailVerified = false;
         boolean phoneVerified = user.getPhoneVerified() != null ? user.getPhoneVerified() : false;
+        boolean hasPassword = false;
 
         try {
             UserRecord firebaseUser = firebaseAuthService.getUserRecord(firebaseUid);
             emailVerified = firebaseUser.isEmailVerified();
+
+            // Check if user has password provider
+            UserInfo[] providerData = firebaseUser.getProviderData();
+            for (UserInfo provider : providerData) {
+                if ("password".equals(provider.getProviderId())) {
+                    hasPassword = true;
+                    break;
+                }
+            }
         } catch (Exception e) {
             // Log error but don't fail the request
             System.err.println("Failed to get Firebase user verification status: " + e.getMessage());
@@ -598,6 +657,7 @@ public class UserController {
 
         response.setEmailVerified(emailVerified);
         response.setPhoneVerified(phoneVerified);
+        response.setHasPassword(hasPassword);
 
         return response;
     }
@@ -833,6 +893,7 @@ public class UserController {
             Map<String, Object> profileData = new HashMap<>();
 
             // Basic info always available
+            profileData.put("id", targetUser.getId()); // Firestore document ID
             profileData.put("firebaseUid", targetUser.getFirebaseUid());
             profileData.put("firstName", targetUser.getFirstName());
             profileData.put("lastName", targetUser.getLastName());
@@ -852,6 +913,23 @@ public class UserController {
                 profileData.put("phoneVerified", targetUser.getPhoneVerified());
                 profileData.put("createdTimestamp", targetUser.getCreatedTimestamp());
                 profileData.put("lastLoginAt", targetUser.getLastLoginAt());
+
+                // Add hasPassword field for OAuth detection
+                boolean hasPassword = false;
+                try {
+                    UserRecord firebaseUser = firebaseAuthService.getUserRecord(targetUser.getFirebaseUid());
+                    UserInfo[] providerData = firebaseUser.getProviderData();
+                    for (UserInfo provider : providerData) {
+                        if ("password".equals(provider.getProviderId())) {
+                            hasPassword = true;
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log error but don't fail the request
+                    System.err.println("Failed to get Firebase user provider info: " + e.getMessage());
+                }
+                profileData.put("hasPassword", hasPassword);
 
                 if (isAdmin) {
                     profileData.put("isBanned", targetUser.getIsBanned());
@@ -988,7 +1066,7 @@ public class UserController {
                 return ResponseEntity.status(403).body(Map.of("error", "Admin access required"));
             }
 
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findById(userId);
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
             if (!userOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }
@@ -1062,7 +1140,7 @@ public class UserController {
                 return ResponseEntity.status(403).body(Map.of("error", "Admin access required"));
             }
 
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findById(userId);
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
             if (!userOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }
@@ -1103,7 +1181,7 @@ public class UserController {
                 return ResponseEntity.status(403).body(Map.of("error", "Admin access required"));
             }
 
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findById(userId);
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
             if (!userOpt.isPresent()) {
                 return ResponseEntity.notFound().build();
             }

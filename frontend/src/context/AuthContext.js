@@ -6,7 +6,7 @@ import { apiService } from '../services/api';
 const AuthContext = createContext();
 
 // Utility function to compute if profile completion is needed
-const computeNeedsProfileCompletion = (profile) => {
+const computeNeedsProfileCompletion = (profile, user = null) => {
   // Admin accounts are exempt from profile completion requirements
   if (profile?.userType === 'ADMIN') {
     if (process.env.NODE_ENV !== 'production') {
@@ -32,11 +32,22 @@ const computeNeedsProfileCompletion = (profile) => {
     return true;
   }
 
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('Profile is complete:', profile);
+  // Check if OAuth user needs password setup
+  const isOAuthUser = !profile?.hasPassword; // This would need to be added to the API response
+  if (isOAuthUser && process.env.NODE_ENV !== 'production') {
+    console.log('OAuth user needs password setup');
   }
 
-  return false;
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Profile completion check:', {
+      hasRequiredFields,
+      hasContact,
+      isOAuthUser,
+      needsCompletion: isOAuthUser
+    });
+  }
+
+  return isOAuthUser;
 };
 
 export const useAuth = () => {
@@ -80,44 +91,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // For Google OAuth, check if user exists first
-        if (isGoogleOAuth) {
-          try {
-            await apiService.checkUser();
-            // User exists, proceed with sync
-          } catch (error) {
-            if (process.env.NODE_ENV !== 'production') {
-              console.log("checkUser error:", error);
-            }
-            // Check if it's a 404 response with user info
-            if (error.response && error.response.status === 404) {
-              let userInfo = null;
-              try {
-                userInfo = error.response.data;
-              } catch (parseError) {
-                if (process.env.NODE_ENV !== 'production') {
-                  console.warn("Could not parse user info from error response");
-                }
-              }
-
-              if (userInfo && userInfo.firstName) {
-                // Store user info for registration pre-fill
-                localStorage.setItem('pendingRegistration', JSON.stringify({
-                  firstName: userInfo.firstName,
-                  lastName: userInfo.lastName,
-                  email: userInfo.email,
-                  fromGoogleOAuth: true
-                }));
-              }
-              // Redirect to complete profile for OAuth users
-              window.location.href = '/complete-profile';
-              return;
-            }
-            throw error;
-          }
-        }
-
-        // Sync user with backend
+        // Sync user with backend (creates/initializes user if needed)
         await apiService.syncUser();
 
         // Fetch user profile from backend
@@ -134,8 +108,34 @@ export const AuthProvider = ({ children }) => {
 
         setUserProfile(profile);
 
+        // For Google OAuth, redirect to profile completion after backend sync
+        if (isGoogleOAuth && profile.username) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('Redirecting OAuth user to profile completion:', profile.username);
+          }
+          window.location.href = `/account/${profile.username}?complete=true`;
+          return;
+        }
+
         // Check if profile completion is needed
-        setNeedsProfileCompletion(computeNeedsProfileCompletion(profile));
+        const needsCompletion = computeNeedsProfileCompletion(profile);
+        setNeedsProfileCompletion(needsCompletion);
+
+        // Redirect to profile completion for users who need it
+        if (needsCompletion && profile.username && !isGoogleOAuth) {
+          // Only redirect if not already on profile completion page
+          const currentPath = window.location.pathname;
+          const accountPath = `/account/${profile.username}`;
+
+          if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true')) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('Redirecting to profile completion:', accountPath);
+            }
+            setTimeout(() => {
+              window.location.href = `${accountPath}?complete=true`;
+            }, 1000); // Small delay to allow UI to load
+          }
+        }
 
         // Update verification status
         const emailVerified = user.emailVerified;

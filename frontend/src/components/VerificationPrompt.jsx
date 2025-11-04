@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
 
 const VerificationPrompt = ({
   isEmailVerified,
@@ -27,6 +28,22 @@ const VerificationPrompt = ({
   const [verifyingPhoneCode, setVerifyingPhoneCode] = useState(false);
   const [phoneVerificationError, setPhoneVerificationError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [smsAvailable, setSmsAvailable] = useState(true); // Default to true to avoid hiding until checked
+
+  // Check SMS availability on component mount
+  useEffect(() => {
+    const checkSmsAvailability = async () => {
+      try {
+        const response = await apiService.getSmsAvailability();
+        setSmsAvailable(response.smsEnabled);
+      } catch (error) {
+        console.warn('Failed to check SMS availability:', error);
+        setSmsAvailable(false); // Assume not available if check fails
+      }
+    };
+
+    checkSmsAvailability();
+  }, []);
 
   const handleSendEmailVerification = async () => {
     setSendingEmailVerification(true);
@@ -173,7 +190,7 @@ const VerificationPrompt = ({
       )}
 
       {/* Phone Verification Section */}
-      {!isPhoneVerified && userPhone && (
+      {!isPhoneVerified && userPhone && smsAvailable && (
         <div style={{
           backgroundColor: 'rgba(255, 255, 255, 0.8)',
           padding: '15px',
@@ -301,6 +318,28 @@ const VerificationPrompt = ({
         </div>
       )}
 
+      {/* SMS Not Available Message */}
+      {!isPhoneVerified && userPhone && !smsAvailable && (
+        <div style={{
+          backgroundColor: 'rgba(255, 193, 7, 0.1)',
+          padding: '15px',
+          borderRadius: '6px',
+          marginBottom: '15px',
+          border: '1px solid #ffc107'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+            <i className="fas fa-info-circle" style={{ marginRight: '8px', color: '#856404' }}></i>
+            <strong>SMS Verification Unavailable</strong>
+          </div>
+          <p style={{ margin: '5px 0', fontSize: '14px', color: '#856404' }}>
+            Phone verification via SMS is not currently configured. Please use email verification or contact an administrator.
+          </p>
+          <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>
+            Phone: {userPhone} (Cannot verify via SMS)
+          </p>
+        </div>
+      )}
+
       {/* Status Display */}
       <div style={{ marginBottom: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
@@ -315,6 +354,11 @@ const VerificationPrompt = ({
              style={{ marginRight: '8px', color: isPhoneVerified ? '#28a745' : '#dc3545' }}></i>
           <span style={{ fontSize: '14px' }}>
             Phone {isPhoneVerified ? 'Verified' : 'Not Verified'}
+            {userPhone && !smsAvailable && (
+              <span style={{ color: '#856404', marginLeft: '8px' }}>
+                (SMS unavailable)
+              </span>
+            )}
           </span>
         </div>
       </div>

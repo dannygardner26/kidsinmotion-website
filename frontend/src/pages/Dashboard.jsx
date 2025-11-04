@@ -19,7 +19,8 @@ const Dashboard = () => {
     isEmailVerified,
     isPhoneVerified,
     sendEmailVerification,
-    refreshVerificationStatus
+    refreshVerificationStatus,
+    needsProfileCompletion
   } = useAuth();
   const [registeredEvents, setRegisteredEvents] = useState([]);
   const [volunteerEvents, setVolunteerEvents] = useState([]);
@@ -1042,39 +1043,41 @@ const Dashboard = () => {
       )}
 
       {/* Profile Completion Banner */}
-      {userProfile && isProfileIncomplete() && (
+      {needsProfileCompletion && userProfile && (
         <div className="container mt-4">
-          <div className="alert alert-warning alert-dismissible fade show animate-slide-in" role="alert">
+          <div className="alert alert-info alert-dismissible fade show animate-slide-in" role="alert">
             <div className="d-flex align-items-center">
-              <i className="fas fa-exclamation-triangle text-warning me-3" style={{ fontSize: '1.5rem' }}></i>
+              <i className="fas fa-user-cog text-info me-3" style={{ fontSize: '1.5rem' }}></i>
               <div className="flex-grow-1">
-                <h5 className="alert-heading mb-1">Complete Your Profile</h5>
+                <h5 className="alert-heading mb-1">Complete Your Account Setup</h5>
                 <p className="mb-2">
-                  Complete your profile to unlock all features. Missing: {getMissingFields().join(', ')}
+                  {userProfile?.hasPassword === false
+                    ? 'Set up your password and complete your profile information to access all features.'
+                    : 'Complete your account setup to access all features.'
+                  }
+                  {getMissingFields().length > 0 && ` Missing: ${getMissingFields().join(', ')}`}
                 </p>
                 <Link
-                  to={userProfile?.username ? `/edit/${userProfile.username}` : "/dashboard"}
-                  className="btn btn-warning btn-sm me-2"
+                  to={userProfile?.username ? `/account/${userProfile.username}?edit=true` : "/dashboard"}
+                  className="btn btn-info btn-sm me-2"
                 >
-                  Update Profile
+                  <i className="fas fa-user-edit mr-1"></i>
+                  Complete Profile
                 </Link>
-                {getMissingFields().every(field => !['first name', 'last name', 'username'].includes(field)) && (
-                  <button
-                    type="button"
-                    onClick={handleBannerDismiss}
-                    className="btn btn-outline-secondary btn-sm"
-                  >
-                    Don't show again
-                  </button>
+                {!userProfile?.hasPassword && (
+                  <small className="text-muted d-block mt-1">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    OAuth users: Set up your password for email/password login access
+                  </small>
                 )}
               </div>
               <button
                 type="button"
                 className="btn-close"
                 aria-label="Close"
-                onClick={handleBannerDismiss}
+                onClick={() => setShowProfileBanner(false)}
                 style={{
-                  display: getMissingFields().some(field => ['first name', 'last name', 'username'].includes(field)) ? 'none' : 'block'
+                  display: needsProfileCompletion && !userProfile?.hasPassword ? 'none' : 'block'
                 }}
               ></button>
             </div>
@@ -1101,7 +1104,7 @@ const Dashboard = () => {
                     <button
                       onClick={() => {
                         if (userProfile?.username) {
-                          navigate(`/edit/${userProfile.username}`);
+                          navigate(`/account/${userProfile.username}?edit=true`);
                         } else {
                           navigate('/dashboard');
                         }

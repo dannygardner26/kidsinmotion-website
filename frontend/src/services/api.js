@@ -37,7 +37,7 @@ class ApiService {
   async makeRequest(endpoint, options = {}) {
     try {
       const token = await this.getAuthToken();
-      
+
       const config = {
         method: 'GET',
         headers: {
@@ -55,24 +55,71 @@ class ApiService {
       }
 
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+
+        // Enhanced error message based on status code
+        let userFriendlyMessage = errorData?.message;
+        if (!userFriendlyMessage) {
+          switch (response.status) {
+            case 400:
+              userFriendlyMessage = 'Invalid request. Please check your input and try again.';
+              break;
+            case 401:
+              userFriendlyMessage = 'Authentication failed. Please log in again.';
+              break;
+            case 403:
+              userFriendlyMessage = 'You don\'t have permission to perform this action.';
+              break;
+            case 404:
+              userFriendlyMessage = 'The requested resource was not found.';
+              break;
+            case 409:
+              userFriendlyMessage = 'Conflict occurred. The resource already exists or is in use.';
+              break;
+            case 422:
+              userFriendlyMessage = 'Invalid data provided. Please check your input.';
+              break;
+            case 429:
+              userFriendlyMessage = 'Too many requests. Please wait a moment and try again.';
+              break;
+            case 500:
+              userFriendlyMessage = 'Server error. Please try again later.';
+              break;
+            case 503:
+              userFriendlyMessage = 'Service temporarily unavailable. Please try again later.';
+              break;
+            default:
+              userFriendlyMessage = `Request failed with status ${response.status}`;
+          }
+        }
+
+        const error = new Error(userFriendlyMessage);
+        error.status = response.status;
+        error.body = errorData;
+        error.url = `${this.baseURL}${endpoint}`;
+        error.originalMessage = errorData?.message;
+        error.isNetworkError = false;
+        throw error;
       }
 
       return await response.json();
     } catch (error) {
+      // Handle network errors and other fetch failures
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        const networkError = new Error('Network error. Please check your internet connection and try again.');
+        networkError.isNetworkError = true;
+        networkError.originalError = error;
+        throw networkError;
+      }
+
       console.error('API request failed:', error);
       throw error;
     }
   }
 
   // Authentication endpoints
-  async checkUser() {
-    return this.makeRequest('/auth/check-user', { method: 'POST' });
-  }
-
   async syncUser() {
     return this.makeRequest('/auth/sync-user', { method: 'POST' });
   }
@@ -86,6 +133,17 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify(profileData),
     });
+  }
+
+  async setUserPassword(password) {
+    return this.makeRequest('/auth/set-password', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  }
+
+  async getSmsAvailability() {
+    return this.makeRequest('/auth/sms-availability');
   }
 
   // DEPRECATED: Network broadcast functionality removed
@@ -117,6 +175,18 @@ class ApiService {
     });
   }
 
+  async banUser(userId, reason, message) {
+    return this.makeRequest(`/users/${userId}/ban`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, message }),
+    });
+  }
+
+  async unbanUser(userId) {
+    return this.makeRequest(`/users/${userId}/unban`, {
+      method: 'POST',
+    });
+  }
 
   async loginWithIdentifier(identifier) {
     // This is a public endpoint that doesn't require authentication
