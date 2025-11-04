@@ -123,7 +123,9 @@
       "Bash(firebase auth:export:*)",
       "Bash(firebase hosting:sites:get:*)",
       "Bash(firebase hosting:sites:create:*)",
-      "Bash(firebase target:apply:*)"
+      "Bash(firebase target:apply:*)",
+      "Bash(start \"C:\\Users\\danny\\Documents\\GitHub\\KidsInMotionJava\\test_verification.html\")",
+      "Bash(npm --version)"
     ],
     "deny": []
   }

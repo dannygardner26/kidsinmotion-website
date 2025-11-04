@@ -119,10 +119,26 @@ class ApiService {
 
 
   async loginWithIdentifier(identifier) {
-    return this.makeRequest('/auth/login-identifier', {
-      method: 'POST',
-      body: JSON.stringify({ identifier }),
-    });
+    // This is a public endpoint that doesn't require authentication
+    try {
+      const response = await fetch(`${this.baseURL}/auth/login-identifier`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identifier }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Login identifier lookup failed:', error);
+      throw error;
+    }
   }
 
   async validateUsername(username) {
