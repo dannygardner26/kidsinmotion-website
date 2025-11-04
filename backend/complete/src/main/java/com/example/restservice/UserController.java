@@ -143,7 +143,7 @@ public class UserController {
 
                 // Try to get user's display name from Firebase Auth
                 try {
-                    UserRecord userRecord = firebaseAuthService.getUser(firebaseUid);
+                    UserRecord userRecord = firebaseAuthService.getUserRecord(firebaseUid);
                     String displayName = userRecord.getDisplayName();
 
                     if (displayName != null && !displayName.trim().isEmpty()) {
