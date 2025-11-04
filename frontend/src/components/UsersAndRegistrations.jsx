@@ -37,11 +37,10 @@ const UsersAndRegistrations = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  // Ban modal state
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [banUser, setBanUser] = useState(null);
-  const [banReason, setBanReason] = useState('');
-  const [banMessage, setBanMessage] = useState('');
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteUser, setDeleteUser] = useState(null);
+  const [deleteReason, setDeleteReason] = useState('');
 
   // Account type change modal state
   const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
@@ -185,11 +184,10 @@ const UsersAndRegistrations = () => {
       setNewAccountType(user.userType || 'PARENT');
       setAccountTypeWarnings([]);
       setShowAccountTypeModal(true);
-    } else if (action === 'ban') {
-      setBanUser(user);
-      setBanReason('');
-      setBanMessage('');
-      setShowBanModal(true);
+    } else if (action === 'delete') {
+      setDeleteUser(user);
+      setDeleteReason('');
+      setShowDeleteModal(true);
     } else {
       setConfirmAction({
         user,
@@ -216,8 +214,7 @@ const UsersAndRegistrations = () => {
   const getActionMessage = (user, action) => {
     const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email;
     switch (action) {
-      case 'ban': return `Are you sure you want to ban ${userName}? They will be immediately logged out and unable to access the system.`;
-      case 'unban': return `Are you sure you want to unban ${userName}? They will regain access to the system.`;
+      case 'delete': return `Are you sure you want to permanently delete ${userName}? This will remove their account, event registrations, and all associated data. This action cannot be undone.`;
       case 'verify': return `Are you sure you want to manually verify ${userName}'s email address?`;
       case 'changeType': return `Are you sure you want to change ${userName}'s account type?`;
       default: return 'Are you sure you want to perform this action?';
@@ -226,8 +223,7 @@ const UsersAndRegistrations = () => {
 
   const getActionButtonText = (action) => {
     switch (action) {
-      case 'ban': return 'Ban User';
-      case 'unban': return 'Unban User';
+      case 'delete': return 'Delete User';
       case 'verify': return 'Verify Email';
       case 'changeType': return 'Change Type';
       default: return 'Confirm';
@@ -236,8 +232,7 @@ const UsersAndRegistrations = () => {
 
   const getActionButtonClass = (action) => {
     switch (action) {
-      case 'ban': return 'btn-danger';
-      case 'unban': return 'btn-success';
+      case 'delete': return 'btn-danger';
       case 'verify': return 'btn-info';
       case 'changeType': return 'btn-warning';
       default: return 'btn-primary';
@@ -253,12 +248,9 @@ const UsersAndRegistrations = () => {
     try {
       let result;
       switch (action) {
-        case 'ban':
+        case 'delete':
           // This will be handled by the modal, not inline
-          result = { message: 'Ban initiated' };
-          break;
-        case 'unban':
-          result = await apiService.unbanUser(user.id);
+          result = { message: 'Delete initiated' };
           break;
         case 'verify':
           result = await apiService.verifyUserEmail(user.id);
@@ -275,10 +267,9 @@ const UsersAndRegistrations = () => {
       setUsers(prevUsers => prevUsers.map(u => {
         if (u.id === user.id) {
           switch (action) {
-            case 'ban':
-              return { ...u, isBanned: true, bannedReason: banReason, bannedAt: Date.now() };
-            case 'unban':
-              return { ...u, isBanned: false, bannedReason: null, bannedAt: null };
+            case 'delete':
+              // User will be removed from the list, this won't actually run
+              return u;
             case 'verify':
               return { ...u, emailVerified: true };
             case 'changeType':
@@ -337,31 +328,28 @@ const UsersAndRegistrations = () => {
     }
   };
 
-  // Ban user handler
-  const handleBanUser = async () => {
-    if (!banUser || !banReason.trim()) return;
+  // Delete user handler
+  const handleDeleteUser = async () => {
+    if (!deleteUser || !deleteReason.trim()) return;
 
-    setActionLoading(prev => ({ ...prev, [banUser.id]: true }));
+    setActionLoading(prev => ({ ...prev, [deleteUser.id]: true }));
 
     try {
-      const result = await apiService.banUser(banUser.id, banReason, banMessage);
+      const result = await apiService.deleteUser(deleteUser.id, deleteReason);
 
-      // Update local state
-      setUsers(prevUsers => prevUsers.map(u =>
-        u.id === banUser.id ? { ...u, isBanned: true, bannedReason: banReason, bannedAt: Date.now() } : u
-      ));
+      // Remove user from local state
+      setUsers(prevUsers => prevUsers.filter(u => u.id !== deleteUser.id));
 
-      showNotification(result.message || 'User banned successfully', 'success');
+      showNotification(result.message || 'User deleted successfully', 'success');
 
-      setShowBanModal(false);
-      setBanUser(null);
-      setBanReason('');
-      setBanMessage('');
+      setShowDeleteModal(false);
+      setDeleteUser(null);
+      setDeleteReason('');
     } catch (error) {
-      console.error('Ban user error:', error);
-      showNotification('Failed to ban user: ' + error.message, 'error');
+      console.error('Delete user error:', error);
+      showNotification('Failed to delete user: ' + error.message, 'error');
     } finally {
-      setActionLoading(prev => ({ ...prev, [banUser.id]: false }));
+      setActionLoading(prev => ({ ...prev, [deleteUser.id]: false }));
     }
   };
 
@@ -445,14 +433,14 @@ const UsersAndRegistrations = () => {
                   {users.map(user => (
                     <tr key={user.id} className={user.isBanned ? 'banned-row' : ''}>
                       <td>
-                        <button
+                        <Link
+                          to={`/edit/${user.username}`}
                           className="user-name-link"
-                          onClick={() => handleViewUserProfile(user)}
-                          title="View full profile"
+                          title="Edit user profile"
                         >
                           {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.name || 'N/A'}
                           {user.isBanned && <span className="banned-badge">(Banned)</span>}
-                        </button>
+                        </Link>
                       </td>
                       <td>{user.email}</td>
                       <td>
@@ -484,36 +472,15 @@ const UsersAndRegistrations = () => {
                             Edit Profile
                           </Link>
 
-                          {!user.emailVerified && (
-                            <button
-                              onClick={() => handleAdminAction(user, 'verify')}
-                              className="btn btn-sm btn-info"
-                              disabled={actionLoading[user.id]}
-                              title="Verify email address"
-                            >
-                              <i className="fas fa-envelope-check"></i>
-                            </button>
-                          )}
 
-                          {user.isBanned ? (
-                            <button
-                              onClick={() => handleAdminAction(user, 'unban')}
-                              className="btn btn-sm btn-success"
-                              disabled={actionLoading[user.id]}
-                              title="Unban user"
-                            >
-                              <i className="fas fa-user-check"></i>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleAdminAction(user, 'ban')}
-                              className="btn btn-sm btn-danger"
-                              disabled={actionLoading[user.id]}
-                              title="Ban user"
-                            >
-                              <i className="fas fa-user-slash"></i>
-                            </button>
-                          )}
+                          <button
+                            onClick={() => handleAdminAction(user, 'delete')}
+                            className="btn btn-sm btn-danger"
+                            disabled={actionLoading[user.id]}
+                            title="Delete user and all associated data"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
 
                           <button
                             onClick={() => handleAdminAction(user, 'changeType')}
@@ -898,13 +865,13 @@ const UsersAndRegistrations = () => {
         </div>
       )}
 
-      {/* Ban User Modal */}
-      {showBanModal && banUser && (
-        <div className="modal-overlay" onClick={() => setShowBanModal(false)}>
+      {/* Delete User Modal */}
+      {showDeleteModal && deleteUser && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Ban User</h3>
-              <button className="modal-close" onClick={() => setShowBanModal(false)}>×</button>
+              <h3>Delete User</h3>
+              <button className="modal-close" onClick={() => setShowDeleteModal(false)}>×</button>
             </div>
             <div className="modal-body">
               <div style={{
@@ -917,72 +884,60 @@ const UsersAndRegistrations = () => {
                 color: '#721c24'
               }}>
                 <i className="fas fa-exclamation-triangle" style={{ marginRight: '8px' }}></i>
-                <strong>Warning:</strong> This will immediately suspend the user's account and log them out.
+                <strong>Warning:</strong> This will permanently delete the user's account, all event registrations, and associated data. This action cannot be undone.
               </div>
 
               <div className="form-group">
                 <label>User:</label>
                 <span>
-                  {banUser.firstName && banUser.lastName
-                    ? `${banUser.firstName} ${banUser.lastName}`
-                    : banUser.email}
+                  {deleteUser.firstName && deleteUser.lastName
+                    ? `${deleteUser.firstName} ${deleteUser.lastName}`
+                    : deleteUser.email}
                 </span>
               </div>
 
               <div className="form-group">
-                <label htmlFor="banReason">Reason for Ban (Required):</label>
+                <label htmlFor="deleteReason">Reason for Deletion (Required):</label>
                 <select
-                  id="banReason"
-                  value={banReason}
-                  onChange={(e) => setBanReason(e.target.value)}
+                  id="deleteReason"
+                  value={deleteReason}
+                  onChange={(e) => setDeleteReason(e.target.value)}
                   className="form-input"
                   required
                 >
                   <option value="">Select a reason...</option>
+                  <option value="User requested account deletion">User requested account deletion</option>
+                  <option value="Duplicate account">Duplicate account</option>
                   <option value="Violation of Terms of Service">Violation of Terms of Service</option>
-                  <option value="Inappropriate Behavior">Inappropriate Behavior</option>
-                  <option value="Spam or Abusive Content">Spam or Abusive Content</option>
-                  <option value="Security Concerns">Security Concerns</option>
-                  <option value="Administrative Decision">Administrative Decision</option>
+                  <option value="Inappropriate behavior">Inappropriate behavior</option>
+                  <option value="Spam or abusive content">Spam or abusive content</option>
+                  <option value="Security concerns">Security concerns</option>
+                  <option value="Data cleanup">Data cleanup</option>
+                  <option value="Administrative decision">Administrative decision</option>
                   <option value="Other">Other</option>
                 </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="banMessage">Additional Message to User (Optional):</label>
-                <textarea
-                  id="banMessage"
-                  value={banMessage}
-                  onChange={(e) => setBanMessage(e.target.value)}
-                  className="form-input"
-                  rows="4"
-                  placeholder="Enter additional information or instructions for the user..."
-                />
-                <small style={{ color: '#6c757d', fontSize: '12px' }}>
-                  This message will be included in the notification sent to the user.
-                </small>
               </div>
             </div>
             <div className="modal-footer">
               <button
-                onClick={() => setShowBanModal(false)}
+                onClick={() => setShowDeleteModal(false)}
                 className="btn btn-secondary"
-                disabled={actionLoading[banUser?.id]}
+                disabled={actionLoading[deleteUser?.id]}
               >
                 Cancel
               </button>
               <button
-                onClick={handleBanUser}
+                onClick={handleDeleteUser}
                 className="btn btn-danger"
-                disabled={actionLoading[banUser?.id] || !banReason.trim()}
+                disabled={actionLoading[deleteUser?.id] || !deleteReason.trim()}
               >
-                {actionLoading[banUser?.id] ? (
+                {actionLoading[deleteUser?.id] ? (
                   <>
                     <i className="fas fa-spinner fa-spin mr-1"></i>
-                    Banning...
+                    Deleting...
                   </>
                 ) : (
-                  'Ban User'
+                  'Delete User'
                 )}
               </button>
             </div>

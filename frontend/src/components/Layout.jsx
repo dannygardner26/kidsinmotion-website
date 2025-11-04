@@ -100,7 +100,11 @@ const Layout = ({ children }) => {
   const handleManageProfile = () => {
     setMenuOpen(false);
     setDropdownOpen(false);
-    navigate('/dashboard');
+    if (userProfile?.username) {
+      navigate(`/edit/${userProfile.username}`);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const handleLogout = async () => {

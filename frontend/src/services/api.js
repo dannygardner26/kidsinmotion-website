@@ -97,16 +97,10 @@ class ApiService {
   }
 
   // Admin user management endpoints
-  async banUser(userId, reason, message = '') {
-    return this.makeRequest(`/users/${userId}/ban`, {
-      method: 'POST',
-      body: JSON.stringify({ reason, message }),
-    });
-  }
-
-  async unbanUser(userId) {
-    return this.makeRequest(`/users/${userId}/unban`, {
-      method: 'POST',
+  async deleteUser(userId, reason) {
+    return this.makeRequest(`/users/${userId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
     });
   }
 

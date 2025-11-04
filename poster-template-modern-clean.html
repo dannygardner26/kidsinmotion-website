@@ -207,14 +207,53 @@
             margin-top: 10px;
             border-radius: 2px;
         }
+
+        .download-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .download-btn {
+            background: #2f506a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(47, 80, 106, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #1e3548;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(47, 80, 106, 0.4);
+        }
+
+        @media print {
+            .download-controls {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Download Controls -->
+    <div class="download-controls">
+        <button class="download-btn" onclick="downloadPoster()">
+            <i class="fas fa-download"></i> Download Poster
+        </button>
+    </div>
+
     <div class="event-poster">
         <!-- Header with logo -->
         <div class="poster-header">
             <div class="poster-logo">
-                <img src="https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/realKIMlogo-transparent.png?alt=media" alt="Kids in Motion Logo">
+                <img src="https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/realKIMlogo-transparent.png?alt=media" alt="Kids in Motion Logo" onerror="this.style.display='none'; this.parentNode.innerHTML='<div style=&quot;color: #2f506a; font-weight: bold; text-align: center; font-size: 12px;&quot;>KIDS IN<br>MOTION</div>';">
             </div>
             <div class="header-text">
                 <h1>KIDS IN MOTION</h1>
@@ -291,5 +330,44 @@
             <div class="footer-decoration"></div>
         </div>
     </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        async function downloadPoster() {
+            const poster = document.querySelector('.event-poster');
+            const downloadBtn = document.querySelector('.download-controls');
+
+            // Hide download button temporarily
+            downloadBtn.style.display = 'none';
+
+            try {
+                const canvas = await html2canvas(poster, {
+                    width: 600,
+                    height: 600,
+                    scale: 2, // Higher quality
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#f8fafc'
+                });
+
+                // Create download link
+                const link = document.createElement('a');
+                link.download = 'kids-in-motion-poster.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('Error generating poster:', error);
+                alert('Error downloading poster. Please try again or use your browser\'s print function.');
+            } finally {
+                // Show download button again
+                downloadBtn.style.display = 'block';
+            }
+        }
+
+        // Alternative print function
+        function printPoster() {
+            window.print();
+        }
+    </script>
 </body>
 </html>
