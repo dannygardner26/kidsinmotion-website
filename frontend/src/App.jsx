@@ -27,8 +27,7 @@ const EventOverview = lazy(() => import('./pages/EventOverview'));
 const VolunteerEventView = lazy(() => import('./pages/VolunteerEventView'));
 const ParentEventView = lazy(() => import('./pages/ParentEventView'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
-const CompleteProfile = lazy(() => import('./pages/CompleteProfile'));
-const ProfileEdit = lazy(() => import('./pages/ProfileEdit'));
+const AccountDetails = lazy(() => import('./pages/AccountDetails'));
 
 // CSS
 import './css/app.css';
@@ -235,22 +234,12 @@ const App = () => {
                   }
                 />
 
-                {/* Complete Profile Route */}
+                {/* Account Details Route */}
                 <Route
-                  path="/complete-profile"
+                  path="/account/:username"
                   element={
                     <ProtectedRoute>
-                      <CompleteProfile />
-                    </ProtectedRoute>
-                  }
-                />
-
-                {/* Profile Edit Route */}
-                <Route
-                  path="/edit/:username"
-                  element={
-                    <ProtectedRoute>
-                      <ProfileEdit />
+                      <AccountDetails />
                     </ProtectedRoute>
                   }
                 />

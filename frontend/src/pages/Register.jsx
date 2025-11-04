@@ -135,23 +135,11 @@ const Register = () => {
 
     try {
         // 1. Check for duplicate accounts before creating Firebase user
-        const duplicateResponse = await fetch(`${process.env.REACT_APP_API_URL}/auth/check-duplicate`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            phoneNumber: formData.phoneNumber,
-            username: formData.username.toLowerCase()
-          })
-        });
-
-        if (!duplicateResponse.ok) {
-          throw new Error('Failed to check for duplicate accounts');
-        }
-
-        const duplicateData = await duplicateResponse.json();
+        const duplicateData = await apiService.checkDuplicate(
+          formData.email,
+          formData.phoneNumber,
+          formData.username.toLowerCase()
+        );
         const duplicates = duplicateData.duplicates;
 
         // Check if any duplicates exist

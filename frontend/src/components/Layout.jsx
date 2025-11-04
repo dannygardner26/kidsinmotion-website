@@ -97,11 +97,11 @@ const Layout = ({ children }) => {
     };
   }, [location.pathname, isTransparentHeaderPage]); // Add isTransparentHeaderPage dependency
 
-  const handleManageProfile = () => {
+  const handleAccountDetails = () => {
     setMenuOpen(false);
     setDropdownOpen(false);
     if (userProfile?.username) {
-      navigate(`/edit/${userProfile.username}`);
+      navigate(`/account/${userProfile.username}`);
     } else {
       navigate('/dashboard');
     }
@@ -213,24 +213,8 @@ const Layout = ({ children }) => {
                         <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`}></i>
                       </button>
                       <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            closeMobileMenu();
-                            setDropdownOpen(false);
-                            if (userProfile?.username) {
-                              navigate(`/profile/${userProfile.username}`);
-                            } else {
-                              navigate('/dashboard');
-                            }
-                          }}
-                          className={`dropdown-item ${!userProfile?.username ? 'disabled' : ''}`}
-                          disabled={!userProfile?.username}
-                        >
-                          <i className="fas fa-user mr-2"></i>View Profile
-                        </button>
-                        <button type="button" onClick={handleManageProfile} className="dropdown-item">
-                          <i className="fas fa-user-edit mr-2"></i>Manage Profile
+                        <button type="button" onClick={handleAccountDetails} className="dropdown-item">
+                          <i className="fas fa-user mr-2"></i>Account Details
                         </button>
                         <div className="dropdown-divider"></div>
                         <button type="button" onClick={handleLogout} className="dropdown-item">

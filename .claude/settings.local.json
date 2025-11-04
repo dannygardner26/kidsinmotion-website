@@ -125,7 +125,9 @@
       "Bash(firebase hosting:sites:create:*)",
       "Bash(firebase target:apply:*)",
       "Bash(start \"C:\\Users\\danny\\Documents\\GitHub\\KidsInMotionJava\\test_verification.html\")",
-      "Bash(npm --version)"
+      "Bash(npm --version)",
+      "Bash(gcloud secrets versions add:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

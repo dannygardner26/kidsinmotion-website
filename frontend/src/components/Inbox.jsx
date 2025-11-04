@@ -6,7 +6,7 @@ import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, needsProfileCompletion } = useAuth();
   const [messages, setMessages] = useState([]);
   const [firestoreMessages, setFirestoreMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -150,11 +150,37 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
                        userProfile?.accountType === 'volunteer' ||
                        userProfile?.userType === 'VOLUNTEER';
 
-    const filteredMessages = newMessages.filter(msg => !(msg.type === 'welcome' || (msg.type === 'volunteer' && msg.title !== 'Apply for a Team!')));
+    // Filter out old messages and profile completion messages (regenerate if needed)
+    const filteredMessages = newMessages.filter(msg => !(msg.type === 'welcome' || msg.type === 'profile-completion' || (msg.type === 'volunteer' && msg.title !== 'Apply for a Team!')));
     if (filteredMessages.length !== newMessages.length) {
       didMutate = true;
     }
     newMessages = filteredMessages;
+
+    // Add profile completion message if needed
+    if (needsProfileCompletion && userProfile) {
+      const hasProfileCompletionMessage = newMessages.some(msg => msg.type === 'profile-completion');
+
+      if (!hasProfileCompletionMessage) {
+        const profileCompletionMessage = {
+          id: `profile_completion_${Date.now()}`,
+          type: 'profile-completion',
+          title: 'Complete Your Account Setup',
+          message: userProfile?.hasPassword === false
+            ? 'Finish setting up your account by adding your profile information and setting a password for email/password login.'
+            : 'Complete your account setup to access all features of Kids in Motion.',
+          actionLink: userProfile?.username ? `/account/${userProfile.username}?edit=true` : '/dashboard',
+          actionText: 'Complete Profile',
+          from: 'Kids in Motion Team',
+          timestamp: new Date().toISOString(),
+          read: false,
+          isSystem: true,
+          priority: 'high'
+        };
+        newMessages.unshift(profileCompletionMessage);
+        didMutate = true;
+      }
+    }
 
     const hasWelcomeMessage = newMessages.some(msg => msg.type === 'welcome');
 
