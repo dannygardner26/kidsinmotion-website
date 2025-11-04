@@ -839,6 +839,18 @@ public class UserController {
             }
             if (updates.containsKey("username")) {
                 String newUsername = (String) updates.get("username");
+
+                // Validate username format and length
+                if (newUsername == null || newUsername.trim().isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Username cannot be null or empty"));
+                }
+                if (newUsername.length() < 3) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Username must be at least 3 characters long"));
+                }
+                if (!newUsername.matches("^[a-zA-Z0-9_-]+$")) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Username can only contain letters, numbers, hyphens, and underscores"));
+                }
+
                 // Check if username is available (unless it's the same)
                 if (!newUsername.equalsIgnoreCase(targetUser.getUsername())) {
                     if (userFirestoreRepository.existsByUsernameLowercase(newUsername.toLowerCase())) {
@@ -876,7 +888,9 @@ public class UserController {
                     targetUser.setIsBanned((Boolean) updates.get("isBanned"));
                 }
                 if (updates.containsKey("isEmailVerified")) {
-                    targetUser.setIsEmailVerified((Boolean) updates.get("isEmailVerified"));
+                    Boolean emailVerified = (Boolean) updates.get("isEmailVerified");
+                    targetUser.setEmailVerified(emailVerified);
+                    targetUser.setIsEmailVerified(emailVerified); // Maintain backward compatibility
                 }
             }
 

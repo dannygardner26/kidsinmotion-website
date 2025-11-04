@@ -150,13 +150,20 @@ const ProfileEdit = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Required fields
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    // Check if admin is editing another user's profile
+    const isAdminEditingOther = isAdmin && !isSelfEdit;
+
+    // Required fields - relaxed for admin editing others
+    if (!isAdminEditingOther && !formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!isAdminEditingOther && !formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.username.trim()) newErrors.username = 'Username is required';
 
-    // Require either email or phone number
-    if (!formData.email.trim() && !formData.phoneNumber.trim()) {
+    // Require either email or phone number (bypass for admin editing others when no contact changes)
+    const isAdminEditingWithoutContactChanges = (isAdmin && !isSelfEdit) &&
+      (formData.email === profileData?.email) &&
+      (formData.phoneNumber === profileData?.phoneNumber);
+
+    if (!isAdminEditingWithoutContactChanges && !formData.email.trim() && !formData.phoneNumber.trim()) {
       newErrors.email = 'Either email or phone number is required';
       newErrors.phoneNumber = 'Either email or phone number is required';
     }
@@ -208,6 +215,11 @@ const ProfileEdit = () => {
         emergencyContactRelationship: formData.emergencyContactRelationship,
         profileVisibility: formData.profileVisibility
       };
+
+      // Include email for admin editing others when changed
+      if (isAdmin && !isSelfEdit && formData.email !== profileData.email) {
+        updateData.email = formData.email;
+      }
 
       // Update basic profile fields
       await apiService.updateUserProfileByUsername(username, updateData);
@@ -336,7 +348,7 @@ const ProfileEdit = () => {
                 <div className="row">
                   <div className="col-md-6">
                     <div className="form-group">
-                      <label htmlFor="firstName">First Name *</label>
+                      <label htmlFor="firstName">First Name{(!isAdmin || isSelfEdit) ? ' *' : ''}</label>
                       <input
                         type="text"
                         className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
@@ -344,14 +356,14 @@ const ProfileEdit = () => {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        required
+                        required={!isAdmin || isSelfEdit}
                       />
                       {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
                     </div>
                   </div>
                   <div className="col-md-6">
                     <div className="form-group">
-                      <label htmlFor="lastName">Last Name *</label>
+                      <label htmlFor="lastName">Last Name{(!isAdmin || isSelfEdit) ? ' *' : ''}</label>
                       <input
                         type="text"
                         className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
@@ -359,7 +371,7 @@ const ProfileEdit = () => {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        required
+                        required={!isAdmin || isSelfEdit}
                       />
                       {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
                     </div>
@@ -604,75 +616,6 @@ const ProfileEdit = () => {
         </div>
       </div>
 
-      <style>{`
-        .section-header {
-          margin: 2rem 0 1rem 0;
-          padding-bottom: 0.5rem;
-          border-bottom: 1px solid #eee;
-        }
-
-        .section-header:first-child {
-          margin-top: 0;
-        }
-
-        .section-header h4 {
-          margin-bottom: 0.25rem;
-          color: var(--primary);
-        }
-
-        .section-header.admin-section h4 {
-          color: #dc3545;
-        }
-
-        .form-group {
-          margin-bottom: 1rem;
-        }
-
-        .form-actions {
-          margin-top: 2rem;
-          padding-top: 1rem;
-          border-top: 1px solid #eee;
-        }
-
-        .input-group-text {
-          width: 40px;
-          justify-content: center;
-        }
-
-        .loading-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 300px;
-        }
-
-        .loading-spinner {
-          width: 50px;
-          height: 50px;
-          border: 3px solid rgba(47, 80, 106, 0.3);
-          border-radius: 50%;
-          border-top-color: var(--primary);
-          animation: spin 1s ease-in-out infinite;
-          margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        .form-check-label.text-danger {
-          font-weight: 500;
-        }
-
-        .admin-section {
-          background-color: #fff5f5;
-          padding: 1rem;
-          border-radius: 8px;
-          border: 1px solid #fed7d7;
-          margin: 2rem 0 1rem 0;
-        }
-      `}</style>
     </div>
   );
 };

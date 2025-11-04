@@ -138,8 +138,10 @@ public class UserFirestore {
         user.setIsBanned(map.get("isBanned") != null ? (Boolean) map.get("isBanned") : false);
         user.setBannedAt((Long) map.get("bannedAt"));
         user.setBannedReason((String) map.get("bannedReason"));
-        user.setEmailVerified(map.get("emailVerified") != null ? (Boolean) map.get("emailVerified") : false);
-        user.setIsEmailVerified(map.get("isEmailVerified") != null ? (Boolean) map.get("isEmailVerified") : false);
+        Boolean emailVerifiedValue = map.get("emailVerified") != null ? (Boolean) map.get("emailVerified") :
+                                     (map.get("isEmailVerified") != null ? (Boolean) map.get("isEmailVerified") : false);
+        user.setEmailVerified(emailVerifiedValue);
+        user.setIsEmailVerified(emailVerifiedValue); // Keep in sync for backward compatibility
         user.setPhoneVerified(map.get("phoneVerified") != null ? (Boolean) map.get("phoneVerified") : false);
         user.setCreatedTimestamp(map.get("createdTimestamp") != null ? (Long) map.get("createdTimestamp") : System.currentTimeMillis());
         user.setUpdatedTimestamp(map.get("updatedTimestamp") != null ? (Long) map.get("updatedTimestamp") : System.currentTimeMillis());

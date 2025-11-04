@@ -203,6 +203,7 @@ export const AuthProvider = ({ children }) => {
               roles: userData.roles || ['ROLE_USER', 'ROLE_ADMIN']
             });
           }
+          setAuthReady(true);
           setLoading(false);
         };
 
@@ -222,8 +223,9 @@ export const AuthProvider = ({ children }) => {
       if (process.env.NODE_ENV !== 'production') {
         console.warn("Firebase auth loading timeout - setting loading to false");
       }
+      setAuthReady(true);
       setLoading(false);
-    }, 5000);
+    }, 10000); // Increased timeout to 10 seconds
 
     try {
       // Listen for authentication state changes
@@ -231,6 +233,8 @@ export const AuthProvider = ({ children }) => {
         if (process.env.NODE_ENV !== 'production') {
           console.log("Auth State Changed:", user ? `User UID: ${user.uid}` : "No user");
         }
+
+        clearTimeout(loadingTimeout);
         setCurrentUser(user);
 
         if (user) {
@@ -244,8 +248,7 @@ export const AuthProvider = ({ children }) => {
           setIsEmailVerified(false);
           setIsPhoneVerified(false);
         }
-        
-        clearTimeout(loadingTimeout);
+
         setAuthReady(true);
         setLoading(false);
       });
@@ -260,6 +263,7 @@ export const AuthProvider = ({ children }) => {
         console.error("Firebase auth initialization failed:", error);
       }
       clearTimeout(loadingTimeout);
+      setAuthReady(true);
       setLoading(false);
     }
   }, []);

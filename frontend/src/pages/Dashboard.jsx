@@ -57,6 +57,9 @@ const Dashboard = () => {
   const isProfileIncomplete = () => {
     if (!userProfile) return false;
 
+    // Admin accounts are exempt from profile completion checks
+    if (isAdmin()) return false;
+
     // Critical fields - always show banner if missing
     const criticalFields = ['firstName', 'lastName', 'username'];
     const hasCriticalMissing = criticalFields.some(field => !userProfile[field]);
@@ -314,13 +317,6 @@ const Dashboard = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [cancelItemId, setCancelItemId] = useState(null);
   const [cancelItemType, setCancelItemType] = useState(null);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editProfileData, setEditProfileData] = useState({
-    firstName: '',
-    lastName: '',
-    phoneNumber: ''
-  });
-  const [profileUpdateLoading, setProfileUpdateLoading] = useState(false);
   
   useEffect(() => {
     // Redirect if not logged in
@@ -804,47 +800,6 @@ const Dashboard = () => {
     setCancelItemType(null);
   };
 
-  const startEditingProfile = () => {
-    setEditProfileData({
-      firstName: userProfile?.firstName || '',
-      lastName: userProfile?.lastName || '',
-      phoneNumber: (userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : ''
-    });
-    setIsEditingProfile(true);
-  };
-
-  const cancelEditingProfile = () => {
-    setIsEditingProfile(false);
-    setEditProfileData({
-      firstName: '',
-      lastName: '',
-      phoneNumber: ''
-    });
-  };
-
-  const handleProfileInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditProfileData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const saveProfileChanges = async () => {
-    try {
-      setProfileUpdateLoading(true);
-      await apiService.updateUserProfile(editProfileData);
-
-      // Refresh user profile data
-      window.location.reload(); // Simple reload to refresh all user data
-
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setError('Failed to update profile: ' + error.message);
-    } finally {
-      setProfileUpdateLoading(false);
-    }
-  };
   
   const handleCancelRegistration = async () => {
     if (!cancelItemId || cancelItemType !== 'registration') return;
@@ -1112,91 +1067,19 @@ const Dashboard = () => {
                   {userProfile?.firstName?.charAt(0) || currentUser?.displayName?.charAt(0) || 'U'}{userProfile?.lastName?.charAt(0) || ''}
                 </div>
                 <div className="profile-info">
-                  {!isEditingProfile ? (
-                    <>
-                      <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
-                      <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
-                      <p><strong>Phone:</strong> {(userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : 'Not provided'}</p>
-                      <div className="profile-actions mt-3">
-                        <button
-                          onClick={() => navigate(`/edit/${userProfile?.username}`)}
-                          className="btn btn-outline btn-sm"
-                        >
-                          <i className="fas fa-user-edit mr-2"></i>
-                          Edit Profile
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="edit-profile-form">
-                      <div className="form-group">
-                        <label><strong>First Name:</strong></label>
-                        <input
-                          type="text"
-                          name="firstName"
-                          value={editProfileData.firstName}
-                          onChange={handleProfileInputChange}
-                          className="form-control"
-                          placeholder="First Name"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label><strong>Last Name:</strong></label>
-                        <input
-                          type="text"
-                          name="lastName"
-                          value={editProfileData.lastName}
-                          onChange={handleProfileInputChange}
-                          className="form-control"
-                          placeholder="Last Name"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label><strong>Phone:</strong></label>
-                        <input
-                          type="tel"
-                          name="phoneNumber"
-                          value={editProfileData.phoneNumber}
-                          onChange={handleProfileInputChange}
-                          className="form-control"
-                          placeholder="Phone Number"
-                        />
-                      </div>
-                      <p><strong>Email:</strong> {userProfile?.email || currentUser?.email} <small>(cannot be changed)</small></p>
-                    </div>
-                  )}
-                </div>
-                {!isEditingProfile ? (
-                  <button onClick={startEditingProfile} className="btn btn-outline btn-block mt-3">
-                    <i className="fas fa-user-edit mr-2"></i> Edit Profile
-                  </button>
-                ) : (
-                  <div className="edit-profile-actions">
+                  <p><strong>Name:</strong> {userProfile?.firstName || ''} {userProfile?.lastName || currentUser?.displayName || ''}</p>
+                  <p><strong>Email:</strong> {userProfile?.email || currentUser?.email}</p>
+                  <p><strong>Phone:</strong> {(userProfile?.phoneNumber && typeof userProfile.phoneNumber === 'string' && userProfile.phoneNumber.trim().toLowerCase() !== 'pending') ? userProfile.phoneNumber : 'Not provided'}</p>
+                  <div className="profile-actions mt-3">
                     <button
-                      onClick={saveProfileChanges}
-                      className="btn btn-primary btn-block mt-3"
-                      disabled={profileUpdateLoading}
+                      onClick={() => navigate(`/edit/${userProfile?.username}`)}
+                      className="btn btn-outline btn-sm"
                     >
-                      {profileUpdateLoading ? (
-                        <>
-                          <div className="loading-spinner-small"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-save mr-2"></i> Save Changes
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={cancelEditingProfile}
-                      className="btn btn-outline btn-block mt-2"
-                      disabled={profileUpdateLoading}
-                    >
-                      <i className="fas fa-times mr-2"></i> Cancel
+                      <i className="fas fa-user-edit mr-2"></i>
+                      Edit Profile
                     </button>
                   </div>
-                )}
+                </div>
               </div>
             </div>
             

@@ -7,7 +7,7 @@ import { auth } from '../firebaseConfig';
 
 const CompleteProfile = () => {
   const navigate = useNavigate();
-  const { userProfile, fetchUserProfile } = useAuth();
+  const { currentUser, userProfile, fetchUserProfile, loading, authReady } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -28,6 +28,29 @@ const CompleteProfile = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
+    // Don't do anything while auth is still loading
+    if (loading || !authReady) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('CompleteProfile: Waiting for auth to be ready', { loading, authReady });
+      }
+      return;
+    }
+
+    // If no user is authenticated, don't proceed (ProtectedRoute should handle this)
+    if (!currentUser) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('CompleteProfile: No current user found');
+      }
+      return;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('CompleteProfile: Auth ready, checking profile completion', {
+        currentUser: currentUser?.uid,
+        userProfile: userProfile?.username
+      });
+    }
+
     // Admin accounts are exempt from profile completion
     if (userProfile?.userType === 'ADMIN') {
       navigate('/dashboard');
@@ -80,7 +103,7 @@ const CompleteProfile = () => {
         emergencyContactRelationship: data.emergencyContactRelationship || ''
       }));
     }
-  }, [userProfile, navigate]);
+  }, [currentUser, userProfile, loading, authReady, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -294,12 +317,17 @@ const CompleteProfile = () => {
     return Math.round((filledFields / allFields.length) * 100);
   };
 
-  if (!userProfile) {
+  // Show loading state while auth is not ready or while user profile is loading
+  if (loading || !authReady || !currentUser) {
     return (
       <div className="container mt-4 text-center">
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading profile...</p>
+          <p>
+            {loading ? 'Loading authentication...' :
+             !authReady ? 'Preparing session...' :
+             'Loading profile...'}
+          </p>
         </div>
       </div>
     );
