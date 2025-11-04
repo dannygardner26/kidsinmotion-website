@@ -1050,10 +1050,10 @@ const Dashboard = () => {
                   Complete your profile to unlock all features. Missing: {getMissingFields().join(', ')}
                 </p>
                 <Link
-                  to="/complete-profile"
+                  to={userProfile?.username ? `/edit/${userProfile.username}` : "/dashboard"}
                   className="btn btn-warning btn-sm me-2"
                 >
-                  Complete Profile
+                  Update Profile
                 </Link>
                 {getMissingFields().every(field => !['first name', 'last name', 'username'].includes(field)) && (
                   <button

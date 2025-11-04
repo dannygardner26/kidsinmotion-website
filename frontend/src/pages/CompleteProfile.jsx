@@ -64,6 +64,17 @@ const CompleteProfile = () => {
       return;
     }
 
+    // Check if this is a regular registration user (has custom username, not auto-generated)
+    // Regular users shouldn't need CompleteProfile (they already set password during registration)
+    if (userProfile && userProfile.username &&
+        !userProfile.username.startsWith('parent_') &&
+        !userProfile.username.startsWith('volunteer_') &&
+        !userProfile.username.startsWith('admin_')) {
+      // This is a regular registration user, redirect to dashboard or profile edit
+      navigate('/dashboard');
+      return;
+    }
+
     // Check for pending OAuth registration data
     const pendingRegistration = localStorage.getItem('pendingRegistration');
     let oauthData = null;
