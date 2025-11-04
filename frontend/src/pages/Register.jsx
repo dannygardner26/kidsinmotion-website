@@ -153,7 +153,8 @@ const Register = () => {
           phoneNumber: formData.phoneNumber,
           userType: formData.role,
           grade: formData.grade || null,
-          school: formData.school || null
+          school: formData.school || null,
+          email: formData.email // Ensure email is included for backend consistency
         };
 
         await apiService.syncUser();

@@ -141,10 +141,28 @@ public class UserController {
                 user.setFirebaseUid(firebaseUid);
                 user.setEmail(firebaseEmail);
 
-                // Extract name from email (simple approach)
-                String[] nameParts = firebaseEmail.split("@")[0].split("\\.");
-                user.setFirstName(nameParts.length > 0 ? nameParts[0] : "User");
-                user.setLastName(nameParts.length > 1 ? nameParts[1] : "");
+                // Try to get user's display name from Firebase Auth
+                try {
+                    UserRecord userRecord = firebaseAuthService.getUser(firebaseUid);
+                    String displayName = userRecord.getDisplayName();
+
+                    if (displayName != null && !displayName.trim().isEmpty()) {
+                        // Parse display name into first and last name
+                        String[] nameParts = displayName.trim().split("\\s+", 2);
+                        user.setFirstName(nameParts.length > 0 ? nameParts[0] : "User");
+                        user.setLastName(nameParts.length > 1 ? nameParts[1] : "");
+                    } else {
+                        // Fallback: Extract name from email
+                        String[] emailParts = firebaseEmail.split("@")[0].split("\\.");
+                        user.setFirstName(emailParts.length > 0 ? emailParts[0] : "User");
+                        user.setLastName(emailParts.length > 1 ? emailParts[1] : "");
+                    }
+                } catch (Exception e) {
+                    // Fallback: Extract name from email if Firebase Auth call fails
+                    String[] emailParts = firebaseEmail.split("@")[0].split("\\.");
+                    user.setFirstName(emailParts.length > 0 ? emailParts[0] : "User");
+                    user.setLastName(emailParts.length > 1 ? emailParts[1] : "");
+                }
 
                 // Automatically grant admin privileges to specific emails
                 if ("kidsinmotion0@gmail.com".equalsIgnoreCase(firebaseEmail) ||

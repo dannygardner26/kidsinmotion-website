@@ -61,10 +61,12 @@
 {
   "localId": "WOkq3zxlzqU29csYBC23yS1Vzpp2",
   "email": "danieljacobgardner@gmail.com",
-  "emailVerified": true,
+  "emailVerified": false,
+  "passwordHash": "oEhqCfK6FUmF9AKP4Ccohd4F2c+ddoJ8z6hr3DOpWYLtg5UnCj4Lck6FemtBqmZFEW2sMItE1dffpZYq9sSWsg==",
+  "salt": "G/KiG0IWPcu1mQ==",
   "displayName": "Danny Gardner",
   "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocIilpGq995neXlWq1vePuHjG_eIva81axaTd7_m1DO8fCdo8Q=s96-c",
-  "lastSignedInAt": "1761441212664",
+  "lastSignedInAt": "1762198439725",
   "createdAt": "1758756635555",
   "providerUserInfo": [
     {
@@ -91,9 +93,11 @@
   "localId": "hWfZYXeNS8U9miXNChbQswXU1NT2",
   "email": "kidsinmotion0@gmail.com",
   "emailVerified": true,
+  "passwordHash": "ednEpdiMi7hKTbg4to1YXqFO/aINGFDdQTADupv/KdvQXqy3IVB7Gi6wrB9H7BoyDYyu/e1Docp2tsqfRTfvPQ==",
+  "salt": "vxCtDiyJIm8rdw==",
   "displayName": "Kids in Motion",
   "photoUrl": "https://lh3.googleusercontent.com/a/ACg8ocJfoVog0r4LUqEbTLFWkMr5_WRQbjdHPQE-z4AyHUlrEspYvzam=s96-c",
-  "lastSignedInAt": "1762108940529",
+  "lastSignedInAt": "1762198271116",
   "createdAt": "1758923365490",
   "disabled": false,
   "customAttributes": "{\"admin\":true}",

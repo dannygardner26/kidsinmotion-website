@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "kids-in-motion-website-b1c09"
-  }
+  },
+  "targets": {
+    "kids-in-motion-website-b1c09": {
+      "hosting": {
+        "kidsinmotionpa": [
+          "kidsinmotionpa-org"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

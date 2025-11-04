@@ -203,7 +203,9 @@ const Layout = ({ children }) => {
                   <li className="navbar-item">
                     <div className={`dropdown ${dropdownOpen ? 'open' : ''}`}>
                       <button className="navbar-link dropdown-toggle" onClick={toggleDropdown}>
-                        {currentUser.displayName || currentUser.email}
+                        {userProfile?.firstName && userProfile?.lastName
+                          ? `${userProfile.firstName} ${userProfile.lastName}`
+                          : currentUser.displayName || currentUser.email}
                         <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`}></i>
                       </button>
                       <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
