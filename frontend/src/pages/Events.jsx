@@ -36,27 +36,40 @@ const Events = () => {
   const fetchEvents = async () => {
     console.log('Events: Starting fetchEvents with filter:', filter);
     setIsLoading(true);
+
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), 10000)
+    );
+
     try {
-      let data;
+      let data = [];
 
-      try {
-        if (filter === 'upcoming') {
-          console.log('Events: Fetching upcoming events...');
-          data = await apiService.getUpcomingEvents();
-        } else {
-          console.log('Events: Fetching all events...');
-          data = await apiService.getEvents();
-        }
+      // Try to fetch data with timeout
+      const fetchPromise = (async () => {
+        try {
+          if (filter === 'upcoming') {
+            console.log('Events: Fetching upcoming events...');
+            data = await apiService.getUpcomingEvents();
+          } else {
+            console.log('Events: Fetching all events...');
+            data = await apiService.getEvents();
+          }
 
-        // If no events from API, try Firestore
-        if (!data || data.length === 0) {
-          console.log('Events: No events from API, trying Firestore...');
+          // If no events from API, try Firestore
+          if (!data || data.length === 0) {
+            console.log('Events: No events from API, trying Firestore...');
+            data = await firestoreEventService.getEvents();
+          }
+        } catch (apiError) {
+          console.log('Events: API failed, using Firestore directly:', apiError);
           data = await firestoreEventService.getEvents();
         }
-      } catch (apiError) {
-        console.log('Events: API failed, using Firestore directly:', apiError);
-        data = await firestoreEventService.getEvents();
-      }
+        return data;
+      })();
+
+      // Race between fetch and timeout
+      data = await Promise.race([fetchPromise, timeoutPromise]);
 
       // Filter events based on filter setting
       if (filter === 'upcoming') {
@@ -66,15 +79,7 @@ const Events = () => {
       }
 
       console.log('Events: Received data:', data);
-      console.log('Events: First event details:', data[0] ? {
-        name: data[0].name,
-        date: data[0].date,
-        startTime: data[0].startTime,
-        endTime: data[0].endTime,
-        ageGroup: data[0].ageGroup,
-        fullEventObject: data[0]
-      } : 'No events');
-      
+
       // Apply age group filter if needed
       if (sportFilter !== 'all') {
         data = data.filter(event => event.ageGroup === sportFilter);
@@ -93,7 +98,7 @@ const Events = () => {
       console.error('Events: Error fetching events:', error);
       // Set empty array if there's an error to ensure UI doesn't break
       setEvents([]);
-      setSportTypes(['All Age Groups']);
+      setSportTypes([]);
     } finally {
       console.log('Events: Setting loading to false');
       setIsLoading(false);
