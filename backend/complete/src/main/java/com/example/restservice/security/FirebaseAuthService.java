@@ -69,5 +69,9 @@ public class FirebaseAuthService {
         UpdateRequest request = new UpdateRequest(uid).setPassword(password);
         FirebaseAuth.getInstance().updateUser(request);
     }
+
+    public void deleteUser(String uid) throws FirebaseAuthException {
+        FirebaseAuth.getInstance().deleteUser(uid);
+    }
 }
 

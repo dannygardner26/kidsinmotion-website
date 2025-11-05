@@ -342,7 +342,7 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   left: 0;
   width: 100%;
   height: 100px;
-  z-index: 1;
+  z-index: -1;
   /* Ensure wave doesn't interfere with content */
   pointer-events: none;
 }
@@ -795,9 +795,21 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
 }
 
 @media (max-width: 768px) {
+  /* Fix mobile layout spacing */
+  body {
+    padding-top: 4rem; /* Reduce top padding for mobile */
+  }
+
+  /* Ensure waves don't cover content on mobile */
+  .hero-wave {
+    z-index: -1;
+    height: 60px;
+  }
+
   .footer-wave {
     top: -50px;
     height: 50px;
+    z-index: -1;
   }
 
   .footer {

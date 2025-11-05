@@ -15,18 +15,18 @@ export const getAssetUrl = async (fileName) => {
 
 // Firebase Storage URLs converted to public HTTPS URLs
 export const assetUrls = {
-  'about-hero.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/IMG_2338.JPG?alt=media',
-  'about-purpose.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/IMG_2341.JPG?alt=media',
-  'danny-profile.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/danny-profile.jpg?alt=media',
-  'kids-with-mentors.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/IMG_2344.JPG?alt=media',
-  'nate-profile-new.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/nate-profile-new.jpg?alt=media',
-  'placeholder.png': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/placeholder.png?alt=media',
-  'ryan-profile-new.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/ryan-profile-new.jpg?alt=media',
-  'team-huddle.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/IMG_2343.JPG?alt=media',
-  'ty-profile.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/placeholder.png?alt=media',
-  'ty-headshot-new.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/TYHEADSHOTFORKIDSINMOTION.jpg?alt=media',
-  'volunteers-group.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/IMG_2345.JPG?alt=media',
-  'realKIMlogo-transparent.png': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.appspot.com/o/realKIMlogo-transparent.png?alt=media'
+  'about-hero.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/IMG_2338.JPG?alt=media',
+  'about-purpose.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/IMG_2341.JPG?alt=media',
+  'danny-profile.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/danny-profile.jpg?alt=media',
+  'kids-with-mentors.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/IMG_2344.JPG?alt=media',
+  'nate-profile-new.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/nate-profile-new.jpg?alt=media',
+  'placeholder.png': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/placeholder.png?alt=media',
+  'ryan-profile-new.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/ryan-profile-new.jpg?alt=media',
+  'team-huddle.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/IMG_2343.JPG?alt=media',
+  'ty-profile.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/ty-profile.jpg?alt=media',
+  'ty-headshot-new.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/TYHEADSHOTFORKIDSINMOTION.jpg?alt=media',
+  'volunteers-group.jpg': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/IMG_2345.JPG?alt=media',
+  'realKIMlogo-transparent.png': 'https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/realKIMlogo-transparent.png?alt=media'
 };
 
 // Function to generate all URLs

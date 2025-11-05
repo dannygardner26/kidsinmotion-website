@@ -127,7 +127,10 @@
       "Bash(start \"C:\\Users\\danny\\Documents\\GitHub\\KidsInMotionJava\\test_verification.html\")",
       "Bash(npm --version)",
       "Bash(gcloud secrets versions add:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(gcloud storage ls:*)",
+      "Bash(gsutil ls:*)",
+      "Bash(gcloud storage buckets list:*)"
     ],
     "deny": []
   }

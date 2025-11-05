@@ -1403,4 +1403,51 @@ public class UserController {
         response.put("createdTimestamp", user.getCreatedTimestamp());
         return response;
     }
+
+    @DeleteMapping("/users/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteUser(@PathVariable String userId, @RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        try {
+            String adminFirebaseUid = (String) httpRequest.getAttribute("firebaseUid");
+            if (adminFirebaseUid == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
+            }
+
+            // Check if requester is admin
+            Optional<UserFirestore> adminOpt = userFirestoreRepository.findByFirebaseUid(adminFirebaseUid);
+            if (!adminOpt.isPresent() || !adminOpt.get().isAdmin()) {
+                return ResponseEntity.status(403).body(Map.of("error", "You don't have permission to perform this action."));
+            }
+
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            UserFirestore user = userOpt.get();
+            String reason = request.get("reason");
+
+            // Prevent deleting other admin users
+            if (user.isAdmin() && !user.getFirebaseUid().equals(adminFirebaseUid)) {
+                return ResponseEntity.status(403).body(Map.of("error", "Cannot delete other admin users"));
+            }
+
+            // Delete user from Firebase Auth
+            try {
+                firebaseAuthService.deleteUser(user.getFirebaseUid());
+            } catch (Exception e) {
+                System.err.println("Failed to delete user from Firebase Auth: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(Map.of("error", "Failed to delete user from authentication system"));
+            }
+
+            // Delete user from Firestore
+            userFirestoreRepository.deleteById(user.getId());
+
+            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+
+        } catch (Exception e) {
+            System.err.println("Error deleting user: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error deleting user"));
+        }
+    }
 }
