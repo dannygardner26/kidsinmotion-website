@@ -6,7 +6,6 @@ import { assetUrls } from '../utils/firebaseAssets';
 import firestoreEventService from '../services/firestoreEventService';
 
 const Events = () => {
-  console.log('Events component is loading!');
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('upcoming'); // 'upcoming', 'past', or 'all'
@@ -34,7 +33,6 @@ const Events = () => {
   }, [isLoading, events]);
   
   const fetchEvents = async () => {
-    console.log('Events: Starting fetchEvents with filter:', filter);
     setIsLoading(true);
 
     // Add timeout to prevent hanging
@@ -49,20 +47,16 @@ const Events = () => {
       const fetchPromise = (async () => {
         try {
           if (filter === 'upcoming') {
-            console.log('Events: Fetching upcoming events...');
             data = await apiService.getUpcomingEvents();
           } else {
-            console.log('Events: Fetching all events...');
             data = await apiService.getEvents();
           }
 
           // If no events from API, try Firestore
           if (!data || data.length === 0) {
-            console.log('Events: No events from API, trying Firestore...');
             data = await firestoreEventService.getEvents();
           }
         } catch (apiError) {
-          console.log('Events: API failed, using Firestore directly:', apiError);
           data = await firestoreEventService.getEvents();
         }
         return data;
@@ -78,20 +72,16 @@ const Events = () => {
         data = data.filter(event => new Date(event.date) < new Date());
       }
 
-      console.log('Events: Received data:', data);
-
       // Apply age group filter if needed
       if (sportFilter !== 'all') {
         data = data.filter(event => event.ageGroup === sportFilter);
       }
 
-      console.log('Events: Setting events data, length:', data.length);
       setEvents(data);
 
       // Extract unique age groups for filter
       if (filter !== 'past') {
         const types = [...new Set(data.map(event => event.ageGroup).filter(Boolean))];
-        console.log('Events: Age groups found:', types);
         setSportTypes(types);
       }
     } catch (error) {
@@ -100,7 +90,6 @@ const Events = () => {
       setEvents([]);
       setSportTypes([]);
     } finally {
-      console.log('Events: Setting loading to false');
       setIsLoading(false);
     }
   };
@@ -110,26 +99,6 @@ const Events = () => {
     const date = new Date(dateString);
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     let formattedDate = date.toLocaleDateString(undefined, dateOptions);
-
-    // Debug logging for time values
-    console.log('=== ENHANCED TIME DEBUG ===');
-    console.log('formatDate called with:', {
-      dateString,
-      startTime,
-      endTime,
-      startTimeType: typeof startTime,
-      endTimeType: typeof endTime,
-      startTimeValue: startTime,
-      endTimeValue: endTime,
-      startTimeJSON: JSON.stringify(startTime),
-      endTimeJSON: JSON.stringify(endTime),
-      startTimeIsNull: startTime === null,
-      endTimeIsNull: endTime === null,
-      startTimeIsUndefined: startTime === undefined,
-      endTimeIsUndefined: endTime === undefined,
-      startTimeFalsy: !startTime,
-      endTimeFalsy: !endTime
-    });
 
     // Helper function to format time from various possible formats
     const formatTime = (timeValue) => {
@@ -174,13 +143,8 @@ const Events = () => {
     // Check for valid formatted times
     if (formattedStartTime && formattedEndTime) {
       formattedDate += ` • ${formattedStartTime} - ${formattedEndTime}`;
-      console.log('Added actual times:', formattedStartTime, '-', formattedEndTime);
     } else if (formattedStartTime) {
       formattedDate += ` • ${formattedStartTime}`;
-      console.log('Added start time only:', formattedStartTime);
-    } else {
-      // Only show fallback if no times were provided at all
-      console.log('No valid times found, showing date only');
     }
 
     return formattedDate;
