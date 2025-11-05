@@ -270,11 +270,13 @@ const Events = () => {
                         {event.capacity && Number(event.capacity) > 0 && (
                           <p><i className="fas fa-users"></i> Capacity: {event.capacity}</p>
                         )}
-                        {event.price && Number(event.price) > 0 && (
+                        {event.price !== null && event.price !== undefined && event.price !== '' && parseFloat(event.price) > 0 && (
                           <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
                         )}
                       </div>
-                      <p>{event.description}</p>
+                      {event.description && (
+                        <p>{event.description}</p>
+                      )}
                     </div>
                     <div className="card-footer">
                       {filter !== 'past' && (
