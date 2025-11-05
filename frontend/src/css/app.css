@@ -528,7 +528,7 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   width: 40px;
   height: 32px;
   position: relative;
-  z-index: 102;
+  z-index: 1001;
   padding: 6px;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);

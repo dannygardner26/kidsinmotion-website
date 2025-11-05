@@ -82,7 +82,7 @@ const Layout = ({ children }) => {
     };
   }, [location.pathname]); // Re-run when route changes
 
-  const isTransparentHeaderPage = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about' || location.pathname === '/login' || location.pathname === '/register';
+  const isTransparentHeaderPage = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about' || location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/dashboard' || location.pathname === '/admin';
 
   // Add/remove body class based on transparent header pages
   useEffect(() => {
