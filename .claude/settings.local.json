@@ -130,7 +130,8 @@
       "Bash(git rm:*)",
       "Bash(gcloud storage ls:*)",
       "Bash(gsutil ls:*)",
-      "Bash(gcloud storage buckets list:*)"
+      "Bash(gcloud storage buckets list:*)",
+      "Bash(python:*)"
     ],
     "deny": []
   }
