@@ -143,7 +143,7 @@ const Home = () => {
               <p>
                 Kids in Motion is on a mission to make sports accessible to every child. Through free 
                 sports clinics and donated equipment, we give kids - especially those facing financial or 
-                opportunity barriers -the chance to explore new sports, develop skills, and build lasting friendships.
+                opportunity barriers - the chance to explore new sports, develop skills, and build lasting friendships.
               </p>
               <p>
                 Founded by high school athletes who believe in the power of sports, we aim to break down 
