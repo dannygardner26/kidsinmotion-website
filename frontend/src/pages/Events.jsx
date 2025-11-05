@@ -279,10 +279,6 @@ const Events = () => {
             </div>
           </div>
           
-          {(() => {
-            console.log('Events render: isLoading:', isLoading, 'events.length:', events.length, 'events:', events);
-            return null;
-          })()}
           {isLoading ? (
             <div className="text-center fade-in">
               <div className="loading-spinner"></div>
@@ -307,10 +303,10 @@ const Events = () => {
                         {event.ageGroup && (
                           <p><i className="fas fa-child"></i> {event.ageGroup}</p>
                         )}
-                        {event.capacity && (
+                        {event.capacity && Number(event.capacity) > 0 && (
                           <p><i className="fas fa-users"></i> Capacity: {event.capacity}</p>
                         )}
-                        {event.price && event.price > 0 && (
+                        {event.price && Number(event.price) > 0 && (
                           <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
                         )}
                       </div>
