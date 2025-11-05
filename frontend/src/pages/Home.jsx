@@ -142,7 +142,7 @@ const Home = () => {
               <h2>Our Mission</h2>
               <p>
                 Kids in Motion is on a mission to make sports accessible to every child. Through free 
-                sports clinics and donated equipment, we give kids - especially those facing financial or 
+                sports clinics and donated equipment, we give kids - especially those facing financial or 
                 opportunity barriers - the chance to explore new sports, develop skills, and build lasting friendships.
               </p>
               <p>
