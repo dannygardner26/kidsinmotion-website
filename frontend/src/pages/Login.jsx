@@ -282,7 +282,7 @@ const Login = () => {
   return (
     <>
       {/* Use flexbox for centering */}
-      <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]"> 
+      <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]" style={{ marginTop: '6rem' }}> 
         {/* Adjust min-height based on header/footer */}
         <div className="w-full max-w-md"> {/* Control the width of the card */}
             <div className="card"> {/* Use theme card style (shadow included) */}
