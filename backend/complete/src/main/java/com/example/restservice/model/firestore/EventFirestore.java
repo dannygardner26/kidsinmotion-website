@@ -20,6 +20,9 @@ public class EventFirestore {
     private String location;
     private Integer capacity;
     private String ageGroup;
+    private Integer minAge;
+    private Integer maxAge;
+    private String tags; // Comma-separated event tags
     private Double price;
     private String eventTypes; // Comma-separated values: "VOLUNTEER,KID_EVENT"
     private Long createdTimestamp; // Creation timestamp
@@ -48,6 +51,9 @@ public class EventFirestore {
         map.put("location", location);
         map.put("capacity", capacity);
         map.put("ageGroup", ageGroup);
+        map.put("minAge", minAge);
+        map.put("maxAge", maxAge);
+        map.put("tags", tags);
         map.put("price", price);
         map.put("eventTypes", eventTypes);
         map.put("createdTimestamp", createdTimestamp);
@@ -67,6 +73,9 @@ public class EventFirestore {
         event.setLocation((String) map.get("location"));
         event.setCapacity(map.get("capacity") != null ? ((Long) map.get("capacity")).intValue() : null);
         event.setAgeGroup((String) map.get("ageGroup"));
+        event.setMinAge(map.get("minAge") != null ? ((Long) map.get("minAge")).intValue() : null);
+        event.setMaxAge(map.get("maxAge") != null ? ((Long) map.get("maxAge")).intValue() : null);
+        event.setTags((String) map.get("tags"));
         event.setPrice(map.get("price") != null ? convertToDouble(map.get("price")) : null);
         event.setEventTypes((String) map.get("eventTypes"));
         event.setCreatedTimestamp(map.get("createdTimestamp") != null ? (Long) map.get("createdTimestamp") : System.currentTimeMillis());
@@ -139,6 +148,15 @@ public class EventFirestore {
 
     public String getAgeGroup() { return ageGroup; }
     public void setAgeGroup(String ageGroup) { this.ageGroup = ageGroup; }
+
+    public Integer getMinAge() { return minAge; }
+    public void setMinAge(Integer minAge) { this.minAge = minAge; }
+
+    public Integer getMaxAge() { return maxAge; }
+    public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
+
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
 
     public Double getPrice() { return price; }
     public void setPrice(Double price) { this.price = price; }

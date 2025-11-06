@@ -131,7 +131,9 @@
       "Bash(gcloud storage ls:*)",
       "Bash(gsutil ls:*)",
       "Bash(gcloud storage buckets list:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Read(//c/Users/danny/Downloads/**)",
+      "Bash(unzip:*)"
     ],
     "deny": []
   }

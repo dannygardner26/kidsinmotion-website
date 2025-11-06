@@ -82,7 +82,7 @@ const Layout = ({ children }) => {
     };
   }, [location.pathname]); // Re-run when route changes
 
-  const isTransparentHeaderPage = location.pathname === '/' || location.pathname === '/events' || location.pathname === '/about' || location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/dashboard' || location.pathname === '/admin';
+  const isTransparentHeaderPage = location.pathname === '/' || location.pathname === '/about';
 
   // Add/remove body class based on transparent header pages
   useEffect(() => {
@@ -226,6 +226,31 @@ const Layout = ({ children }) => {
                 </>
               ) : (
                 <>
+                  <li className="navbar-item">
+                    <div className={`dropdown inbox-dropdown ${inboxOpen ? 'open' : ''}`}>
+                      <button className="navbar-link inbox-trigger" onClick={() => setInboxOpen(!inboxOpen)}>
+                        <i className="fas fa-inbox mr-2"></i>
+                        Inbox
+                      </button>
+                      <div className={`dropdown-menu inbox-dropdown-menu ${inboxOpen ? 'show' : ''}`}>
+                        <div className="guest-inbox-message">
+                          <div className="message-content">
+                            <i className="fas fa-user-plus message-icon"></i>
+                            <h4>Join Kids in Motion!</h4>
+                            <p>Sign up to receive event notifications, updates, and connect with our community.</p>
+                            <div className="message-actions">
+                              <Link to="/register" className="btn btn-primary" onClick={() => setInboxOpen(false)}>
+                                Sign Up
+                              </Link>
+                              <Link to="/login" className="btn btn-outline" onClick={() => setInboxOpen(false)}>
+                                Login
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
                   <li className="navbar-item">
                     <Link to="/login" className={`navbar-link ${location.pathname === '/login' ? 'active' : ''}`} onClick={closeMobileMenu}>
                       Login

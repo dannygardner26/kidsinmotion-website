@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
 import QRCode from 'qrcode';
 import { assetUrls } from '../utils/firebaseAssets';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const EventPosterGenerator = ({ event, onClose }) => {
   const posterRef = useRef();
@@ -173,14 +174,13 @@ const EventPosterGenerator = ({ event, onClose }) => {
                   </div>
                 )}
 
-                {event.ageGroup && (
-                  <div className="detail-row">
-                    <div className="detail-icon"><i className="fas fa-users"></i></div>
-                    <div className="detail-text">
-                      <strong>Ages: {event.ageGroup}</strong>
-                    </div>
+                <div className="detail-row">
+                  <div className="detail-icon"><i className="fas fa-users"></i></div>
+                  <div className="detail-text">
+                    <strong>Ages: {formatAgeRange(event, { includePrefix: false })
+                    }</strong>
                   </div>
-                )}
+                </div>
 
                 {event.price && (
                   <div className="detail-row">

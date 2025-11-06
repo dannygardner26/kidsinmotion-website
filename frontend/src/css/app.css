@@ -1518,6 +1518,133 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
   color: var(--secondary);
 }
 
+/* Guest Inbox Message Styles */
+.guest-inbox-message {
+  padding: 0;
+}
+
+.guest-inbox-message .message-content {
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: linear-gradient(135deg, var(--primary) 0%, rgba(47, 80, 106, 0.9) 100%);
+  color: white;
+}
+
+.guest-inbox-message .message-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.guest-inbox-message h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+.guest-inbox-message p {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.guest-inbox-message .message-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.guest-inbox-message .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.guest-inbox-message .btn-primary {
+  background: white;
+  color: var(--primary);
+  border: 1px solid white;
+}
+
+.guest-inbox-message .btn-primary:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.guest-inbox-message .btn-outline {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.guest-inbox-message .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: white;
+}
+
+/* Mobile styles for guest inbox */
+@media (max-width: 767px) {
+  .navbar-menu .guest-inbox-message .message-content {
+    padding: 1.5rem 1rem;
+    background: #f8f9fa;
+    color: var(--text-color);
+  }
+
+  .navbar-menu .guest-inbox-message .message-icon {
+    color: var(--primary);
+  }
+
+  .navbar-menu .guest-inbox-message h4 {
+    color: var(--text-color);
+  }
+
+  .navbar-menu .guest-inbox-message p {
+    color: #666;
+  }
+
+  .navbar-menu .guest-inbox-message .btn-primary {
+    background: var(--primary);
+    color: white;
+  }
+
+  .navbar-menu .guest-inbox-message .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* Fix inbox text visibility in mobile navbar */
+  .navbar-menu .inbox-trigger {
+    color: #000 !important;
+  }
+}
+
+/* Non-scrollable login and register pages */
+.login-page-container,
+.register-page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding-top: 5rem; /* Account for fixed navbar */
+}
+
+@media (max-width: 768px) {
+  .login-page-container,
+  .register-page-container {
+    height: auto;
+    min-height: 100vh;
+    padding-top: 4rem; /* Smaller padding for mobile navbar */
+  }
+}
+
 .message-title-compact {
   font-weight: 600;
   margin-bottom: 0.25rem;

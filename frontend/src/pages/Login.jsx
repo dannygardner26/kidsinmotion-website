@@ -282,9 +282,10 @@ const Login = () => {
   return (
     <>
       {/* Use flexbox for centering */}
-      <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]" style={{ marginTop: '6rem' }}> 
-        {/* Adjust min-height based on header/footer */}
-        <div className="w-full max-w-md"> {/* Control the width of the card */}
+      <div className="login-page-container">
+        <div className="container">
+          <div className="flex justify-center items-start w-full">
+            <div className="w-full max-w-md"> {/* Control the width of the card */}
             <div className="card"> {/* Use theme card style (shadow included) */}
               <div className="card-header"> {/* Use theme card-header style */}
                 {/* Ensure h1 color contrasts with header bg if needed, theme handles white text */}
@@ -414,7 +415,7 @@ const Login = () => {
               </div>
             </div>
           </div>
-        {/* Removed extra closing div */}
+        </div>
       </div>
 
       {/* Password Reset Modal */}

@@ -186,8 +186,16 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
 
         // Ensure participantAge is a valid number
         const participantAge = parseInt(child.age, 10);
-        if (isNaN(participantAge) || participantAge < 4 || participantAge > 18) {
-          throw new Error(`Invalid age for ${child.firstName} ${child.lastName}. Age must be a number between 4 and 18.`);
+        if (isNaN(participantAge) || participantAge < 0 || participantAge > 21) {
+          throw new Error(`Invalid age for ${child.firstName} ${child.lastName}. Age must be a number between 0 and 21.`);
+        }
+
+        // Check event age range validation
+        if (event.minAge !== null && event.minAge !== undefined && participantAge < event.minAge) {
+          throw new Error(`Child ${child.firstName} ${child.lastName} (age ${participantAge}) does not meet the minimum age requirement (${event.minAge}). Please email us at info@kidsinmotionpa.org if you have questions.`);
+        }
+        if (event.maxAge !== null && event.maxAge !== undefined && participantAge > event.maxAge) {
+          throw new Error(`Child ${child.firstName} ${child.lastName} (age ${participantAge}) exceeds the maximum age requirement (${event.maxAge}). Please email us at info@kidsinmotionpa.org if you have questions.`);
         }
 
         // Combine all special requests and medical info
@@ -366,7 +374,18 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
             <h4>Event Details</h4>
             <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
             {event.location && <p><strong>Location:</strong> {event.location}</p>}
-            {event.ageGroup && <p><strong>Age Group:</strong> {event.ageGroup}</p>}
+            {(() => {
+              if (event.minAge !== null && event.minAge !== undefined && event.maxAge !== null && event.maxAge !== undefined) {
+                return <p><strong>Age Range:</strong> Ages {event.minAge}-{event.maxAge}</p>;
+              } else if (event.minAge !== null && event.minAge !== undefined) {
+                return <p><strong>Age Range:</strong> Ages {event.minAge}+</p>;
+              } else if (event.maxAge !== null && event.maxAge !== undefined) {
+                return <p><strong>Age Range:</strong> Ages up to {event.maxAge}</p>;
+              } else if (event.ageGroup) {
+                return <p><strong>Age Group:</strong> {event.ageGroup}</p>;
+              }
+              return <p><strong>Age Range:</strong> All Ages</p>;
+            })()}
             {event.price && <p><strong>Price:</strong> ${event.price}</p>}
             {event.capacity && (
               <p><strong>Capacity:</strong> {event.capacity} participants</p>

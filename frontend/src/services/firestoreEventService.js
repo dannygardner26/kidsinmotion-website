@@ -18,6 +18,9 @@ class FirestoreEventService {
         capacity: eventData.capacity ? parseInt(eventData.capacity) : null,
         price: eventData.price ? parseFloat(eventData.price) : 0,
         ageGroup: eventData.ageGroup || '',
+        minAge: eventData.minAge ?? null,
+        maxAge: eventData.maxAge ?? null,
+        tags: eventData.tags || '',
         requiresParentSignup: eventData.requiresParentSignup || false,
         status: 'ACTIVE',
         createdAt: new Date().toISOString(),
@@ -53,6 +56,9 @@ class FirestoreEventService {
         capacity: eventData.capacity ? parseInt(eventData.capacity) : null,
         price: eventData.price ? parseFloat(eventData.price) : 0,
         ageGroup: eventData.ageGroup || '',
+        minAge: eventData.minAge ?? null,
+        maxAge: eventData.maxAge ?? null,
+        tags: eventData.tags || '',
         requiresParentSignup: eventData.requiresParentSignup || false,
         updatedAt: new Date().toISOString()
       };

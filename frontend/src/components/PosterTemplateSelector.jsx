@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import { assetUrls } from '../utils/firebaseAssets';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const PosterTemplateSelector = ({ event, onClose }) => {
   const [selectedTemplate, setSelectedTemplate] = useState('clean-blue');
@@ -278,16 +279,15 @@ const PosterTemplateSelector = ({ event, onClose }) => {
                   </div>
                 )}
 
-                {event.ageGroup && (
-                  <div className="detail-row">
-                    <div className="detail-icon" style={{ color: selectedTheme.accent }}>
-                      <i className="fas fa-users"></i>
-                    </div>
-                    <div className="detail-text">
-                      <strong>Ages: {event.ageGroup}</strong>
-                    </div>
+                <div className="detail-row">
+                  <div className="detail-icon" style={{ color: selectedTheme.accent }}>
+                    <i className="fas fa-users"></i>
                   </div>
-                )}
+                  <div className="detail-text">
+                    <strong>Ages: {formatAgeRange(event, { includePrefix: false })
+                    }</strong>
+                  </div>
+                </div>
 
                 {event.price > 0 && (
                   <div className="detail-row">

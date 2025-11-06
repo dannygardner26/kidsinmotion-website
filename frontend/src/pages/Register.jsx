@@ -311,8 +311,10 @@ const Register = () => {
   return (
     <>
       {/* Use flexbox for centering, allow more width for register form */}
-      <div className="container mt-4 flex justify-center items-start min-h-[calc(100vh-200px)]"> 
-        <div className="w-full max-w-xl"> {/* Increased max-width */}
+      <div className="register-page-container">
+        <div className="container">
+          <div className="flex justify-center items-start w-full">
+            <div className="w-full max-w-xl"> {/* Increased max-width */}
             <div className="card"> {/* Use theme card style */}
               <div className="card-header"> {/* Use theme card-header style */}
                 <h1 className="text-2xl font-bold text-center mb-0">Create an Account</h1>
@@ -632,9 +634,10 @@ const Register = () => {
                 </div>
               </div>
             </div>
-          </div> {/* Closing tag for w-full max-w-xl */}
-        </div> 
-      {/* Removed the extra closing div here */}
+            </div> {/* Closing tag for w-full max-w-xl */}
+          </div>
+        </div>
+      </div>
     </>
   );
 };

@@ -75,8 +75,8 @@ const ChildrenManagement = () => {
       setIsSubmitting(false);
       return;
     }
-    if (!formData.age || formData.age < 4 || formData.age > 18) {
-      setError('Age must be between 4 and 18');
+    if (!formData.age || formData.age < 0 || formData.age > 21) {
+      setError('Age must be between 0 and 21');
       setIsSubmitting(false);
       return;
     }
@@ -236,8 +236,8 @@ const ChildrenManagement = () => {
                     value={formData.age}
                     onChange={handleInputChange}
                     className="form-control"
-                    min="4"
-                    max="18"
+                    min="0"
+                    max="21"
                     required
                   />
                 </div>

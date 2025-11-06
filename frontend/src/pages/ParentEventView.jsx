@@ -6,6 +6,7 @@ import EventChat from '../components/EventChat';
 import firestoreParticipantService from '../services/firestoreParticipantService';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const ParentEventView = () => {
   const { id: eventId } = useParams();
@@ -228,7 +229,8 @@ const ParentEventView = () => {
                 <div className="col-md-6">
                   <p><strong>Date:</strong> {formatDate(event.date)}</p>
                   <p><strong>Time:</strong> {formatTime(event.startTime)} - {formatTime(event.endTime)}</p>
-                  <p><strong>Age Group:</strong> {event.ageGroup}</p>
+                  <p><strong>Age Range:</strong> {formatAgeRange(event)
+                  }</p>
                 </div>
                 <div className="col-md-6">
                   <p><strong>Location:</strong> {event.location}</p>

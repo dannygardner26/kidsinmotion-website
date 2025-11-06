@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Search, X, Calendar as CalendarIcon, Clock, MapPin, Users, RefreshCw } from 'lucide-react';
 
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 import firestoreEventService from '../services/firestoreEventService';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('upcoming'); // 'upcoming', 'past', or 'all'
-  const [sportFilter, setSportFilter] = useState('all');
-  const [sportTypes, setSportTypes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+
   
   useEffect(() => {
     fetchEvents();
-  }, [filter, sportFilter]);
+  }, [filter]);
+
+  // Re-filter events when search or tag filters change
+  useEffect(() => {
+    // This will trigger a re-render when search or tags change
+  }, [searchQuery, selectedTags]);
 
   // Trigger intersection observer after content loads
   useEffect(() => {
@@ -72,23 +81,22 @@ const Events = () => {
         data = data.filter(event => new Date(event.date) < new Date());
       }
 
-      // Apply age group filter if needed
-      if (sportFilter !== 'all') {
-        data = data.filter(event => event.ageGroup === sportFilter);
-      }
+
+
 
       setEvents(data);
 
-      // Extract unique age groups for filter
-      if (filter !== 'past') {
-        const types = [...new Set(data.map(event => event.ageGroup).filter(Boolean))];
-        setSportTypes(types);
-      }
+      // Extract unique tags from all events for dynamic filtering
+      const allTags = data.flatMap(event =>
+        event.tags ? event.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
+      );
+      const uniqueTags = [...new Set(allTags)];
+      setAvailableTags(uniqueTags);
+
     } catch (error) {
       console.error('Events: Error fetching events:', error);
       // Set empty array if there's an error to ensure UI doesn't break
       setEvents([]);
-      setSportTypes([]);
     } finally {
       setIsLoading(false);
     }
@@ -149,138 +157,206 @@ const Events = () => {
 
     return formattedDate;
   };
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSelectedTags([]);
+    setFilter('upcoming');
+  };
+
+  // Toggle tag selection
+  const toggleTag = (tag) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = searchQuery || selectedTags.length > 0 || filter !== 'upcoming';
+
+  // Filter events display for the new design
+  const filteredEvents = events.filter(event => {
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      if (!(event.name && event.name.toLowerCase().includes(query)) &&
+          !(event.description && event.description.toLowerCase().includes(query))) {
+        return false;
+      }
+    }
+
+    // Tag filter
+    if (selectedTags.length > 0) {
+      // Parse event tags from the event.tags string
+      const eventTags = event.tags ? event.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+
+      // Check if event has any of the selected tags
+      if (!selectedTags.some(tag => eventTags.includes(tag))) {
+        return false;
+      }
+    }
+
+    return true;
+  });
   
   return (
-    <>
-      {/* Hero Section with Parallax */}
-      <section className="hero" style={{ minHeight: '50vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: `url("${assetUrls['placeholder.png']}")` }}></div>
-        
-        <div className="container hero-content">
-          <h1>Events & Clinics</h1>
-          <p>Explore our upcoming sports clinics and events. Registration is free for all participants.</p>
-        </div>
-        
-        <div className="hero-wave">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
-            <path
-              fill="#ede9e7"
-              fillOpacity="1"
-              d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,75C840,75,960,53,1080,48C1200,43,1320,53,1380,58.7L1440,64L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-            ></path>
-          </svg>
-        </div>
-      </section>
-      
-      <section className="section">
+    <div className="events-page">
+      {/* Content Container */}
+      <div className="events-content">
+        {/* Modern Filter Bar */}
+        <div className="filter-bar">
         <div className="container">
-          <div className="row mb-4 fade-in">
-            <div className="col">
-              <div className="card">
-                <div className="card-body">
-                  <div className="row">
-                    <div className="col-half">
-                      <h3>Filter Events</h3>
-                      <div className="form-group">
-                        <label htmlFor="timeFilter">Time Period</label>
-                        <select 
-                          id="timeFilter" 
-                          className="form-control" 
-                          value={filter}
-                          onChange={(e) => setFilter(e.target.value)}
-                        >
-                          <option value="upcoming">Upcoming Events</option>
-                          <option value="past">Past Events</option>
-                          <option value="all">All Events</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="col-half">
-                      <h3>Age Group</h3>
-                      <div className="form-group">
-                        <label htmlFor="sportFilter">Age Group</label>
-                        <select
-                          id="sportFilter"
-                          className="form-control"
-                          value={sportFilter}
-                          onChange={(e) => setSportFilter(e.target.value)}
-                        >
-                          <option value="all">All Age Groups</option>
-                          {sportTypes.map(ageGroup => (
-                            <option key={ageGroup} value={ageGroup}>{ageGroup}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <div className="col">
-                      <button
-                        onClick={() => {
-                          setIsLoading(true);
-                          fetchEvents();
-                        }}
-                        className="btn btn-outline"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <>
-                            <div className="loading-spinner-small"></div>
-                            Refreshing...
-                          </>
-                        ) : (
-                          <>
-                            <i className="fas fa-sync-alt"></i>
-                            Refresh Events
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          <div className="filter-content">
+            {/* Page Title and Search Row */}
+            <div className="filter-row">
+              {/* Page Title */}
+              <div className="page-title">
+                <h1>Event Dashboard</h1>
+              </div>
+              {/* Search Input */}
+              <div className="search-input-container">
+                <Search className="search-icon" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search events by name or description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                />
+              </div>
+
+
+              {/* Time Period Filter */}
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="upcoming">Upcoming Events</option>
+                <option value="past">Past Events</option>
+                <option value="all">All Events</option>
+              </select>
+
+              {/* Clear Filters Button */}
+              {hasActiveFilters && (
+                <button
+                  onClick={handleClearFilters}
+                  className="clear-filters-btn"
+                >
+                  <X size={16} />
+                  Clear
+                </button>
+              )}
+
+              {/* Refresh Button */}
+              <button
+                onClick={() => {
+                  setIsLoading(true);
+                  fetchEvents();
+                }}
+                className="refresh-btn-filter"
+                disabled={isLoading}
+                title="Refresh Events"
+              >
+                <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+                Refresh
+              </button>
+            </div>
+
+            {/* Tag Filter Row */}
+            <div className="tag-filter-row">
+              <p className="tag-filter-label">Filter by tags:</p>
+              <div className="tag-container">
+                {availableTags.map(tag => (
+                  <button
+                    key={tag}
+                    className={`tag-badge ${
+                      selectedTags.includes(tag) ? 'tag-badge-selected' : 'tag-badge-outline'
+                    }`}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <section className="section">
           
+        <div className="container">
           {isLoading ? (
-            <div className="text-center fade-in">
+            <div className="loading-container">
               <div className="loading-spinner"></div>
               <p>Loading events...</p>
             </div>
-          ) : events.length > 0 ? (
-            <div className="row">
-              {events.map((event, index) => (
-                <div 
-                  className="col-half mb-3 fade-in" 
-                  key={event.id} 
+          ) : filteredEvents.length > 0 ? (
+            <div className="events-grid">
+              {filteredEvents.map((event, index) => (
+                <div
+                  className="event-card-wrapper fade-in"
+                  key={event.id}
                   style={{ animationDelay: `${0.1 * index}s` }}
                 >
-                  <div className="card event-card">
-                    <div className="card-header">
-                      <h3>{event.name}</h3>
-                    </div>
-                    <div className="card-body">
-                      <div className="event-meta">
-                        <p><i className="far fa-calendar"></i> {formatDate(event.date, event.startTime, event.endTime)}</p>
-                        <p><i className="fas fa-map-marker-alt"></i> {event.location || 'TBD'}</p>
-                        {event.ageGroup && (
-                          <p><i className="fas fa-child"></i> {event.ageGroup}</p>
-                        )}
-                        {event.capacity && Number(event.capacity) > 0 && (
-                          <p><i className="fas fa-users"></i> Capacity: {event.capacity}</p>
-                        )}
-                        {event.price !== null && event.price !== undefined && event.price !== '' && parseFloat(event.price) > 0 && (
-                          <p><i className="fas fa-dollar-sign"></i> ${event.price}</p>
+                  <div className="modern-event-card">
+                    <div className="event-card-content">
+                      {/* Title */}
+                      <h3 className="event-title">{event.name}</h3>
+
+                      {/* Date & Time */}
+                      <div className="event-meta-section">
+                        <div className="event-meta-item">
+                          <CalendarIcon size={18} className="meta-icon" />
+                          <span className="meta-text">{formatDate(event.date, event.startTime, event.endTime)}</span>
+                        </div>
+                        {event.location && (
+                          <div className="event-meta-item">
+                            <MapPin size={18} className="meta-icon secondary" />
+                            <span className="meta-text">{event.location}</span>
+                          </div>
                         )}
                       </div>
+
+                      {/* Age Range */}
+                      <div className="event-meta-item">
+                        <Users size={18} className="meta-icon" />
+                        <span className="meta-text">{formatAgeRange(event)}</span>
+                      </div>
+
+                      {/* Description */}
                       {event.description && (
-                        <p>{event.description}</p>
+                        <p className="event-description">{event.description}</p>
                       )}
-                    </div>
-                    <div className="card-footer">
+
+                      {/* Event Tags */}
+                      {event.tags && event.tags.trim() && (
+                        <div className="event-tag-display">
+                          {event.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                            <span key={tag} className="event-tag-badge">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Additional Info */}
+                      <div className="event-tags">
+                        {event.capacity && Number(event.capacity) > 0 && (
+                          <span className="event-tag">Capacity: {event.capacity}</span>
+                        )}
+                        {event.price !== null && event.price !== undefined && event.price !== '' && parseFloat(event.price) > 0 && (
+                          <span className="event-tag">${event.price}</span>
+                        )}
+                      </div>
+
+                      {/* Register Button */}
                       {filter !== 'past' && (
-                        <Link to={`/events/${event.id}/register`} className="btn btn-primary">Register</Link>
+                        <Link to={`/events/${event.id}/register`} className="register-btn">
+                          Register Now
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -288,44 +364,370 @@ const Events = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center fade-in">
-              <div style={{ fontSize: '72px', color: 'var(--primary)', marginBottom: '1rem' }}>
-                No Events
-              </div>
-              <p>No events found matching your criteria.</p>
-              <button onClick={() => {
-                setFilter('upcoming');
-                setSportFilter('all');
-              }} className="btn btn-outline mt-2">
-                Reset Filters
+            <div className="no-events-container">
+              <div className="no-events-icon">📅</div>
+              <p className="no-events-text">No events found matching your filters</p>
+              <button onClick={handleClearFilters} className="clear-all-btn">
+                Clear all filters
               </button>
             </div>
           )}
         </div>
       </section>
-      
-      {/* Custom CSS for this page */}
+      </div>
+
+      {/* Modern Events Page Styles */}
       <style>{`
-        .row {
+        .events-page {
+          min-height: 100vh;
+        }
+
+        .events-content {
+          padding-top: 0;
+        }
+
+        .refresh-btn-filter {
           display: flex;
-          flex-wrap: wrap;
+          align-items: center;
+          gap: 0.5rem;
+          background: var(--primary);
+          color: white;
+          border: 1px solid var(--primary);
+          border-radius: 0.5rem;
+          padding: 0.75rem 1rem;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .refresh-btn-filter:hover:not(:disabled) {
+          background: rgba(47, 80, 106, 0.9);
+          transform: translateY(-1px);
+        }
+
+        .refresh-btn-filter:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .spinning {
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        .filter-bar {
+          background-color: white;
+          border-bottom: 1px solid rgba(47, 80, 106, 0.15);
+          padding: 1.5rem 0;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-content {
+          display: flex;
+          flex-direction: column;
           gap: 1rem;
         }
 
-        .col-half {
-          flex: 0 0 calc(50% - 0.5rem);
-          max-width: calc(50% - 0.5rem);
+        .filter-row {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
         }
 
-        @media (max-width: 768px) {
-          .col-half {
-            flex: 0 0 100%;
-            max-width: 100%;
+        @media (min-width: 768px) {
+          .filter-row {
+            flex-direction: row;
+            align-items: center;
           }
         }
 
+        .page-title {
+          display: flex;
+          align-items: center;
+          margin-right: 2rem;
+        }
+
+        .page-title h1 {
+          font-size: 1.875rem;
+          font-weight: 700;
+          color: var(--primary);
+          margin: 0;
+          white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+          .page-title {
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+          }
+
+          .page-title h1 {
+            font-size: 1.5rem;
+          }
+        }
+
+        .search-input-container {
+          position: relative;
+          flex: 1;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6b7280;
+          pointer-events: none;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+          border: 1px solid rgba(47, 80, 106, 0.15);
+          border-radius: 0.5rem;
+          font-size: 1rem;
+          background-color: white;
+          transition: all 0.15s ease;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1);
+        }
+
+        .filter-select {
+          padding: 0.75rem;
+          border: 1px solid rgba(47, 80, 106, 0.15);
+          border-radius: 0.5rem;
+          background-color: white;
+          font-size: 1rem;
+          min-width: 10rem;
+          transition: all 0.15s ease;
+        }
+
+        .filter-select:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1);
+        }
+
+        .clear-filters-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1rem;
+          border: 1px solid var(--secondary);
+          border-radius: 0.5rem;
+          background-color: white;
+          color: var(--secondary);
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .clear-filters-btn:hover {
+          background-color: var(--secondary);
+          color: white;
+        }
+
+        .tag-filter-row {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        @media (min-width: 768px) {
+          .tag-filter-row {
+            flex-direction: row;
+            align-items: center;
+          }
+        }
+
+        .tag-filter-label {
+          font-size: 0.875rem;
+          color: #6b7280;
+          margin: 0;
+          white-space: nowrap;
+        }
+
+        .tag-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .tag-badge {
+          padding: 0.375rem 0.75rem;
+          border-radius: 9999px;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          border: none;
+        }
+
+        .tag-badge-selected {
+          background-color: var(--primary);
+          color: white;
+        }
+
+        .tag-badge-selected:hover {
+          background-color: rgba(47, 80, 106, 0.9);
+        }
+
+        .tag-badge-outline {
+          border: 1px solid rgba(47, 80, 106, 0.15);
+          background-color: white;
+          color: var(--foreground);
+        }
+
+        .tag-badge-outline:hover {
+          border-color: var(--primary);
+          color: var(--primary);
+        }
+
+        .events-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 1.5rem;
+          padding-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+          .events-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 1024px) {
+          .events-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        .event-card-wrapper {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: all 0.5s ease;
+        }
+
+        .event-card-wrapper.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .modern-event-card {
+          background-color: white;
+          border: 1px solid rgba(47, 80, 106, 0.15);
+          border-radius: 0.75rem;
+          overflow: hidden;
+          transition: all 0.15s ease;
+          height: 100%;
+        }
+
+        .modern-event-card:hover {
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-card-content {
+          padding: 1.25rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          height: 100%;
+        }
+
+        .event-title {
+          color: var(--primary);
+          font-size: 1.125rem;
+          font-weight: 500;
+          margin: 0;
+          line-height: 1.5;
+        }
+
+        .event-meta-section {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .event-meta-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+
+        .meta-icon {
+          color: var(--primary);
+          flex-shrink: 0;
+          margin-top: 0.125rem;
+        }
+
+        .meta-icon.secondary {
+          color: var(--secondary);
+        }
+
+        .meta-text {
+          font-size: 0.875rem;
+          color: var(--primary);
+          line-height: 1.25;
+        }
+
+        .event-description {
+          font-size: 0.875rem;
+          color: #6b7280;
+          line-height: 1.625;
+          margin: 0;
+        }
+
+        .event-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .event-tag {
+          background-color: rgba(47, 80, 106, 0.1);
+          color: var(--primary);
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+        }
+
+        .register-btn {
+          width: 100%;
+          background-color: var(--secondary);
+          color: white;
+          padding: 0.75rem 1rem;
+          border-radius: 9999px;
+          text-decoration: none;
+          text-align: center;
+          font-weight: 500;
+          transition: all 0.15s ease;
+          margin-top: auto;
+        }
+
+        .register-btn:hover {
+          background-color: rgba(230, 79, 80, 0.9);
+          color: white;
+          text-decoration: none;
+        }
+
+        .loading-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 4rem 0;
+          gap: 1rem;
+        }
+
         .loading-spinner {
-          display: inline-block;
           width: 50px;
           height: 50px;
           border: 3px solid rgba(47, 80, 106, 0.3);
@@ -334,30 +736,60 @@ const Events = () => {
           animation: spin 1s ease-in-out infinite;
         }
 
-        .loading-spinner-small {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 2px solid rgba(47, 80, 106, 0.3);
-          border-radius: 50%;
-          border-top-color: var(--primary);
-          animation: spin 1s ease-in-out infinite;
-          margin-right: 0.5rem;
+        .no-events-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 4rem 0;
+          gap: 1rem;
+        }
+
+        .no-events-icon {
+          font-size: 4rem;
+          opacity: 0.5;
+        }
+
+        .no-events-text {
+          color: #6b7280;
+          margin: 0;
+        }
+
+        .clear-all-btn {
+          color: #2563eb;
+          background: none;
+          border: none;
+          text-decoration: underline;
+          cursor: pointer;
+          font-size: 1rem;
+        }
+
+        .clear-all-btn:hover {
+          color: #1d4ed8;
+        }
+
+        .event-tag-display {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin: 0.75rem 0;
+        }
+
+        .event-tag-badge {
+          background-color: #e3f2fd;
+          color: #1976d2;
+          padding: 0.25rem 0.75rem;
+          border-radius: 1rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+          border: 1px solid #bbdefb;
         }
 
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-
-        .ml-2 {
-          margin-left: 0.5rem;
-        }
-
-        .mb-3 {
-          margin-bottom: 1rem;
-        }
       `}</style>
-    </>
+    </div>
   );
 };
 

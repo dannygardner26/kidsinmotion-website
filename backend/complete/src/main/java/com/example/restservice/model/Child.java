@@ -26,8 +26,8 @@ public class Child {
     @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
-    @Min(value = 4, message = "Age must be at least 4")
-    @Max(value = 18, message = "Age must not exceed 18")
+    @Min(value = 0, message = "Age must be at least 0")
+    @Max(value = 21, message = "Age must not exceed 21")
     @Column(name = "age", nullable = false)
     private Integer age;
 

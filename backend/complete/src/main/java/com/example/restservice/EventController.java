@@ -206,8 +206,31 @@ public class EventController {
             event.setLocation(request.getLocation());
             event.setCapacity(request.getCapacity());
             event.setAgeGroup(request.getAgeGroup());
+            event.setMinAge(request.getMinAge());
+            event.setMaxAge(request.getMaxAge());
+            event.setTags(request.getTags());
             event.setPrice(request.getPrice());
             event.setEventTypes(request.getEventTypes());
+
+            // Validate age bounds and constraints
+            if (request.getMinAge() != null) {
+                if (request.getMinAge() < 0 || request.getMinAge() > 21) {
+                    return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Error: Minimum age must be between 0 and 21"));
+                }
+            }
+            if (request.getMaxAge() != null) {
+                if (request.getMaxAge() < 0 || request.getMaxAge() > 21) {
+                    return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Error: Maximum age must be between 0 and 21"));
+                }
+            }
+            if (request.getMinAge() != null && request.getMaxAge() != null) {
+                if (request.getMinAge() > request.getMaxAge()) {
+                    return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Error: Minimum age cannot be greater than maximum age"));
+                }
+            }
 
             // Handle date
             if (request.getDate() != null) {
@@ -266,6 +289,9 @@ public class EventController {
             event.setLocation(oldEvent.getLocation());
             event.setCapacity(oldEvent.getCapacity());
             event.setAgeGroup(oldEvent.getAgeGroup());
+            event.setMinAge(oldEvent.getMinAge());
+            event.setMaxAge(oldEvent.getMaxAge());
+            event.setTags(oldEvent.getTags());
             event.setPrice(oldEvent.getPrice());
             event.setEventTypes(oldEvent.getEventTypes());
             event.setDate(oldEvent.getDate());
@@ -287,6 +313,39 @@ public class EventController {
             }
             if (request.getAgeGroup() != null) {
                 event.setAgeGroup(request.getAgeGroup());
+            }
+            if (request.getMinAge() != null) {
+                event.setMinAge(request.getMinAge());
+            }
+            if (request.getMaxAge() != null) {
+                event.setMaxAge(request.getMaxAge());
+            }
+
+            // Validate age bounds and constraints for update
+            if (request.getMinAge() != null) {
+                if (request.getMinAge() < 0 || request.getMinAge() > 21) {
+                    return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Error: Minimum age must be between 0 and 21"));
+                }
+            }
+            if (request.getMaxAge() != null) {
+                if (request.getMaxAge() < 0 || request.getMaxAge() > 21) {
+                    return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Error: Maximum age must be between 0 and 21"));
+                }
+            }
+            // Check minAge vs maxAge constraint using current event values
+            Integer finalMinAge = request.getMinAge() != null ? request.getMinAge() : event.getMinAge();
+            Integer finalMaxAge = request.getMaxAge() != null ? request.getMaxAge() : event.getMaxAge();
+            if (finalMinAge != null && finalMaxAge != null) {
+                if (finalMinAge > finalMaxAge) {
+                    return ResponseEntity.badRequest()
+                        .body(new MessageResponse("Error: Minimum age cannot be greater than maximum age"));
+                }
+            }
+
+            if (request.getTags() != null) {
+                event.setTags(request.getTags());
             }
             if (request.getPrice() != null) {
                 event.setPrice(request.getPrice());
@@ -468,6 +527,9 @@ public class EventController {
         private String location;
         private Integer capacity;
         private String ageGroup;
+        private Integer minAge;
+        private Integer maxAge;
+        private String tags;
         private Double price;
         private String eventTypes;
         private String startTime;
@@ -491,6 +553,15 @@ public class EventController {
 
         public String getAgeGroup() { return ageGroup; }
         public void setAgeGroup(String ageGroup) { this.ageGroup = ageGroup; }
+
+        public Integer getMinAge() { return minAge; }
+        public void setMinAge(Integer minAge) { this.minAge = minAge; }
+
+        public Integer getMaxAge() { return maxAge; }
+        public void setMaxAge(Integer maxAge) { this.maxAge = maxAge; }
+
+        public String getTags() { return tags; }
+        public void setTags(String tags) { this.tags = tags; }
 
         public Double getPrice() { return price; }
         public void setPrice(Double price) { this.price = price; }
@@ -555,6 +626,19 @@ public class EventController {
         return result.toString();
     }
 
+    // Helper method to format age range
+    private String formatAgeRange(Integer minAge, Integer maxAge) {
+        if (minAge != null && maxAge != null) {
+            return "Ages " + minAge + "-" + maxAge;
+        } else if (minAge != null) {
+            return "Ages " + minAge + "+";
+        } else if (maxAge != null) {
+            return "Ages up to " + maxAge;
+        } else {
+            return "All Ages";
+        }
+    }
+
     // Change detection method
     private Map<String, String> detectEventChanges(EventFirestore oldEvent, EventFirestore newEvent) {
         Map<String, String> changes = new HashMap<>();
@@ -592,6 +676,18 @@ public class EventController {
             changes.put("capacity", (oldEvent.getCapacity() != null ? oldEvent.getCapacity().toString() : "Unlimited") + " → " + (newEvent.getCapacity() != null ? newEvent.getCapacity().toString() : "Unlimited"));
         }
 
+        if (!java.util.Objects.equals(oldEvent.getMinAge(), newEvent.getMinAge()) || !java.util.Objects.equals(oldEvent.getMaxAge(), newEvent.getMaxAge())) {
+            String oldAgeRange = formatAgeRange(oldEvent.getMinAge(), oldEvent.getMaxAge());
+            String newAgeRange = formatAgeRange(newEvent.getMinAge(), newEvent.getMaxAge());
+            changes.put("ageRange", oldAgeRange + " → " + newAgeRange);
+        }
+
+        if (!java.util.Objects.equals(oldEvent.getTags(), newEvent.getTags())) {
+            String oldTags = oldEvent.getTags() != null && !oldEvent.getTags().trim().isEmpty() ? oldEvent.getTags() : "None";
+            String newTags = newEvent.getTags() != null && !newEvent.getTags().trim().isEmpty() ? newEvent.getTags() : "None";
+            changes.put("tags", oldTags + " → " + newTags);
+        }
+
         return changes;
     }
 
@@ -617,6 +713,12 @@ public class EventController {
                     break;
                 case "ageGroup":
                     fieldName = "Age Group";
+                    break;
+                case "ageRange":
+                    fieldName = "Age Range";
+                    break;
+                case "tags":
+                    fieldName = "Tags";
                     break;
                 default:
                     fieldName = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);

@@ -37,6 +37,13 @@ public class Event {
     @Size(max = 50)
     private String ageGroup;
 
+    private Integer minAge; // Minimum age for event participation
+
+    private Integer maxAge; // Maximum age for event participation
+
+    @Size(max = 500)
+    private String tags; // Comma-separated tags for event categorization
+
     private Double price;
 
     @Size(max = 100)
@@ -138,5 +145,29 @@ public class Event {
 
     public void setEventTypes(String eventTypes) {
         this.eventTypes = eventTypes;
+    }
+
+    public Integer getMinAge() {
+        return minAge;
+    }
+
+    public void setMinAge(Integer minAge) {
+        this.minAge = minAge;
+    }
+
+    public Integer getMaxAge() {
+        return maxAge;
+    }
+
+    public void setMaxAge(Integer maxAge) {
+        this.maxAge = maxAge;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
     }
 }

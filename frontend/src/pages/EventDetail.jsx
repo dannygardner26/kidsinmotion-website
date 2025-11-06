@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -27,6 +28,7 @@ const EventDetail = () => {
       setIsLoading(false);
     }
   };
+
   
   // Format date for display
   const formatDate = (dateString, startTime, endTime) => {
@@ -136,7 +138,7 @@ const EventDetail = () => {
         <div className="hero-bg" style={{ backgroundImage: `url("${sportBackground}")` }}></div>
         
         <div className="container hero-content">
-          {event.ageGroup && <span className="event-badge">{event.ageGroup}</span>}
+          <span className="event-badge">{formatAgeRange(event)}</span>
           <h1>{event.name}</h1>
           <div className="event-meta-highlights">
             <div className="event-meta-item">
@@ -182,8 +184,16 @@ const EventDetail = () => {
                   <div className="event-meta mb-3">
                     <p><i className="far fa-calendar"></i> <strong>Date:</strong> {formatDate(event.date, event.startTime, event.endTime)}</p>
                     <p><i className="fas fa-map-marker-alt"></i> <strong>Location:</strong> {event.location || 'TBD'}</p>
-                    {event.ageGroup && (
-                      <p><i className="fas fa-child"></i> <strong>Age Group:</strong> {event.ageGroup}</p>
+                    <p><i className="fas fa-child"></i> <strong>Age Range:</strong> {formatAgeRange(event)}</p>
+                    {event.tags && event.tags.trim() && (
+                      <div style={{marginTop: '1rem'}}>
+                        <p><i className="fas fa-tags"></i> <strong>Tags:</strong></p>
+                        <div className="event-tags-display">
+                          {event.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                            <span key={tag} className="event-tag-badge">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     {event.capacity && (
                       <p><i className="fas fa-users"></i> <strong>Capacity:</strong> {event.capacity}</p>
@@ -598,12 +608,29 @@ const EventDetail = () => {
           to { transform: rotate(360deg); }
         }
         
+        .event-tags-display {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .event-tag-badge {
+          background-color: #e3f2fd;
+          color: #1976d2;
+          padding: 0.25rem 0.75rem;
+          border-radius: 1rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+          border: 1px solid #bbdefb;
+        }
+
         @media (max-width: 768px) {
           .event-meta-highlights {
             flex-direction: column;
             gap: 0.5rem;
           }
-          
+
           .sticky-card {
             position: static;
           }

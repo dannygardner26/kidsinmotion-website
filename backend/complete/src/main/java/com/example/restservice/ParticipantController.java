@@ -160,6 +160,17 @@ public class ParticipantController {
 
             EventFirestore event = eventOpt.get();
 
+            // Check event age range validation
+            Integer childAge = request.getParticipantAge();
+            if (event.getMinAge() != null && childAge < event.getMinAge()) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Child does not meet minimum age requirement. Please contact us if you have questions."));
+            }
+            if (event.getMaxAge() != null && childAge > event.getMaxAge()) {
+                return ResponseEntity.badRequest()
+                    .body(new MessageResponse("Child exceeds maximum age requirement. Please contact us if you have questions."));
+            }
+
             // Check event capacity
             if (event.getCapacity() != null && event.getCapacity() > 0) {
                 long currentParticipants = participantRepository.countByEventId(request.getEventId());
@@ -393,8 +404,8 @@ public class ParticipantController {
         private String participantLastName;
 
         @NotNull(message = "Participant age is required")
-        @Min(value = 4, message = "Participant age must be at least 4")
-        @Max(value = 18, message = "Participant age must be at most 18")
+        @Min(value = 0, message = "Participant age must be at least 0")
+        @Max(value = 21, message = "Participant age must be at most 21")
         private Integer participantAge;
 
         private String participantAgeGroup;

@@ -8,6 +8,7 @@ import AdminMessaging from '../components/AdminMessaging';
 import UsersAndRegistrations from '../components/UsersAndRegistrations';
 import ReportsAndAnalytics from '../components/ReportsAndAnalytics';
 import PosterTemplateSelector from '../components/PosterTemplateSelector';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const AdminDashboard = () => {
   const { userProfile } = useAuth();
@@ -297,9 +298,9 @@ const AdminDashboard = () => {
                       <tr key={event.id}>
                         <td>
                           <strong>{event.name}</strong>
-                          {event.ageGroup && (
-                            <div className="text-muted small">{event.ageGroup}</div>
-                          )}
+                          <div className="text-muted small">
+                            {formatAgeRange(event)}
+                          </div>
                         </td>
                         <td>
                           <div>{new Date(event.date).toLocaleDateString()}</div>

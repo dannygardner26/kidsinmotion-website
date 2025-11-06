@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import { formatAgeRange } from '../utils/eventFormatters';
 
 const EventRegistrations = () => {
   const { id } = useParams();
@@ -79,7 +80,7 @@ const EventRegistrations = () => {
                 <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
                 <p><strong>Location:</strong> {event.location || 'Not specified'}</p>
                 <p><strong>Capacity:</strong> {event.capacity || 'Unlimited'}</p>
-                <p><strong>Age Group:</strong> {event.ageGroup || 'All ages'}</p>
+                <p><strong>Age Range:</strong> {formatAgeRange(event)}</p>
                 <p><strong>Price:</strong> {event.price ? `$${event.price}` : 'Free'}</p>
                 <p><strong>Description:</strong> {event.description}</p>
               </div>

@@ -20,11 +20,16 @@ const CreateEvent = () => {
     startTime: '',
     endTime: '',
     location: '',
-    ageGroup: [],
+    minAge: '',
+    maxAge: '',
+    tags: [],
+    customTag: '',
     capacity: '',
     price: '',
     eventTypes: []
   });
+
+  const predefinedTags = ['Small Group', 'Large Clinic', 'Fundraiser'];
 
   // Check if user is admin
   const isAdmin = userProfile?.userType === 'ADMIN';
@@ -51,7 +56,10 @@ const CreateEvent = () => {
         startTime: eventData.startTime?.substring(0, 5) || '', // Convert "17:00:00" to "17:00"
         endTime: eventData.endTime?.substring(0, 5) || '',
         location: eventData.location || '',
-        ageGroup: eventData.ageGroup?.split(', ').map(item => item.trim()).filter(item => item !== '') || [], // Parse comma-separated string back to array
+        minAge: eventData.minAge ?? '',
+        maxAge: eventData.maxAge ?? '',
+        tags: eventData.tags?.split(',').map(t => t.trim()).filter(Boolean) || [],
+        customTag: '',
         capacity: eventData.capacity || '',
         price: eventData.price || '',
         eventTypes: eventData.eventTypes?.split(', ').map(item => item.trim()).filter(item => item !== '') || [] // Parse comma-separated string back to array
@@ -90,21 +98,30 @@ const CreateEvent = () => {
     }));
   };
 
-  const handleAgeGroupChange = (ageGroup) => {
-    setFormData(prev => {
-      const currentAgeGroups = prev.ageGroup || [];
-      if (currentAgeGroups.includes(ageGroup)) {
-        return {
-          ...prev,
-          ageGroup: currentAgeGroups.filter(ag => ag !== ageGroup)
-        };
-      } else {
-        return {
-          ...prev,
-          ageGroup: [...currentAgeGroups, ageGroup]
-        };
-      }
-    });
+  const handleTagToggle = (tagName) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.includes(tagName)
+        ? prev.tags.filter(tag => tag !== tagName)
+        : [...prev.tags, tagName]
+    }));
+  };
+
+  const handleAddCustomTag = () => {
+    if (formData.customTag.trim() && !formData.tags.includes(formData.customTag.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, prev.customTag.trim()],
+        customTag: ''
+      }));
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
   };
 
   const handleEventTypeChange = (eventType) => {
@@ -130,10 +147,32 @@ const CreateEvent = () => {
     setError(null);
 
     try {
+      // Client-side validation for age bounds and constraints
+      const minAge = formData.minAge === '' ? null : parseInt(formData.minAge, 10);
+      const maxAge = formData.maxAge === '' ? null : parseInt(formData.maxAge, 10);
+
+      if (minAge !== null && (minAge < 0 || minAge > 21)) {
+        setError('Minimum age must be between 0 and 21');
+        setIsLoading(false);
+        return;
+      }
+      if (maxAge !== null && (maxAge < 0 || maxAge > 21)) {
+        setError('Maximum age must be between 0 and 21');
+        setIsLoading(false);
+        return;
+      }
+      if (minAge !== null && maxAge !== null && minAge > maxAge) {
+        setError('Minimum age cannot be greater than maximum age');
+        setIsLoading(false);
+        return;
+      }
+
       // Prepare event data
       const eventData = {
         ...formData,
-        ageGroup: formData.ageGroup.length > 0 ? formData.ageGroup.join(', ') : '',
+        minAge: minAge,
+        maxAge: maxAge,
+        tags: formData.tags.join(','),
         eventTypes: formData.eventTypes.length > 0 ? formData.eventTypes.join(', ') : '',
         capacity: formData.capacity ? parseInt(formData.capacity) : null,
         price: formData.price ? parseFloat(formData.price) : 0.0,
@@ -300,22 +339,36 @@ const CreateEvent = () => {
                   </div>
 
                   <div className="row">
-                    <div className="col-md-4">
+                    <div className="col-md-2">
                       <div className="form-group">
-                        <label>Age Groups</label>
-                        <div className="age-group-multiselect">
-                          {['5-7 years', '8-10 years', '11-13 years', '14-16 years', 'All Ages'].map(ageGroup => (
-                            <label key={ageGroup} className="checkbox-label">
-                              <input
-                                type="checkbox"
-                                checked={formData.ageGroup.includes(ageGroup)}
-                                onChange={() => handleAgeGroupChange(ageGroup)}
-                              />
-                              <span className="checkmark"></span>
-                              {ageGroup}
-                            </label>
-                          ))}
-                        </div>
+                        <label htmlFor="minAge">Minimum Age</label>
+                        <input
+                          type="number"
+                          id="minAge"
+                          name="minAge"
+                          className="form-control"
+                          value={formData.minAge}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="21"
+                          placeholder="e.g., 5"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-2">
+                      <div className="form-group">
+                        <label htmlFor="maxAge">Maximum Age</label>
+                        <input
+                          type="number"
+                          id="maxAge"
+                          name="maxAge"
+                          className="form-control"
+                          value={formData.maxAge}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="21"
+                          placeholder="e.g., 12"
+                        />
                       </div>
                     </div>
                     <div className="col-md-4">
@@ -349,6 +402,69 @@ const CreateEvent = () => {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Event Tags</label>
+                    <div className="mb-3">
+                      <div className="row">
+                        {predefinedTags.map(tag => (
+                          <div key={tag} className="col-md-4 mb-2">
+                            <label className="checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={formData.tags.includes(tag)}
+                                onChange={() => handleTagToggle(tag)}
+                              />
+                              <span className="checkmark"></span>
+                              {tag}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-8">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Add custom tag"
+                          value={formData.customTag}
+                          onChange={(e) => setFormData(prev => ({...prev, customTag: e.target.value}))}
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={handleAddCustomTag}
+                          disabled={!formData.customTag.trim()}
+                        >
+                          Add Tag
+                        </button>
+                      </div>
+                    </div>
+                    {formData.tags.length > 0 && (
+                      <div className="mt-3">
+                        <label className="form-label">Selected Tags:</label>
+                        <div className="tags-display">
+                          {formData.tags.map(tag => (
+                            <span key={tag} className="tag-badge">
+                              {tag}
+                              <button
+                                type="button"
+                                className="tag-remove"
+                                onClick={() => handleRemoveTag(tag)}
+                                title="Remove tag"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="row">
@@ -421,13 +537,39 @@ const CreateEvent = () => {
           letter-spacing: 0.5px;
         }
 
-        .age-group-multiselect {
-          border: 2px solid #e1e5e9;
-          border-radius: 4px;
-          padding: 0.75rem;
-          background: white;
-          max-height: 200px;
-          overflow-y: auto;
+        .tags-display {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .tag-badge {
+          display: inline-flex;
+          align-items: center;
+          background-color: #e3f2fd;
+          color: #1976d2;
+          padding: 0.25rem 0.75rem;
+          border-radius: 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          border: 1px solid #bbdefb;
+        }
+
+        .tag-remove {
+          background: none;
+          border: none;
+          color: #1976d2;
+          cursor: pointer;
+          font-size: 1rem;
+          margin-left: 0.5rem;
+          padding: 0;
+          line-height: 1;
+        }
+
+        .tag-remove:hover {
+          color: #d32f2f;
+          font-weight: bold;
         }
 
         .checkbox-label {

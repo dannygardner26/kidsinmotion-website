@@ -434,7 +434,7 @@ const UsersAndRegistrations = () => {
                     <tr key={user.id} className={user.isBanned ? 'banned-row' : ''}>
                       <td>
                         <Link
-                          to={`/edit/${user.username}`}
+                          to={`/account/${user.username}`}
                           className="user-name-link"
                           title="Edit user profile"
                         >
@@ -466,7 +466,7 @@ const UsersAndRegistrations = () => {
                       <td>
                         <div className="action-buttons">
                           <Link
-                            to={`/edit/${user.username}`}
+                            to={`/account/${user.username}`}
                             className="btn btn-sm btn-primary"
                           >
                             Edit Profile
