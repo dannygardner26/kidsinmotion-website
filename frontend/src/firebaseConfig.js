@@ -96,7 +96,18 @@ const clearStaleAuthData = () => {
 // This function is kept available for manual debugging or troubleshooting specific auth issues,
 // but should NOT be called automatically on initialization.
 // Only clear auth data explicitly when needed (e.g., during logout or when debugging auth problems).
-// clearStaleAuthData();
+
+// One-time cleanup: Clear corrupted auth data that's causing 400 errors
+// This runs once per browser and then sets a flag to never run again
+const AUTH_CLEANUP_VERSION = 'v2'; // Increment this to force cleanup again
+const cleanupFlag = localStorage.getItem('authCleanupVersion');
+
+if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
+  console.log('Running one-time auth cleanup to fix 400 errors...');
+  clearStaleAuthData();
+  localStorage.setItem('authCleanupVersion', AUTH_CLEANUP_VERSION);
+  console.log('Auth cleanup complete. Please log in again.');
+}
 
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
