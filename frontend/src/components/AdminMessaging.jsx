@@ -746,8 +746,20 @@ const AdminMessaging = () => {
           gap: 0.35rem;
         }
 
+        .category-card strong {
+          font-family: 'Montserrat', sans-serif;
+          font-weight: 600;
+          font-size: 0.95rem;
+          color: #1f2937;
+          letter-spacing: 0.01em;
+        }
+
         .category-card small {
+          font-family: 'Open Sans', sans-serif;
+          font-weight: 400;
           color: #6b7280;
+          font-size: 0.85rem;
+          line-height: 1.4;
         }
 
         .loading-categories {
@@ -771,10 +783,11 @@ const AdminMessaging = () => {
         .category-section-divider h5 {
           margin: 0 0 1rem 0;
           color: #374151;
+          font-family: 'Montserrat', sans-serif;
           font-weight: 600;
           font-size: 0.9rem;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.1em;
         }
 
         .event-category {

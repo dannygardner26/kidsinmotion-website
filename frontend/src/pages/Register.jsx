@@ -266,7 +266,7 @@ const Register = () => {
       if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
         try {
           window.google.accounts.id.initialize({
-            client_id: "839796180413-30kvc5flvdeo29pks8r9kkf1jr67ccju.apps.googleusercontent.com",
+            client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || "839796180413-30kvc5flvdeo29pks8r9kkf1jr67ccju.apps.googleusercontent.com",
             callback: handleGoogleSignIn,
           });
           window.google.accounts.id.renderButton(
