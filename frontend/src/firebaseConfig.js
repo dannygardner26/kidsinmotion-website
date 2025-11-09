@@ -52,19 +52,8 @@ window.addEventListener('unhandledrejection', (event) => {
 // Handle Firebase Auth persistence issues more carefully
 // Instead of intercepting fetch, let's improve the auth state handling
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-console.log("Firebase App initialized");
-
-// Initialize Firebase Auth
-// NOTE: Auth initialization is asynchronous. The auth object is created immediately,
-// but Firebase performs internal initialization in the background.
-const auth = getAuth(app);
-console.log("Firebase Auth initializing...");
-
-// Set auth persistence to local storage for persistent login with better error handling
-// NOTE: Auth keys must persist across sessions for login persistence to work correctly.
-// The 400 error on accounts:lookup has been resolved through the 150ms delay in AuthContext.js.
+// CRITICAL: Define and run cleanup BEFORE Firebase initialization
+// This ensures corrupted auth data is cleared before Firebase tries to load it
 const clearStaleAuthData = () => {
   try {
     console.log("Starting aggressive auth cleanup...");
@@ -94,23 +83,30 @@ const clearStaleAuthData = () => {
   }
 };
 
-// IMPORTANT: clearStaleAuthData() is commented out to preserve login persistence.
-// Auth keys should persist across sessions for users to remain logged in after closing the browser.
-// This function is kept available for manual debugging or troubleshooting specific auth issues,
-// but should NOT be called automatically on initialization.
-// Only clear auth data explicitly when needed (e.g., during logout or when debugging auth problems).
-
 // One-time cleanup: Clear corrupted auth data that's causing 400 errors
-// This runs once per browser and then sets a flag to never run again
-const AUTH_CLEANUP_VERSION = 'v3'; // Increment this to force cleanup again
+// This runs once per browser BEFORE Firebase initializes
+const AUTH_CLEANUP_VERSION = 'v4'; // Increment this to force cleanup again
 const cleanupFlag = localStorage.getItem('authCleanupVersion');
 
 if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
-  console.log('Running one-time auth cleanup to fix 400 errors...');
+  console.log('Running one-time auth cleanup to fix 400 errors (BEFORE Firebase init)...');
   clearStaleAuthData();
   localStorage.setItem('authCleanupVersion', AUTH_CLEANUP_VERSION);
   console.log('Auth cleanup complete. Please log in again.');
 }
+
+// Initialize Firebase AFTER cleanup
+const app = initializeApp(firebaseConfig);
+console.log("Firebase App initialized");
+
+// Initialize Firebase Auth
+// NOTE: Auth initialization is asynchronous. The auth object is created immediately,
+// but Firebase performs internal initialization in the background.
+const auth = getAuth(app);
+console.log("Firebase Auth initializing...");
+
+// Set auth persistence to local storage for persistent login with better error handling
+// NOTE: Auth keys must persist across sessions for login persistence to work correctly.
 
 setPersistence(auth, browserLocalPersistence)
   .then(() => {
