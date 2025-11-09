@@ -312,84 +312,11 @@ export const AuthProvider = ({ children }) => {
           const isRestoredSession = !isGoogleOAuthLogin;
 
           if (isRestoredSession && process.env.NODE_ENV !== 'production') {
-            console.log("Restored session detected, checking token validity...");
-
-            // For restored sessions, verify the token is still valid
-            try {
-              await user.getIdToken(true); // Force token refresh
-              console.log("Token validation successful for restored session");
-            } catch (tokenError) {
-              console.warn("Token validation failed for restored session:", tokenError);
-              // If token is invalid, clear auth state and don't proceed
-              if (tokenError.code === 'auth/network-request-failed' ||
-                  tokenError.code === 'auth/user-token-expired' ||
-                  tokenError.code === 'auth/invalid-user-token') {
-                console.log("Clearing invalid auth state...");
-
-                // Targeted removal of Firebase auth keys instead of localStorage.clear()
-                // This preserves other app data while cleaning up invalid auth state
-                try {
-                  const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
-                  const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
-
-                  let removedCount = 0;
-
-                  // Attempt targeted removal with exact keys
-                  if (apiKey && projectId) {
-                    const firebaseKeysToRemove = [
-                      `firebase:authUser:${apiKey}:[DEFAULT]`,
-                      `firebase:host:${projectId}.firebaseapp.com`,
-                      `firebase:host:${projectId}.web.app`,
-                      `firebase:persistence:${apiKey}:[DEFAULT]`,
-                      `firebase:authTokenSyncURL:${apiKey}:[DEFAULT]`,
-                      `firebase:pendingRedirect:${apiKey}:[DEFAULT]`
-                    ];
-
-                    firebaseKeysToRemove.forEach(key => {
-                      if (localStorage.getItem(key)) {
-                        if (process.env.NODE_ENV !== 'production') {
-                          console.log("Removing Firebase auth key:", key);
-                        }
-                        localStorage.removeItem(key);
-                        removedCount++;
-                      }
-                    });
-                  }
-
-                  // Fallback: prefix-based deletion if env vars are missing or no keys were removed
-                  if (!apiKey || !projectId || removedCount === 0) {
-                    if (process.env.NODE_ENV !== 'production') {
-                      console.log("Using fallback prefix-based deletion for firebase: keys");
-                    }
-                    Object.keys(localStorage).forEach(key => {
-                      if (key.startsWith('firebase:')) {
-                        if (process.env.NODE_ENV !== 'production') {
-                          console.log("Removing Firebase key (fallback):", key);
-                        }
-                        localStorage.removeItem(key);
-                      }
-                    });
-                  }
-
-                  // Also remove user profile cache
-                  const userProfileKey = `userProfile_${user?.uid}`;
-                  if (localStorage.getItem(userProfileKey)) {
-                    if (process.env.NODE_ENV !== 'production') {
-                      console.log("Removing user profile cache:", userProfileKey);
-                    }
-                    localStorage.removeItem(userProfileKey);
-                  }
-                } catch (cleanupError) {
-                  console.warn("Error during targeted localStorage cleanup:", cleanupError);
-                }
-
-                setCurrentUser(null);
-                setUserProfile(null);
-                setAuthReady(true);
-                setLoading(false);
-                return;
-              }
-            }
+            console.log("Restored session detected - trusting Firebase's built-in token validation");
+            // NOTE: Removed aggressive token validation that was causing premature logouts.
+            // Firebase automatically handles token refresh and will trigger onAuthStateChanged
+            // with user=null if the token is truly invalid. We should trust Firebase's
+            // built-in validation rather than forcing our own checks on every page load.
           }
 
           // Add initialization delay to prevent race condition with Firebase Auth's internal initialization
