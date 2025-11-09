@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, X, Calendar as CalendarIcon, Clock, MapPin, Users, RefreshCw } from 'lucide-react';
 
+import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 import firestoreEventService from '../services/firestoreEventService';
 import { formatAgeRange } from '../utils/eventFormatters';
 
 const Events = () => {
+  const { currentUser } = useAuth();
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('upcoming'); // 'upcoming', 'past', or 'all'
@@ -286,9 +288,31 @@ const Events = () => {
           </div>
         </div>
       </div>
+      </div>
 
       <section className="section">
-          
+        <div className="container">
+          {!currentUser && filter !== 'past' && (
+            <div className="account-requirement-banner fade-in" style={{ marginBottom: '2rem' }}>
+              <div className="banner-icon">
+                <i className="fas fa-info-circle"></i>
+              </div>
+              <div className="banner-content">
+                <h3>Account Required</h3>
+                <p>To register for events, you need a Kids in Motion account. Log in or create one to get started.</p>
+              </div>
+              <div className="banner-actions">
+                <Link to="/login" className="btn btn-primary">
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-outline">
+                  Sign Up
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="container">
           {isLoading ? (
             <div className="loading-container">
@@ -354,9 +378,19 @@ const Events = () => {
 
                       {/* Register Button */}
                       {filter !== 'past' && (
-                        <Link to={`/events/${event.id}/register`} className="register-btn">
-                          Register Now
-                        </Link>
+                        <>
+                          {!currentUser && (
+                            <span className="login-required-badge">
+                              <i className="fas fa-lock"></i> Login Required
+                            </span>
+                          )}
+                          <Link
+                            to={currentUser ? `/events/${event.id}/register` : `/login?redirect=/events/${event.id}/register`}
+                            className="register-btn"
+                          >
+                            {currentUser ? 'Register Now' : 'Login to Register'}
+                          </Link>
+                        </>
                       )}
                     </div>
                   </div>
@@ -374,7 +408,6 @@ const Events = () => {
           )}
         </div>
       </section>
-      </div>
 
       {/* Modern Events Page Styles */}
       <style>{`
@@ -783,6 +816,77 @@ const Events = () => {
           font-size: 0.75rem;
           font-weight: 500;
           border: 1px solid #bbdefb;
+        }
+
+        .account-requirement-banner {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          border-left: 4px solid var(--primary);
+          padding: 1.5rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .banner-icon {
+          flex-shrink: 0;
+          font-size: 2.5rem;
+          color: var(--primary);
+        }
+
+        .banner-content {
+          flex: 1;
+        }
+
+        .banner-content h3 {
+          margin: 0 0 0.5rem 0;
+          color: var(--primary);
+          font-size: 1.3rem;
+        }
+
+        .banner-content p {
+          margin: 0;
+          color: #1976d2;
+        }
+
+        .banner-actions {
+          display: flex;
+          gap: 0.75rem;
+          flex-shrink: 0;
+        }
+
+        .login-required-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.375rem;
+          background-color: rgba(47, 80, 106, 0.1);
+          color: var(--primary);
+          padding: 0.375rem 0.75rem;
+          border-radius: 0.375rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+          margin-top: auto;
+        }
+
+        .login-required-badge i {
+          font-size: 0.625rem;
+        }
+
+        @media (max-width: 768px) {
+          .account-requirement-banner {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .banner-actions {
+            flex-direction: column;
+            width: 100%;
+          }
+
+          .banner-actions .btn {
+            width: 100%;
+          }
         }
 
         @keyframes spin {
