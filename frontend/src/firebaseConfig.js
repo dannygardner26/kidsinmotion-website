@@ -67,25 +67,28 @@ console.log("Firebase Auth initializing...");
 // The 400 error on accounts:lookup has been resolved through the 150ms delay in AuthContext.js.
 const clearStaleAuthData = () => {
   try {
-    const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
-    const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
+    console.log("Starting aggressive auth cleanup...");
 
-    // Clear Firebase Auth storage keys that might be corrupted
-    const keysToCheck = [
-      `firebase:authUser:${apiKey}:[DEFAULT]`,
-      `firebase:host:${projectId}.firebaseapp.com`,
-      `firebase:host:${projectId}.web.app`,
-      `firebase:persistence:${apiKey}:[DEFAULT]`,
-      `firebase:authTokenSyncURL:${apiKey}:[DEFAULT]`,
-      `firebase:pendingRedirect:${apiKey}:[DEFAULT]`
-    ];
+    // Remove ALL firebase: prefixed keys (most aggressive approach)
+    const allKeys = Object.keys(localStorage);
+    let removedCount = 0;
 
-    keysToCheck.forEach(key => {
-      if (localStorage.getItem(key)) {
-        console.log("Clearing potentially stale auth key:", key);
+    allKeys.forEach(key => {
+      if (key.startsWith('firebase:')) {
+        console.log("Removing Firebase key:", key);
         localStorage.removeItem(key);
+        removedCount++;
       }
     });
+
+    console.log(`Removed ${removedCount} Firebase keys from localStorage`);
+
+    // Also clear IndexedDB which Firebase uses for auth persistence
+    if (window.indexedDB) {
+      const dbDeleteRequest = indexedDB.deleteDatabase('firebaseLocalStorageDb');
+      dbDeleteRequest.onsuccess = () => console.log("Cleared Firebase IndexedDB");
+      dbDeleteRequest.onerror = () => console.warn("Could not clear Firebase IndexedDB");
+    }
   } catch (error) {
     console.warn("Could not clear stale auth data:", error);
   }
@@ -99,7 +102,7 @@ const clearStaleAuthData = () => {
 
 // One-time cleanup: Clear corrupted auth data that's causing 400 errors
 // This runs once per browser and then sets a flag to never run again
-const AUTH_CLEANUP_VERSION = 'v2'; // Increment this to force cleanup again
+const AUTH_CLEANUP_VERSION = 'v3'; // Increment this to force cleanup again
 const cleanupFlag = localStorage.getItem('authCleanupVersion');
 
 if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
