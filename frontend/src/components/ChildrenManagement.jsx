@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import firebaseRealtimeService from '../services/firebaseRealtimeService';
+import { useAuth } from '../context/AuthContext';
 
 const ChildrenManagement = () => {
+  const { currentUser } = useAuth();
   const [children, setChildren] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,8 +24,28 @@ const ChildrenManagement = () => {
   });
 
   useEffect(() => {
-    fetchChildren();
-  }, []);
+    if (!currentUser) return;
+
+    // Set up real-time listener for children
+    firebaseRealtimeService.subscribeToUserChildren(
+      currentUser.uid,
+      (childrenData) => {
+        console.log('ChildrenManagement: Real-time children update:', childrenData);
+        setChildren(childrenData);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('ChildrenManagement: Real-time children error:', error);
+        // Fallback to manual fetch
+        fetchChildren();
+      }
+    );
+
+    return () => {
+      // Clean up listener when component unmounts
+      firebaseRealtimeService.unsubscribe(`user_children_${currentUser.uid}`);
+    };
+  }, [currentUser]);
 
   const fetchChildren = async () => {
     try {

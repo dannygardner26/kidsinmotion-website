@@ -69,9 +69,25 @@ export const AuthProvider = ({ children }) => {
   // Profile completion state
   const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false);
 
-  const syncUserWithBackend = async (user, isGoogleOAuth = false) => {
+  // Track pending sync timeouts for cleanup
+  const syncTimeoutRef = React.useRef(null);
+
+  // Track last known UID for targeted cache cleanup on logout
+  const lastUidRef = React.useRef(null);
+
+  const syncUserWithBackend = async (user, isGoogleOAuth = false, retryCount = 0) => {
     if (user) {
       try {
+        // Verify Firebase user object is fully initialized before making API calls
+        const isUserReady = user.uid && user.email && typeof user.getIdToken === 'function';
+        if (!isUserReady && retryCount < 3) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`Firebase user not fully ready, waiting 200ms (attempt ${retryCount + 1}/3)...`);
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+          return syncUserWithBackend(user, isGoogleOAuth, retryCount + 1);
+        }
+
         // Check for cached profile first to speed up loading
         const cachedProfile = localStorage.getItem(`userProfile_${user.uid}`);
         if (cachedProfile) {
@@ -83,15 +99,49 @@ export const AuthProvider = ({ children }) => {
             parsed.roles = ['ROLE_USER', 'ROLE_ADMIN'];
           }
 
-          // Use cached profile immediately, then refresh in background
+          // Use cached profile immediately for instant UI rendering
           setUserProfile(parsed);
           setAuthReady(true);
           if (process.env.NODE_ENV !== 'production') {
             console.log("Using cached user profile:", parsed);
           }
+
+          // Background refresh - non-blocking, wrapped in its own try-catch
+          (async () => {
+            try {
+              if (process.env.NODE_ENV !== 'production') {
+                console.log("Starting background profile refresh...");
+              }
+              await apiService.syncUser();
+              const freshProfile = await apiService.getUserProfile();
+
+              // Apply admin privileges to fresh profile
+              if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
+                freshProfile.userType = 'ADMIN';
+                freshProfile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
+              }
+
+              setUserProfile(freshProfile);
+              localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(freshProfile));
+              if (process.env.NODE_ENV !== 'production') {
+                console.log("Background profile refresh completed:", freshProfile);
+              }
+            } catch (bgError) {
+              // Background sync failures are non-critical - just log them
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn("Background profile refresh failed (non-critical):", bgError);
+              }
+            }
+          })();
+
+          // Return early since we're using cached data
+          return;
         }
 
-        // Sync user with backend (creates/initializes user if needed)
+        // No cached profile - sync with backend (creates/initializes user if needed)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("No cached profile, syncing with backend...");
+        }
         await apiService.syncUser();
 
         // Fetch user profile from backend
@@ -150,10 +200,28 @@ export const AuthProvider = ({ children }) => {
           console.log("User synced with backend:", profile);
         }
       } catch (error) {
+        // Enhanced error handling for auth initialization issues
+        const isAuthError = error.code === 'auth/internal-error' ||
+                           error.code === 'auth/network-request-failed' ||
+                           error.message?.includes('not fully initialized');
+
+        if (isAuthError && retryCount < 2) {
+          // Retry with exponential backoff for auth initialization errors
+          const backoffDelay = retryCount === 0 ? 500 : 1000;
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`Auth initialization error detected, retrying in ${backoffDelay}ms (attempt ${retryCount + 1}/2)...`);
+          }
+          await new Promise(resolve => setTimeout(resolve, backoffDelay));
+          return syncUserWithBackend(user, isGoogleOAuth, retryCount + 1);
+        }
+
         if (process.env.NODE_ENV !== 'production') {
           console.error("Failed to sync user with backend:", error);
+          console.error("Error code:", error.code);
+          console.error("Retry count:", retryCount);
         }
-        // Don't prevent login if backend sync fails
+
+        // Don't prevent login if backend sync fails - allow app to load with cached data or without profile
         if (!authReady) {
           setAuthReady(true); // Still allow app to load
         }
@@ -238,24 +306,188 @@ export const AuthProvider = ({ children }) => {
         setCurrentUser(user);
 
         if (user) {
-          await syncUserWithBackend(user, isGoogleOAuthLogin);
-          setIsGoogleOAuthLogin(false); // Reset flag after use
+          // Track the last known UID for targeted cache cleanup on logout
+          lastUidRef.current = user.uid;
+          // Check if this is a restored session vs a fresh login
+          const isRestoredSession = !isGoogleOAuthLogin;
 
-          // Update verification status
-          setIsEmailVerified(user.emailVerified);
+          if (isRestoredSession && process.env.NODE_ENV !== 'production') {
+            console.log("Restored session detected, checking token validity...");
+
+            // For restored sessions, verify the token is still valid
+            try {
+              await user.getIdToken(true); // Force token refresh
+              console.log("Token validation successful for restored session");
+            } catch (tokenError) {
+              console.warn("Token validation failed for restored session:", tokenError);
+              // If token is invalid, clear auth state and don't proceed
+              if (tokenError.code === 'auth/network-request-failed' ||
+                  tokenError.code === 'auth/user-token-expired' ||
+                  tokenError.code === 'auth/invalid-user-token') {
+                console.log("Clearing invalid auth state...");
+
+                // Targeted removal of Firebase auth keys instead of localStorage.clear()
+                // This preserves other app data while cleaning up invalid auth state
+                try {
+                  const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+                  const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
+
+                  let removedCount = 0;
+
+                  // Attempt targeted removal with exact keys
+                  if (apiKey && projectId) {
+                    const firebaseKeysToRemove = [
+                      `firebase:authUser:${apiKey}:[DEFAULT]`,
+                      `firebase:host:${projectId}.firebaseapp.com`,
+                      `firebase:host:${projectId}.web.app`,
+                      `firebase:persistence:${apiKey}:[DEFAULT]`,
+                      `firebase:authTokenSyncURL:${apiKey}:[DEFAULT]`,
+                      `firebase:pendingRedirect:${apiKey}:[DEFAULT]`
+                    ];
+
+                    firebaseKeysToRemove.forEach(key => {
+                      if (localStorage.getItem(key)) {
+                        if (process.env.NODE_ENV !== 'production') {
+                          console.log("Removing Firebase auth key:", key);
+                        }
+                        localStorage.removeItem(key);
+                        removedCount++;
+                      }
+                    });
+                  }
+
+                  // Fallback: prefix-based deletion if env vars are missing or no keys were removed
+                  if (!apiKey || !projectId || removedCount === 0) {
+                    if (process.env.NODE_ENV !== 'production') {
+                      console.log("Using fallback prefix-based deletion for firebase: keys");
+                    }
+                    Object.keys(localStorage).forEach(key => {
+                      if (key.startsWith('firebase:')) {
+                        if (process.env.NODE_ENV !== 'production') {
+                          console.log("Removing Firebase key (fallback):", key);
+                        }
+                        localStorage.removeItem(key);
+                      }
+                    });
+                  }
+
+                  // Also remove user profile cache
+                  const userProfileKey = `userProfile_${user?.uid}`;
+                  if (localStorage.getItem(userProfileKey)) {
+                    if (process.env.NODE_ENV !== 'production') {
+                      console.log("Removing user profile cache:", userProfileKey);
+                    }
+                    localStorage.removeItem(userProfileKey);
+                  }
+                } catch (cleanupError) {
+                  console.warn("Error during targeted localStorage cleanup:", cleanupError);
+                }
+
+                setCurrentUser(null);
+                setUserProfile(null);
+                setAuthReady(true);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+
+          // Add initialization delay to prevent race condition with Firebase Auth's internal initialization
+          // Firebase Auth needs time to complete its accounts:lookup call before we can safely make API requests
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Waiting 300ms for Firebase Auth to complete initialization...");
+          }
+
+          // Store timeout for cleanup
+          syncTimeoutRef.current = setTimeout(async () => {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log("Initialization delay complete, syncing user with backend...");
+            }
+
+            await syncUserWithBackend(user, isGoogleOAuthLogin);
+            setIsGoogleOAuthLogin(false); // Reset flag after use
+
+            // Update verification status
+            setIsEmailVerified(user.emailVerified);
+
+            setAuthReady(true);
+            setLoading(false);
+          }, 300); // Reduced delay since we're validating tokens first
         } else {
+          // User is logged out - perform targeted localStorage cleanup
+          // Instead of localStorage.clear(), only remove Firebase auth keys and user profile cache
+          // This preserves other app data (preferences, settings, etc.)
+          try {
+            const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+            const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
+
+            let removedCount = 0;
+
+            // Attempt targeted removal with exact keys
+            if (apiKey && projectId) {
+              const firebaseKeysToRemove = [
+                `firebase:authUser:${apiKey}:[DEFAULT]`,
+                `firebase:host:${projectId}.firebaseapp.com`,
+                `firebase:host:${projectId}.web.app`,
+                `firebase:persistence:${apiKey}:[DEFAULT]`,
+                `firebase:authTokenSyncURL:${apiKey}:[DEFAULT]`,
+                `firebase:pendingRedirect:${apiKey}:[DEFAULT]`
+              ];
+
+              firebaseKeysToRemove.forEach(key => {
+                if (localStorage.getItem(key)) {
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.log("Removing Firebase auth key on logout:", key);
+                  }
+                  localStorage.removeItem(key);
+                  removedCount++;
+                }
+              });
+            }
+
+            // Fallback: prefix-based deletion if env vars are missing or no keys were removed
+            if (!apiKey || !projectId || removedCount === 0) {
+              if (process.env.NODE_ENV !== 'production') {
+                console.log("Using fallback prefix-based deletion for firebase: keys");
+              }
+              Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('firebase:')) {
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.log("Removing Firebase key (fallback):", key);
+                  }
+                  localStorage.removeItem(key);
+                }
+              });
+            }
+
+            // Remove only the current user's profile cache using tracked UID
+            if (lastUidRef.current) {
+              const userProfileKey = `userProfile_${lastUidRef.current}`;
+              if (localStorage.getItem(userProfileKey)) {
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log("Removing user profile cache on logout:", userProfileKey);
+                }
+                localStorage.removeItem(userProfileKey);
+              }
+            }
+          } catch (cleanupError) {
+            console.warn("Error during logout localStorage cleanup:", cleanupError);
+          }
+
           setUserProfile(null);
           setIsEmailVerified(false);
           setIsPhoneVerified(false);
+          setAuthReady(true);
+          setLoading(false);
         }
-
-        setAuthReady(true);
-        setLoading(false);
       });
 
       // Cleanup subscription on unmount
       return () => {
         clearTimeout(loadingTimeout);
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current);
+        }
         unsubscribe();
       };
     } catch (error) {

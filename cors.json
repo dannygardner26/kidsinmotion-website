@@ -1,8 +1,0 @@
-[
-  {
-    "origin": ["https://kidsinmotionpa.org", "https://www.kidsinmotionpa.org", "https://kids-in-motion-website-b1c09.web.app", "http://localhost:3000", "http://localhost:3001"],
-    "method": ["GET", "HEAD"],
-    "responseHeader": ["Content-Type", "Access-Control-Allow-Origin", "Access-Control-Allow-Methods", "Access-Control-Allow-Headers"],
-    "maxAgeSeconds": 3600
-  }
-]

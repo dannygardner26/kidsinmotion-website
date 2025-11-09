@@ -9,7 +9,7 @@ import apiService from '../services/api';
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setIsGoogleOAuthLogin } = useAuth();
+  const { currentUser, setIsGoogleOAuthLogin } = useAuth();
   // No more tabs - single input field
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -35,19 +35,25 @@ const Login = () => {
     }
   }, [identifier]);
 
-  // Firebase auth state listener
+  // Track component mount state to prevent navigation on unmounted components
+  const isMountedRef = useRef(true);
+
+  // Use AuthContext currentUser instead of separate auth state listener
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        console.log("User signed in, navigating:", user);
-        navigate(redirectUrl, { replace: true });
-      } else {
-        console.log("User not signed in.");
-        setIsLoading(false); // Ensure loading is false if no user
-      }
-    });
-    return () => unsubscribe();
-  }, [navigate, redirectUrl]);
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  // Handle navigation when user is authenticated via AuthContext
+  useEffect(() => {
+    if (currentUser && isMountedRef.current) {
+      console.log("User authenticated via AuthContext, navigating:", currentUser.uid);
+      navigate(redirectUrl, { replace: true });
+    }
+  }, [currentUser, navigate, redirectUrl]);
 
   const validateForm = () => {
     const errors = {};
@@ -142,6 +148,9 @@ const Login = () => {
           case 'auth/network-request-failed':
             userMessage = 'Network error. Please check your internet connection and try again.';
             break;
+          case 'auth/internal-error':
+            userMessage = 'Authentication service is initializing. Please wait a moment and try again.';
+            break;
           default:
             userMessage = 'Login failed. Please try again or contact support if the problem persists.';
             break;
@@ -223,6 +232,11 @@ const Login = () => {
   };
 
   useEffect(() => {
+    // Initialize Google Sign-In (One Tap)
+    // NOTE: Cross-Origin-Opener-Policy (COOP) warnings in console are EXPECTED behavior
+    // Google Identity Services uses iframes/popups which trigger browser security warnings
+    // These warnings do not affect functionality and can be safely ignored
+    // Reference: https://developers.google.com/identity/gsi/web/guides/features
     const initializeGoogleSignIn = () => {
       if (typeof window.google !== 'undefined' && window.google.accounts && googleButtonDivRef.current) {
         try {
@@ -244,10 +258,19 @@ const Login = () => {
         }
       } else {
         // Retry after a short delay if Google script hasn't loaded yet
-        if (process.env.NODE_ENV !== 'production') {
-          console.log("Google GSI not ready, retrying in 500ms...");
+        // Max 5 retries to prevent infinite loops
+        const retryCount = (window.googleSignInRetryCount || 0) + 1;
+        if (retryCount <= 5) {
+          window.googleSignInRetryCount = retryCount;
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`Google GSI not ready, retrying in 500ms (attempt ${retryCount}/5)...`);
+          }
+          setTimeout(initializeGoogleSignIn, 500);
+        } else {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Google Sign-In failed to load after 5 attempts');
+          }
         }
-        setTimeout(initializeGoogleSignIn, 500);
       }
     };
 

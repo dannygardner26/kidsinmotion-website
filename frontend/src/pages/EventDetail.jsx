@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 import { formatAgeRange } from '../utils/eventFormatters';
+import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -14,7 +15,25 @@ const EventDetail = () => {
   const [error, setError] = useState(null);
   
   useEffect(() => {
-    fetchEventDetails();
+    // Set up real-time listener for this specific event
+    firebaseRealtimeService.subscribeToEvent(
+      id,
+      (eventData) => {
+        console.log('EventDetail: Real-time event update:', eventData);
+        setEvent(eventData);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('EventDetail: Real-time event error:', error);
+        // Fallback to manual fetch
+        fetchEventDetails();
+      }
+    );
+
+    return () => {
+      // Clean up listener when component unmounts or id changes
+      firebaseRealtimeService.unsubscribe(`event_${id}`);
+    };
   }, [id]);
   
   const fetchEventDetails = async () => {
@@ -168,9 +187,34 @@ const EventDetail = () => {
           </svg>
         </div>
       </section>
-      
+
       <section className="section">
         <div className="container">
+          {!currentUser && !isPastEvent && (
+            <div className="account-requirement-banner fade-in" style={{ marginBottom: '2rem' }}>
+              <div className="banner-icon">
+                <i className="fas fa-info-circle"></i>
+              </div>
+              <div className="banner-content">
+                <h3>Account Required</h3>
+                <p>You need a Kids in Motion account to register for this event. Please log in or create an account to continue.</p>
+              </div>
+              <div className="banner-actions">
+                <Link
+                  to={`/login?redirect=/events/${event.id}`}
+                  className="btn btn-primary"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn btn-outline"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          )}
           <div className="row">
             <div className="col-two-thirds">
               <div className="card mb-4 fade-in">
@@ -306,15 +350,18 @@ const EventDetail = () => {
                           </Link>
                         ) : (
                           <div className="login-prompt">
-                            <p>Please login to register your child for this event.</p>
-                            <Link 
-                              to={`/login?redirect=/events/${event.id}`} 
+                            <div className="login-prompt-icon">
+                              <i className="fas fa-user-lock"></i>
+                            </div>
+                            <p className="login-prompt-text"><strong>Account Required:</strong> Please log in or create an account to register your child for this event.</p>
+                            <Link
+                              to={`/login?redirect=/events/${event.id}/register`}
                               className="btn btn-primary btn-block mt-2"
                             >
                               Login to Register
                             </Link>
-                            <Link 
-                              to="/register" 
+                            <Link
+                              to="/register"
                               className="btn btn-outline btn-block mt-2"
                             >
                               Create an Account
@@ -343,8 +390,8 @@ const EventDetail = () => {
                     </div>
                     
                     {currentUser ? (
-                      <Link 
-                        to={`/events/${event.id}/volunteer`} 
+                      <Link
+                        to={`/events/${event.id}/volunteer`}
                         className="btn btn-secondary btn-block mt-3"
                       >
                         Sign Up to Volunteer
@@ -352,8 +399,8 @@ const EventDetail = () => {
                     ) : (
                       <div className="login-prompt">
                         <p>Please login to sign up as a volunteer.</p>
-                        <Link 
-                          to={`/login?redirect=/events/${event.id}`} 
+                        <Link
+                          to={`/login?redirect=/events/${event.id}/volunteer`}
                           className="btn btn-secondary btn-block mt-2"
                         >
                           Login to Volunteer
@@ -546,6 +593,55 @@ const EventDetail = () => {
           text-align: center;
           padding: 1rem 0;
         }
+
+        .login-prompt-icon {
+          font-size: 2rem;
+          color: var(--primary);
+          margin-bottom: 0.5rem;
+        }
+
+        .login-prompt-text {
+          font-size: 0.95rem;
+          line-height: 1.5;
+        }
+
+        .account-requirement-banner {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          border-left: 4px solid var(--primary);
+          padding: 1.5rem;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .banner-icon {
+          flex-shrink: 0;
+          font-size: 2.5rem;
+          color: var(--primary);
+        }
+
+        .banner-content {
+          flex: 1;
+        }
+
+        .banner-content h3 {
+          margin: 0 0 0.5rem 0;
+          color: var(--primary);
+          font-size: 1.3rem;
+        }
+
+        .banner-content p {
+          margin: 0;
+          color: #1976d2;
+        }
+
+        .banner-actions {
+          display: flex;
+          gap: 0.75rem;
+          flex-shrink: 0;
+        }
         
         .volunteers-header {
           background-color: var(--secondary);
@@ -633,6 +729,20 @@ const EventDetail = () => {
 
           .sticky-card {
             position: static;
+          }
+
+          .account-requirement-banner {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .banner-actions {
+            flex-direction: column;
+            width: 100%;
+          }
+
+          .banner-actions .btn {
+            width: 100%;
           }
         }
       `}</style>

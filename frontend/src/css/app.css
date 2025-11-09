@@ -2044,6 +2044,11 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
 
 /* Mobile form optimization */
 @media (max-width: 768px) {
+  /* Reduce body padding on mobile for non-transparent header pages */
+  body:not(.transparent-header-page-body) {
+    padding-top: 3rem; /* Reduced from 5rem for mobile */
+  }
+
   .form-control {
     min-height: 44px;
     font-size: 16px; /* Prevents zoom on iOS */

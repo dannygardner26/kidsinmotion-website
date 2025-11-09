@@ -10,6 +10,45 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8082/api
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
+    this.authInitialized = false; // Track if auth has been successfully initialized
+  }
+
+  /**
+   * Wait for Firebase Auth to be fully initialized and ready
+   * @returns {Promise<void>} Resolves when auth is ready or rejects after timeout
+   */
+  async waitForAuthReady() {
+    const maxAttempts = 3;
+    const delayMs = 100;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const user = auth.currentUser;
+
+      if (user) {
+        // Verify user object is fully initialized with all required properties
+        const hasRequiredProps = user.uid && user.email && user.emailVerified !== undefined;
+        const hasGetIdToken = typeof user.getIdToken === 'function';
+
+        if (hasRequiredProps && hasGetIdToken) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[api] Firebase Auth is ready');
+          }
+          return; // Auth is ready
+        }
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`[api] Firebase user object incomplete (attempt ${attempt + 1}/${maxAttempts}), waiting ${delayMs}ms...`);
+        }
+      }
+
+      // Wait before next attempt
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+
+    // If we get here, auth might not be fully ready, but proceed anyway
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[api] Firebase Auth readiness check timed out, proceeding anyway');
+    }
   }
 
   async getAuthToken() {
@@ -23,12 +62,57 @@ class ApiService {
     const user = auth.currentUser;
     if (user) {
       try {
+        // Only wait for auth ready on first call (performance optimization)
+        if (!this.authInitialized) {
+          await this.waitForAuthReady();
+        }
+
         // Get token with caching (false = use cached if valid)
-        return await user.getIdToken(false);
+        const token = await user.getIdToken(false);
+
+        // Mark auth as initialized after first successful token retrieval
+        if (!this.authInitialized) {
+          this.authInitialized = true;
+          if (process.env.NODE_ENV !== 'production') {
+            console.log('[api] Firebase Auth successfully initialized');
+          }
+        }
+
+        return token;
       } catch (error) {
-        console.warn('Token refresh error, retrying:', error.message);
-        // Try one more time with force refresh
-        return await user.getIdToken(true);
+        // Handle specific Firebase Auth errors
+        const errorCode = error.code;
+
+        if (errorCode === 'auth/internal-error') {
+          // Auth initialization issue - wait and retry once
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('[api] Auth internal error detected, waiting 200ms and retrying...', error.message);
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          try {
+            return await user.getIdToken(true); // Force refresh
+          } catch (retryError) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('[api] Auth retry failed:', retryError);
+            }
+            throw new Error('Firebase Auth not fully initialized. Please try again.');
+          }
+        } else if (errorCode === 'auth/network-request-failed') {
+          throw new Error('Network error. Please check your internet connection.');
+        } else if (errorCode === 'auth/user-token-expired') {
+          // Try to refresh the token
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('[api] Token expired, refreshing...', error.message);
+          }
+          return await user.getIdToken(true); // Force refresh
+        } else {
+          // Generic error - try one more time with force refresh
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('[api] Token refresh error, retrying with force refresh:', error.message);
+          }
+          return await user.getIdToken(true);
+        }
       }
     }
     throw new Error('User not authenticated');
@@ -106,6 +190,14 @@ class ApiService {
 
       return await response.json();
     } catch (error) {
+      // Handle auth initialization errors with user-friendly messages
+      if (error.message?.includes('not fully initialized')) {
+        const authError = new Error('Authentication is still loading. Please wait a moment and try again.');
+        authError.isAuthInitError = true;
+        authError.originalError = error;
+        throw authError;
+      }
+
       // Handle network errors and other fetch failures
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         const networkError = new Error('Network error. Please check your internet connection and try again.');
@@ -184,6 +276,13 @@ class ApiService {
 
   async unbanUser(userId) {
     return this.makeRequest(`/users/${userId}/unban`, {
+      method: 'POST',
+    });
+  }
+
+  // Admin test account management
+  async resetTestAccounts() {
+    return this.makeRequest('/admin/test-accounts/reset', {
       method: 'POST',
     });
   }

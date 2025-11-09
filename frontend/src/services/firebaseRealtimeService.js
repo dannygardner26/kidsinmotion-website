@@ -397,6 +397,52 @@ class FirebaseRealtimeService {
   isListenerActive(listenerKey) {
     return this.listeners.has(listenerKey);
   }
+
+  // Listen to children for a specific user
+  subscribeToUserChildren(userId, callback, errorCallback) {
+    const listenerKey = `user_children_${userId}`;
+
+    // Clean up existing listener if any
+    this.unsubscribe(listenerKey);
+
+    try {
+      const childrenRef = collection(db, 'children');
+      const childrenQuery = query(
+        childrenRef,
+        where('parentFirebaseUid', '==', userId),
+        orderBy('createdAt', 'desc')
+      );
+
+      const unsubscribe = onSnapshot(
+        childrenQuery,
+        (querySnapshot) => {
+          const children = [];
+          querySnapshot.forEach((doc) => {
+            children.push({ id: doc.id, ...doc.data() });
+          });
+          callback(children);
+        },
+        (error) => {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Children listener error:', error);
+          }
+          if (errorCallback) errorCallback(error);
+        }
+      );
+
+      this.listeners.set(listenerKey, unsubscribe);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Started listening to children for user: ${userId}`);
+      }
+      return unsubscribe;
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Failed to subscribe to user children:', error);
+      }
+      if (errorCallback) errorCallback(error);
+      return null;
+    }
+  }
 }
 
 // Create a singleton instance

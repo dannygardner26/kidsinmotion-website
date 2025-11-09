@@ -7,6 +7,7 @@ import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 import firestoreEventService from '../services/firestoreEventService';
 import { formatAgeRange } from '../utils/eventFormatters';
+import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const Events = () => {
   const { currentUser } = useAuth();
@@ -19,7 +20,49 @@ const Events = () => {
 
   
   useEffect(() => {
-    fetchEvents();
+    // Set up real-time event listeners
+    let eventListenerMethod;
+
+    if (filter === 'upcoming') {
+      eventListenerMethod = firebaseRealtimeService.subscribeToUpcomingEvents;
+    } else {
+      eventListenerMethod = firebaseRealtimeService.subscribeToAllEvents;
+    }
+
+    eventListenerMethod(
+      (eventsData) => {
+        console.log('Events page: Real-time events update:', eventsData);
+
+        // Filter events based on filter setting
+        let filteredData = eventsData;
+        if (filter === 'upcoming') {
+          filteredData = eventsData.filter(event => new Date(event.date) >= new Date());
+        } else if (filter === 'past') {
+          filteredData = eventsData.filter(event => new Date(event.date) < new Date());
+        }
+
+        setEvents(filteredData);
+
+        // Extract unique tags from all events for dynamic filtering
+        const allTags = filteredData.flatMap(event =>
+          event.tags ? event.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
+        );
+        const uniqueTags = [...new Set(allTags)];
+        setAvailableTags(uniqueTags);
+
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('Events page: Real-time events error:', error);
+        // Fallback to manual fetch
+        fetchEvents();
+      }
+    );
+
+    return () => {
+      // Clean up listeners when component unmounts or filter changes
+      firebaseRealtimeService.unsubscribeAll();
+    };
   }, [filter]);
 
   // Re-filter events when search or tag filters change
