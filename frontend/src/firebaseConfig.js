@@ -54,7 +54,7 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // CRITICAL: Define and run cleanup BEFORE Firebase initialization
 // This ensures corrupted auth data is cleared before Firebase tries to load it
-const clearStaleAuthData = () => {
+const clearStaleAuthData = async () => {
   try {
     console.log("Starting aggressive auth cleanup...");
 
@@ -72,11 +72,24 @@ const clearStaleAuthData = () => {
 
     console.log(`Removed ${removedCount} Firebase keys from localStorage`);
 
-    // Also clear IndexedDB which Firebase uses for auth persistence
+    // Clear IndexedDB which Firebase uses for auth persistence
+    // CRITICAL: Wait for this to complete before continuing
     if (window.indexedDB) {
-      const dbDeleteRequest = indexedDB.deleteDatabase('firebaseLocalStorageDb');
-      dbDeleteRequest.onsuccess = () => console.log("Cleared Firebase IndexedDB");
-      dbDeleteRequest.onerror = () => console.warn("Could not clear Firebase IndexedDB");
+      await new Promise((resolve, reject) => {
+        const dbDeleteRequest = indexedDB.deleteDatabase('firebaseLocalStorageDb');
+        dbDeleteRequest.onsuccess = () => {
+          console.log("✅ Cleared Firebase IndexedDB");
+          resolve();
+        };
+        dbDeleteRequest.onerror = () => {
+          console.warn("⚠️ Could not clear Firebase IndexedDB");
+          resolve(); // Resolve anyway to not block initialization
+        };
+        dbDeleteRequest.onblocked = () => {
+          console.warn("⚠️ IndexedDB deletion blocked - close other tabs and refresh");
+          resolve(); // Resolve anyway
+        };
+      });
     }
   } catch (error) {
     console.warn("Could not clear stale auth data:", error);
@@ -85,7 +98,7 @@ const clearStaleAuthData = () => {
 
 // One-time cleanup: Clear corrupted auth data that's causing 400 errors
 // This runs once per browser BEFORE Firebase initializes
-const AUTH_CLEANUP_VERSION = 'v5'; // Increment this to force cleanup again
+const AUTH_CLEANUP_VERSION = 'v6'; // Increment this to force cleanup again
 const cleanupFlag = localStorage.getItem('authCleanupVersion');
 
 console.log('=== AUTH CLEANUP CHECK ===');
@@ -93,16 +106,41 @@ console.log('Current cleanup flag in localStorage:', cleanupFlag);
 console.log('Required cleanup version:', AUTH_CLEANUP_VERSION);
 console.log('Will run cleanup?', cleanupFlag !== AUTH_CLEANUP_VERSION);
 
+// Run cleanup synchronously if needed
 if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
   console.log('🔥 Running one-time auth cleanup to fix 400 errors (BEFORE Firebase init)...');
-  clearStaleAuthData();
+
+  // Synchronously clear localStorage
+  const allKeys = Object.keys(localStorage);
+  let removedCount = 0;
+  allKeys.forEach(key => {
+    if (key.startsWith('firebase:')) {
+      console.log("Removing Firebase key:", key);
+      localStorage.removeItem(key);
+      removedCount++;
+    }
+  });
+  console.log(`Removed ${removedCount} Firebase keys from localStorage`);
+
+  // Delete IndexedDB synchronously (best effort - may not complete before Firebase init)
+  if (window.indexedDB) {
+    const dbDeleteRequest = indexedDB.deleteDatabase('firebaseLocalStorageDb');
+    dbDeleteRequest.onsuccess = () => console.log("✅ Cleared Firebase IndexedDB");
+    dbDeleteRequest.onerror = () => console.warn("⚠️ Could not clear Firebase IndexedDB");
+    dbDeleteRequest.onblocked = () => console.warn("⚠️ IndexedDB deletion blocked");
+  }
+
   localStorage.setItem('authCleanupVersion', AUTH_CLEANUP_VERSION);
-  console.log('✅ Auth cleanup complete. Please log in again.');
+  console.log('✅ Auth cleanup complete. Reloading page for clean start...');
+
+  // CRITICAL: Reload the page to ensure Firebase starts with clean IndexedDB
+  window.location.reload();
+  throw new Error('Page reloading for clean auth state'); // Stop execution
 } else {
   console.log('⏭️ Cleanup already ran for this version, skipping.');
 }
 
-// Initialize Firebase AFTER cleanup
+// Initialize Firebase AFTER cleanup check
 const app = initializeApp(firebaseConfig);
 console.log("Firebase App initialized");
 
