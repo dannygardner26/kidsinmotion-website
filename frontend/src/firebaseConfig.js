@@ -98,7 +98,7 @@ const clearStaleAuthData = async () => {
 
 // One-time cleanup: Clear corrupted auth data that's causing 400 errors
 // This runs once per browser BEFORE Firebase initializes
-const AUTH_CLEANUP_VERSION = 'v6'; // Increment this to force cleanup again
+const AUTH_CLEANUP_VERSION = 'v7'; // Increment this to force cleanup again
 const cleanupFlag = localStorage.getItem('authCleanupVersion');
 
 console.log('=== AUTH CLEANUP CHECK ===');
@@ -122,12 +122,20 @@ if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
   });
   console.log(`Removed ${removedCount} Firebase keys from localStorage`);
 
-  // Delete IndexedDB synchronously (best effort - may not complete before Firebase init)
+  // Delete ALL Firebase IndexedDB databases
   if (window.indexedDB) {
-    const dbDeleteRequest = indexedDB.deleteDatabase('firebaseLocalStorageDb');
-    dbDeleteRequest.onsuccess = () => console.log("✅ Cleared Firebase IndexedDB");
-    dbDeleteRequest.onerror = () => console.warn("⚠️ Could not clear Firebase IndexedDB");
-    dbDeleteRequest.onblocked = () => console.warn("⚠️ IndexedDB deletion blocked");
+    const firebaseDBs = [
+      'firebaseLocalStorageDb',
+      'firebase-heartbeat-database',
+      'firebase-installations-database'
+    ];
+
+    firebaseDBs.forEach(dbName => {
+      const dbDeleteRequest = indexedDB.deleteDatabase(dbName);
+      dbDeleteRequest.onsuccess = () => console.log(`✅ Cleared ${dbName}`);
+      dbDeleteRequest.onerror = () => console.warn(`⚠️ Could not clear ${dbName}`);
+      dbDeleteRequest.onblocked = () => console.warn(`⚠️ ${dbName} deletion blocked`);
+    });
   }
 
   localStorage.setItem('authCleanupVersion', AUTH_CLEANUP_VERSION);
