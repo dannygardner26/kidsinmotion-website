@@ -85,14 +85,21 @@ const clearStaleAuthData = () => {
 
 // One-time cleanup: Clear corrupted auth data that's causing 400 errors
 // This runs once per browser BEFORE Firebase initializes
-const AUTH_CLEANUP_VERSION = 'v4'; // Increment this to force cleanup again
+const AUTH_CLEANUP_VERSION = 'v5'; // Increment this to force cleanup again
 const cleanupFlag = localStorage.getItem('authCleanupVersion');
 
+console.log('=== AUTH CLEANUP CHECK ===');
+console.log('Current cleanup flag in localStorage:', cleanupFlag);
+console.log('Required cleanup version:', AUTH_CLEANUP_VERSION);
+console.log('Will run cleanup?', cleanupFlag !== AUTH_CLEANUP_VERSION);
+
 if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
-  console.log('Running one-time auth cleanup to fix 400 errors (BEFORE Firebase init)...');
+  console.log('🔥 Running one-time auth cleanup to fix 400 errors (BEFORE Firebase init)...');
   clearStaleAuthData();
   localStorage.setItem('authCleanupVersion', AUTH_CLEANUP_VERSION);
-  console.log('Auth cleanup complete. Please log in again.');
+  console.log('✅ Auth cleanup complete. Please log in again.');
+} else {
+  console.log('⏭️ Cleanup already ran for this version, skipping.');
 }
 
 // Initialize Firebase AFTER cleanup
