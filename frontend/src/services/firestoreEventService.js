@@ -46,6 +46,11 @@ class FirestoreEventService {
     try {
       console.log('Updating event in Firestore:', eventId, eventData);
 
+      // Get current document first for comparison
+      const eventRef = doc(db, 'events', eventId);
+      const currentDoc = await getDoc(eventRef);
+      const currentData = currentDoc.exists() ? currentDoc.data() : null;
+
       const firestoreEventData = {
         name: eventData.name,
         description: eventData.description || '',
@@ -63,10 +68,17 @@ class FirestoreEventService {
         updatedAt: new Date().toISOString()
       };
 
-      const eventRef = doc(db, 'events', eventId);
+      console.log('=== FIRESTORE UPDATE COMPARISON ===');
+      console.log('Current Firestore data:', currentData);
+      console.log('New Firestore data:', firestoreEventData);
+      if (currentData) {
+        console.log('Date change:', { from: currentData.date, to: firestoreEventData.date, changing: currentData.date !== firestoreEventData.date });
+        console.log('Name change:', { from: currentData.name, to: firestoreEventData.name, changing: currentData.name !== firestoreEventData.name });
+      }
+
       await updateDoc(eventRef, firestoreEventData);
 
-      console.log('Event updated successfully');
+      console.log('Event updated successfully in Firestore with timestamp:', firestoreEventData.updatedAt);
 
       return {
         id: eventId,

@@ -181,20 +181,25 @@ const CreateEvent = () => {
         endTime: formData.endTime && formData.endTime.trim() !== '' ? formData.endTime : null
       };
 
-      console.log('=== FRONTEND EVENT CREATION DEBUG ===');
-      console.log('Original form data:', {
-        startTime: formData.startTime,
-        endTime: formData.endTime,
-        startTimeType: typeof formData.startTime,
-        endTimeType: typeof formData.endTime
-      });
-      console.log('Processed event data being sent to API:', {
-        startTime: eventData.startTime,
-        endTime: eventData.endTime,
-        startTimeType: typeof eventData.startTime,
-        endTimeType: typeof eventData.endTime
-      });
-      console.log('Full event data object:', eventData);
+      console.log('=== FRONTEND EVENT UPDATE DEBUG ===');
+      console.log('Original stored event data:', originalEvent);
+      console.log('Current form data:', formData);
+      console.log('Processed event data for update:', eventData);
+
+      // Add update timestamp to ensure change detection
+      eventData.updatedAt = new Date().toISOString();
+
+      // Compare key fields to see what's actually changing
+      if (originalEvent) {
+        console.log('Field comparison:');
+        console.log('Date:', { from: originalEvent.date, to: eventData.date, changed: originalEvent.date !== eventData.date });
+        console.log('Name:', { from: originalEvent.name, to: eventData.name, changed: originalEvent.name !== eventData.name });
+        console.log('Time:', {
+          from: { start: originalEvent.startTime, end: originalEvent.endTime },
+          to: { start: eventData.startTime, end: eventData.endTime },
+          changed: originalEvent.startTime !== eventData.startTime || originalEvent.endTime !== eventData.endTime
+        });
+      }
 
       if (isEditMode) {
         // Use Firestore directly for real-time sync across all components
