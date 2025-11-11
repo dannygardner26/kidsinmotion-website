@@ -158,75 +158,34 @@ export const AuthProvider = ({ children }) => {
             console.log("Using cached user profile:", parsed);
           }
 
-          // Background refresh - non-blocking, wrapped in its own try-catch
-          (async () => {
-            try {
-              if (process.env.NODE_ENV !== 'production') {
-                console.log("Starting background profile refresh...");
-              }
-
-              // For admin accounts, skip API sync if we detect token issues
-              const isAdminAccount = user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com';
-
-              if (isAdminAccount) {
-                // Test token health before attempting API sync
-                try {
-                  await user.getIdToken(false); // Test cached token
-                } catch (tokenError) {
-                  if (process.env.NODE_ENV !== 'production') {
-                    console.warn('Admin account token issue detected, skipping API sync:', tokenError);
-                  }
-                  // Use cached profile for admin - don't risk API corruption
-                  return;
-                }
-              }
-
-              await apiService.syncUser();
-              const freshProfile = await apiService.getUserProfile();
-
-              // Apply admin privileges to fresh profile
-              if (isAdminAccount) {
-                freshProfile.userType = 'ADMIN';
-                freshProfile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
-              }
-
-              setUserProfile(freshProfile);
-              localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(freshProfile));
-              if (process.env.NODE_ENV !== 'production') {
-                console.log("Background profile refresh completed:", freshProfile);
-              }
-            } catch (bgError) {
-              // Background sync failures are non-critical - just log them
-              if (process.env.NODE_ENV !== 'production') {
-                console.warn("Background profile refresh failed (non-critical):", bgError);
-              }
-
-              // For admin accounts, check if this is a 400/auth error that needs cleanup
-              const isAdminAccount = user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com';
-              const isAuthError = bgError.message?.includes('400') ||
-                                bgError.message?.includes('auth/') ||
-                                bgError.message?.includes('accounts:lookup');
-
-              if (isAdminAccount && isAuthError) {
-                console.warn('🔍 Admin account background sync failed with auth error - triggering cleanup');
-                localStorage.setItem('forceAdminCleanup', 'true');
-                console.warn('🔧 Admin cleanup scheduled for next page load');
-              }
-            }
-          })();
+          // REMOVED: Backend sync operations that were corrupting auth tokens
+          // All user management is now handled purely through Firebase
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("Using cached profile only - no backend sync");
+          }
 
           // Return early since we're using cached data
           return;
         }
 
-        // No cached profile - sync with backend (creates/initializes user if needed)
+        // No cached profile - create minimal Firebase-only profile
         if (process.env.NODE_ENV !== 'production') {
-          console.log("No cached profile, syncing with backend...");
+          console.log("No cached profile, creating Firebase-only profile...");
         }
-        await apiService.syncUser();
 
-        // Fetch user profile from backend
-        const profile = await apiService.getUserProfile();
+        // Create minimal profile from Firebase user data only
+        const profile = {
+          uid: user.uid,
+          email: user.email,
+          firstName: user.displayName?.split(' ')[0] || '',
+          lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+          username: user.email.split('@')[0], // Use email prefix as username
+          userType: 'USER',
+          roles: ['ROLE_USER'],
+          emailVerified: user.emailVerified,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
+        };
 
         // Automatically grant admin privileges to specific emails
         if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
@@ -238,15 +197,6 @@ export const AuthProvider = ({ children }) => {
         }
 
         setUserProfile(profile);
-
-        // For Google OAuth, redirect to profile completion after backend sync
-        if (isGoogleOAuth && profile.username) {
-          if (process.env.NODE_ENV !== 'production') {
-            console.log('Redirecting OAuth user to profile completion:', profile.username);
-          }
-          window.location.href = `/account/${profile.username}?complete=true`;
-          return;
-        }
 
         // Check if profile completion is needed
         const needsCompletion = computeNeedsProfileCompletion(profile);
@@ -278,7 +228,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(profile));
 
         if (process.env.NODE_ENV !== 'production') {
-          console.log("User synced with backend:", profile);
+          console.log("Firebase-only profile created:", profile);
         }
       } catch (error) {
         // Enhanced error handling for auth initialization issues

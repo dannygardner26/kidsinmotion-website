@@ -18,6 +18,7 @@ class FirebaseRealtimeService {
     const listenerKey = `event_${eventId}`;
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -40,6 +41,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`Started listening to event: ${eventId}`);
@@ -59,6 +61,7 @@ class FirebaseRealtimeService {
     const listenerKey = `participants_${eventId}`;
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -86,6 +89,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`Started listening to participants for event: ${eventId}`);
@@ -105,6 +109,7 @@ class FirebaseRealtimeService {
     const listenerKey = `volunteers_${eventId}`;
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -132,6 +137,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`Started listening to volunteers for event: ${eventId}`);
@@ -151,6 +157,7 @@ class FirebaseRealtimeService {
     const listenerKey = 'all_events';
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -174,6 +181,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log('Started listening to all events');
@@ -193,6 +201,7 @@ class FirebaseRealtimeService {
     const listenerKey = 'upcoming_events';
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -221,6 +230,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log('Started listening to upcoming events');
@@ -240,6 +250,7 @@ class FirebaseRealtimeService {
     const listenerKey = `user_messages_${userId}`;
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -263,6 +274,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`Started listening to messages for user: ${userId}`);
@@ -282,6 +294,7 @@ class FirebaseRealtimeService {
     const listenerKey = `chat_${eventId}`;
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -307,6 +320,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`Subscribed to event chat: ${eventId}`);
@@ -419,6 +433,7 @@ class FirebaseRealtimeService {
     const listenerKey = `user_children_${userId}`;
 
     // Clean up existing listener if any
+    this.ensureListeners();
     this.unsubscribe(listenerKey);
 
     try {
@@ -446,6 +461,7 @@ class FirebaseRealtimeService {
         }
       );
 
+      this.ensureListeners();
       this.listeners.set(listenerKey, unsubscribe);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`Started listening to children for user: ${userId}`);
