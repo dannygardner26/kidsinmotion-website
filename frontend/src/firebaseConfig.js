@@ -92,74 +92,52 @@ if (!window.__authUnhandledRejectionRegistered) {
   });
 }
 
-// Enhanced cleanup to fix COOP header corruption and detect malformed auth data
-// This runs ONCE per browser to clear corrupted auth tokens
-const AUTH_FIX_VERSION = 'v12-corrupted-accounts-fix';
-const authFixed = localStorage.getItem('authDataFixed');
-
-// Function to detect corrupted auth data
-const detectCorruptedAuthData = () => {
-  const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
-  if (!apiKey) return false;
-
-  const authUserKey = `firebase:authUser:${apiKey}:[DEFAULT]`;
-  const authUser = localStorage.getItem(authUserKey);
-
-  if (authUser) {
-    try {
-      const userData = JSON.parse(authUser);
-      // Check for signs of corrupted user data
-      if (!userData.uid ||
-          !userData.email ||
-          userData.uid.length < 10 ||
-          !userData.email.includes('@') ||
-          !userData.stsTokenManager) {
-        console.warn('🔍 Detected corrupted auth user data:', userData);
-        return true;
-      }
-
-      // Check for expired or invalid tokens
-      const tokenManager = userData.stsTokenManager;
-      if (tokenManager.expirationTime && tokenManager.expirationTime < Date.now()) {
-        console.warn('🔍 Detected expired token in localStorage');
-        return true;
-      }
-    } catch (parseError) {
-      console.warn('🔍 Cannot parse auth user data - likely corrupted:', parseError);
-      return true;
-    }
-  }
-
-  return false;
-};
-
-if (authFixed !== AUTH_FIX_VERSION || detectCorruptedAuthData()) {
-  console.log('🔧 Clearing corrupted auth data...');
+// Aggressive cleanup to prevent auth token corruption
+// This forces a clean slate on every page load to prevent 400 errors
+const clearAllFirebaseData = () => {
+  console.log('🔧 Force clearing ALL Firebase data to prevent corruption...');
 
   // Remove ALL Firebase localStorage keys
   const allKeys = Object.keys(localStorage);
   allKeys.forEach(key => {
-    if (key.startsWith('firebase:') || key.startsWith('userProfile_')) {
+    if (key.startsWith('firebase:') ||
+        key.startsWith('userProfile_') ||
+        key.startsWith('authDataFixed')) {
       localStorage.removeItem(key);
     }
   });
 
-  // Delete Firebase IndexedDB databases
+  // Clear sessionStorage too
+  const sessionKeys = Object.keys(sessionStorage);
+  sessionKeys.forEach(key => {
+    if (key.startsWith('firebase:')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+
+  // Delete ALL Firebase IndexedDB databases
   if (window.indexedDB) {
-    ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'firebase-installations-database'].forEach(dbName => {
+    const dbsToDelete = [
+      'firebaseLocalStorageDb',
+      'firebase-heartbeat-database',
+      'firebase-installations-database',
+      'firebase-messaging-database',
+      'firebase-app-check-database'
+    ];
+
+    dbsToDelete.forEach(dbName => {
       const req = indexedDB.deleteDatabase(dbName);
       req.onsuccess = () => console.log(`✅ Cleared ${dbName}`);
       req.onerror = () => console.warn(`⚠️ Could not clear ${dbName}`);
     });
   }
 
-  localStorage.setItem('authDataFixed', AUTH_FIX_VERSION);
-  console.log('✅ Corrupted auth data cleared. Reloading for clean start...');
+  console.log('✅ All Firebase data cleared');
+};
 
-  // Reload once to start fresh
-  window.location.reload();
-  throw new Error('Reloading to apply auth fix');
-}
+// For now, always clear to prevent corruption issues
+// This forces users to log in fresh each time but prevents 400 errors
+clearAllFirebaseData();
 
 // Initialize Firebase AFTER cleanup check
 const app = initializeApp(firebaseConfig);
@@ -182,32 +160,8 @@ setTimeout(() => {
     .then(() => {
       console.log("Firebase Auth persistence set successfully");
 
-      // Set up token refresh handler to maintain valid tokens
-      const refreshToken = () => {
-        if (auth.currentUser) {
-          auth.currentUser.getIdToken(true).then(() => {
-            console.log("Token refreshed successfully");
-          }).catch(err => {
-            console.warn("Token refresh failed:", err);
-            // Don't force logout on token refresh failure - Firebase will handle it
-          });
-        }
-      };
-
-      // Refresh token every 50 minutes (tokens expire after 60 minutes)
-      setInterval(refreshToken, 50 * 60 * 1000);
-
-      // Also refresh on page focus to ensure token is fresh when user returns
-      window.addEventListener('focus', () => {
-        if (auth.currentUser) {
-          refreshToken();
-        }
-      });
-
-      // Force token refresh on page load to prevent TOKEN_EXPIRED errors
-      if (auth.currentUser) {
-        refreshToken();
-      }
+      // Remove automatic token refresh to prevent corruption
+      // Firebase will handle token refresh internally when needed
 
       // Verify Firebase auth keys are being stored in localStorage
       if (process.env.NODE_ENV !== 'production') {
