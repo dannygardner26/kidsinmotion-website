@@ -74,10 +74,12 @@ if (!window.__authUnhandledRejectionRegistered) {
     const isAccountsLookup = reasonMessage.includes('accounts:lookup') || reasonUrl.includes('accounts:lookup');
 
     if (is400Error && isAccountsLookup) {
-      console.warn('🔍 Accounts:lookup 400 error detected (suppressed, user stays logged in)');
+      console.warn('🔍 Accounts:lookup 400 error detected - admin account needs cleanup');
 
-      // DO NOT sign out - just suppress the error and let the user stay logged in
-      // The 400 error is non-critical and doesn't affect functionality
+      // For admin account 400 errors, force a cleanup on next reload
+      localStorage.setItem('forceAdminCleanup', 'true');
+      console.warn('🔧 Admin cleanup scheduled for next page load');
+
       event.preventDefault();
       return;
     }
@@ -92,12 +94,29 @@ if (!window.__authUnhandledRejectionRegistered) {
   });
 }
 
-// Smart Firebase data cleanup - only clear when corrupted
-const AUTH_FIX_VERSION = 'v13-smart-cleanup';
+// Smart Firebase data cleanup - enhanced admin account handling
+const AUTH_FIX_VERSION = 'v14-admin-fix';
 const lastCleanup = localStorage.getItem('authLastCleanup');
+
+// Track 400 errors to trigger cleanup
+let has400Error = false;
 
 // Function to detect if we need cleanup
 const needsCleanup = () => {
+  // Check if admin cleanup was forced due to 400 error
+  const forceAdminCleanup = localStorage.getItem('forceAdminCleanup');
+  if (forceAdminCleanup === 'true') {
+    console.warn('🔍 Admin cleanup forced due to 400 error');
+    localStorage.removeItem('forceAdminCleanup');
+    return true;
+  }
+
+  // Always cleanup if we detect 400 errors
+  if (has400Error) {
+    console.warn('🔍 Detected 400 error - forcing cleanup');
+    return true;
+  }
+
   // Check if we've done smart cleanup recently
   if (lastCleanup === AUTH_FIX_VERSION) {
     return false;
@@ -113,14 +132,36 @@ const needsCleanup = () => {
   if (authUser) {
     try {
       const userData = JSON.parse(authUser);
-      // Only clear if we detect actual corruption
+
+      // Enhanced corruption detection for admin accounts
+      const tokenManager = userData.stsTokenManager;
+
+      // Check basic structure
       if (!userData.uid ||
           !userData.email ||
-          !userData.stsTokenManager ||
+          !tokenManager ||
           userData.uid.length < 10) {
-        console.warn('🔍 Detected corrupted auth data');
+        console.warn('🔍 Detected corrupted auth data structure');
         return true;
       }
+
+      // Check for admin account specific issues
+      if (userData.email === 'kidsinmotion0@gmail.com') {
+        // Admin accounts might have corrupted tokens even with valid structure
+        if (!tokenManager.accessToken ||
+            !tokenManager.refreshToken ||
+            tokenManager.accessToken.length < 100) {
+          console.warn('🔍 Detected corrupted admin account tokens');
+          return true;
+        }
+      }
+
+      // Check token expiration
+      if (tokenManager.expirationTime && tokenManager.expirationTime < Date.now()) {
+        console.warn('🔍 Detected expired tokens');
+        return true;
+      }
+
     } catch (error) {
       console.warn('🔍 Cannot parse auth data - corrupted');
       return true;
