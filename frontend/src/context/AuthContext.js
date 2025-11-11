@@ -164,11 +164,28 @@ export const AuthProvider = ({ children }) => {
               if (process.env.NODE_ENV !== 'production') {
                 console.log("Starting background profile refresh...");
               }
+
+              // For admin accounts, skip API sync if we detect token issues
+              const isAdminAccount = user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com';
+
+              if (isAdminAccount) {
+                // Test token health before attempting API sync
+                try {
+                  await user.getIdToken(false); // Test cached token
+                } catch (tokenError) {
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.warn('Admin account token issue detected, skipping API sync:', tokenError);
+                  }
+                  // Use cached profile for admin - don't risk API corruption
+                  return;
+                }
+              }
+
               await apiService.syncUser();
               const freshProfile = await apiService.getUserProfile();
 
               // Apply admin privileges to fresh profile
-              if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
+              if (isAdminAccount) {
                 freshProfile.userType = 'ADMIN';
                 freshProfile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
               }
@@ -182,6 +199,18 @@ export const AuthProvider = ({ children }) => {
               // Background sync failures are non-critical - just log them
               if (process.env.NODE_ENV !== 'production') {
                 console.warn("Background profile refresh failed (non-critical):", bgError);
+              }
+
+              // For admin accounts, check if this is a 400/auth error that needs cleanup
+              const isAdminAccount = user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com';
+              const isAuthError = bgError.message?.includes('400') ||
+                                bgError.message?.includes('auth/') ||
+                                bgError.message?.includes('accounts:lookup');
+
+              if (isAdminAccount && isAuthError) {
+                console.warn('🔍 Admin account background sync failed with auth error - triggering cleanup');
+                localStorage.setItem('forceAdminCleanup', 'true');
+                console.warn('🔧 Admin cleanup scheduled for next page load');
               }
             }
           })();
