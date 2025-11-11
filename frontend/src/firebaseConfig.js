@@ -39,16 +39,47 @@ console.log("Firebase Config Debug:", {
   projectId: Boolean(process.env.REACT_APP_FIREBASE_PROJECT_ID)
 });
 
-// Fetch interceptor removed - it was causing logout by returning empty users array
-// Firebase handles token refresh automatically, even with 400 errors
+// Lightweight fetch interceptor to catch 400 errors on Firebase auth endpoints
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+  const [url] = args;
 
-// Suppress Google Sign-In COOP warnings (they're harmless but noisy)
+  return originalFetch.apply(this, args).then(response => {
+    // Check for 400 errors on Firebase auth endpoints
+    if (response.status === 400 &&
+        typeof url === 'string' &&
+        (url.includes('accounts:lookup') || url.includes('identitytoolkit'))) {
+      console.warn('🔍 Fetch intercepted 400 auth error - forcing admin cleanup');
+      localStorage.setItem('forceAdminCleanup', 'true');
+      console.warn('🔧 Admin cleanup scheduled for next page load');
+    }
+    return response;
+  }).catch(error => {
+    // Handle fetch errors
+    throw error;
+  });
+};
+
+// Suppress Google Sign-In COOP warnings and detect 400 errors
 const originalConsoleError = console.error;
 console.error = function(...args) {
   const message = args[0]?.toString() || '';
-  if (message.includes('Cross-Origin-Opener-Policy') || message.includes('postMessage')) {
+
+  // Suppress COOP warnings (harmless Google Sign-In noise)
+  if (message.includes('Cross-Origin-Opener-Policy') ||
+      message.includes('postMessage') ||
+      message.includes('window.postMessage')) {
     return; // Suppress COOP warnings
   }
+
+  // Detect 400 errors for admin account cleanup
+  if (message.includes('400') &&
+      (message.includes('accounts:lookup') || message.includes('identitytoolkit'))) {
+    console.warn('🔍 Detected 400 auth error - forcing admin cleanup');
+    localStorage.setItem('forceAdminCleanup', 'true');
+    console.warn('🔧 Admin cleanup scheduled for next page load');
+  }
+
   originalConsoleError.apply(console, args);
 };
 
@@ -173,26 +204,51 @@ const needsCleanup = () => {
 
 // Only clear if actually needed
 if (needsCleanup()) {
-  console.log('🔧 Smart cleanup: Clearing only corrupted Firebase data...');
+  const isAdminCleanup = localStorage.getItem('forceAdminCleanup') === 'true';
 
-  // Clear only when necessary
+  if (isAdminCleanup) {
+    console.log('🔧 ADMIN CLEANUP: Clearing corrupted auth data for kidsinmotion0@gmail.com...');
+  } else {
+    console.log('🔧 Smart cleanup: Clearing only corrupted Firebase data...');
+  }
+
+  // Clear Firebase auth data
   const allKeys = Object.keys(localStorage);
   allKeys.forEach(key => {
-    if (key.startsWith('firebase:') || key.startsWith('userProfile_')) {
+    if (key.startsWith('firebase:') ||
+        key.startsWith('userProfile_') ||
+        key === 'forceAdminCleanup') {
       localStorage.removeItem(key);
     }
   });
 
-  // Clear IndexedDB only when needed
+  // Clear IndexedDB databases that might be corrupted
   if (window.indexedDB) {
-    ['firebaseLocalStorageDb', 'firebase-heartbeat-database'].forEach(dbName => {
+    const dbsToDelete = isAdminCleanup ?
+      // More aggressive cleanup for admin account
+      ['firebaseLocalStorageDb', 'firebase-heartbeat-database', 'firebase-installations-database'] :
+      // Standard cleanup
+      ['firebaseLocalStorageDb', 'firebase-heartbeat-database'];
+
+    dbsToDelete.forEach(dbName => {
       const req = indexedDB.deleteDatabase(dbName);
       req.onsuccess = () => console.log(`✅ Cleared ${dbName}`);
+      req.onerror = () => console.warn(`⚠️ Could not clear ${dbName}`);
     });
   }
 
   localStorage.setItem('authLastCleanup', AUTH_FIX_VERSION);
-  console.log('✅ Smart cleanup completed');
+
+  if (isAdminCleanup) {
+    console.log('✅ Admin cleanup completed - refresh to login again');
+    // For admin cleanup, show a message and reload
+    setTimeout(() => {
+      alert('Admin account cleanup completed. Page will refresh for fresh login.');
+      window.location.reload();
+    }, 1000);
+  } else {
+    console.log('✅ Smart cleanup completed');
+  }
 } else {
   console.log('🟢 Firebase auth data looks clean, preserving login state');
 }
