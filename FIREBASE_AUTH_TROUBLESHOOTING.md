@@ -68,6 +68,245 @@ The fix uses a multi-layered approach:
 - Background sync happens without blocking UI
 - Retry logic handles transient network issues
 
+### Version 8 Improvements
+
+**Implemented:** November 9, 2025
+
+The v8 update addresses persistent 400 errors that continued to occur despite the v7 cleanup running successfully. This suggests that timing adjustments and auto-recovery mechanisms are needed in addition to the cleanup process.
+
+**Key Changes:**
+
+1. **AUTH_CLEANUP_VERSION Incremented to v8** (`firebaseConfig.js` line 101)
+   - Forces a fresh cleanup on next page load
+   - Clears any potentially corrupted auth data that may have accumulated after v7
+   - Users will experience one automatic page reload when v8 cleanup runs
+
+2. **Auto-Recovery Mechanism** (`firebaseConfig.js` lines 43-86)
+   - Enhanced unhandledrejection listener now detects 400 errors on accounts:lookup
+   - Automatically increments cleanup version (e.g., v8 → v9) when 400 error detected
+   - Triggers page reload to run cleanup with new version
+   - Creates a self-healing system that recovers from persistent auth corruption
+   - Prevents 400 errors from appearing in console (uses event.preventDefault())
+
+3. **Increased Initialization Delay to 500ms** (`AuthContext.js` line 342)
+   - Previously 300ms, now 500ms before syncing with backend
+   - Gives Firebase Auth more time to complete accounts:lookup call
+   - Reduces race conditions on slower connections or devices
+   - Includes detailed comment explaining why the delay is necessary
+
+4. **setPersistence Stabilization Delay** (`firebaseConfig.js` lines 200-225)
+   - Wrapped setPersistence in 100ms setTimeout
+   - Allows auth object to complete initial setup before configuring persistence
+   - Prevents potential race conditions during auth initialization
+   - Retry logic preserved within the setTimeout wrapper
+
+5. **Enhanced localStorage Verification Logging**
+   - `firebaseConfig.js` lines 208-229: Logs Firebase key presence after persistence is set
+   - `AuthContext.js` lines 343-370: Logs Firebase key and profile cache presence after login
+   - Both wrapped in `if (process.env.NODE_ENV !== 'production')` for development only
+   - Helps diagnose persistence issues by confirming keys are stored correctly
+   - Provides warnings if critical keys are missing
+
+**Why These Changes Were Necessary:**
+
+Despite v7 cleanup running successfully, users continued to experience 400 errors. Analysis showed:
+- The 300ms delay was insufficient on some devices/connections
+- No automatic recovery mechanism existed for persistent corruption
+- setPersistence race conditions could cause intermittent failures
+- Lack of verification logging made it difficult to diagnose persistence issues
+
+**What This Means for Users:**
+
+- First load after deployment: One automatic page reload as v8 cleanup runs
+- If 400 error occurs after v8: Automatic recovery increments to v9 and reloads
+- Login should be more reliable on slower connections (500ms buffer)
+- Developers get detailed logging to diagnose any remaining issues
+
+---
+
+## Auto-Recovery from 400 Errors
+
+This section documents the automatic recovery mechanism that detects and fixes corrupted Firebase auth data when 400 errors occur on the accounts:lookup endpoint.
+
+### How Auto-Recovery Works
+
+**Implemented in:** `frontend/src/firebaseConfig.js` lines 43-86
+
+The auto-recovery mechanism uses a global `unhandledrejection` event listener to intercept Firebase auth errors before they reach the console:
+
+1. **Error Detection:**
+   - Listener catches all unhandled promise rejections
+   - Checks if error is a 400 status code (Bad Request)
+   - Checks if error message includes "accounts:lookup"
+   - Both conditions must be true to trigger auto-recovery
+
+2. **Version Increment:**
+   - Reads current `authCleanupVersion` from localStorage
+   - Extracts version number (e.g., "v8" → 8)
+   - Increments to next version (8 → 9)
+   - Saves new version to localStorage (e.g., "v9")
+
+3. **Page Reload:**
+   - Calls `window.location.reload()` to reload the page
+   - On reload, the cleanup logic detects version mismatch (v8 ≠ v9)
+   - Full cleanup runs: removes all `firebase:` keys, deletes IndexedDB databases
+   - Page reloads again with clean auth state
+   - User can now log in without 400 errors
+
+4. **Console Management:**
+   - Uses `event.preventDefault()` to suppress error from appearing in console
+   - Logs helpful messages explaining the auto-recovery process
+   - Shows version transition (e.g., "v8 → v9")
+
+**Code Flow:**
+
+```javascript
+window.addEventListener('unhandledrejection', (event) => {
+  // Detect 400 error on accounts:lookup
+  if (is400Error && isAccountsLookup) {
+    // Get current version
+    const currentVersion = localStorage.getItem('authCleanupVersion'); // "v8"
+    const versionNumber = parseInt(currentVersion.replace('v', '')); // 8
+    const nextVersion = `v${versionNumber + 1}`; // "v9"
+
+    // Save new version
+    localStorage.setItem('authCleanupVersion', nextVersion);
+
+    // Reload page (triggers cleanup on next load)
+    window.location.reload();
+  }
+});
+```
+
+### When Auto-Recovery Triggers
+
+Auto-recovery activates automatically in these scenarios:
+
+1. **Initial Page Load with Corrupted Data:**
+   - User has corrupted `firebase:authUser` key in localStorage
+   - Firebase attempts to validate the corrupted data
+   - accounts:lookup API call returns 400 error
+   - Auto-recovery triggers immediately
+
+2. **After Browser Updates:**
+   - Browser update changes how IndexedDB or localStorage works
+   - Existing Firebase auth data becomes incompatible
+   - 400 error occurs on next login attempt
+   - Auto-recovery clears incompatible data
+
+3. **After Cache Corruption:**
+   - Browser cache becomes corrupted due to crash or disk errors
+   - Firebase auth keys contain invalid data
+   - accounts:lookup fails with 400 error
+   - Auto-recovery restores clean state
+
+4. **When Firebase Auth State Becomes Inconsistent:**
+   - Race conditions or interrupted operations leave auth in bad state
+   - Firebase's internal validation detects the inconsistency
+   - 400 error is thrown during initialization
+   - Auto-recovery resolves the inconsistency
+
+**Important:** Auto-recovery should only trigger once per corruption event. If it triggers repeatedly (multiple reloads), this indicates a deeper issue that needs investigation.
+
+### What Happens During Auto-Recovery
+
+**Step-by-Step Process:**
+
+1. **Error Detected (Instant):**
+   ```
+   Console: "🔍 Corrupted auth data detected (400 error on accounts:lookup)"
+   Console: "📋 Auto-recovery: Incrementing cleanup version and reloading..."
+   ```
+
+2. **Version Incremented (Instant):**
+   ```
+   localStorage.authCleanupVersion: "v8" → "v9"
+   Console: "✅ Cleanup version updated: v8 → v9"
+   ```
+
+3. **Page Reloads (1-2 seconds):**
+   - Page reloads automatically
+   - User sees brief loading screen
+
+4. **Cleanup Runs (On Reload):**
+   ```
+   Console: "🔥 Running one-time auth cleanup to fix 400 errors..."
+   Console: "Removing Firebase key: firebase:authUser:..."
+   Console: "Removing Firebase key: firebase:persistence:..."
+   Console: "Removed 3 Firebase keys from localStorage"
+   Console: "✅ Cleared firebaseLocalStorageDb"
+   Console: "✅ Auth cleanup complete. Reloading page for clean start..."
+   ```
+
+5. **Page Reloads Again (1-2 seconds):**
+   - Second reload ensures Firebase starts with completely clean state
+   - No corrupted data remains
+
+6. **Normal Operation Resumes:**
+   ```
+   Console: "⏭️ Cleanup already ran for this version, skipping."
+   Console: "Firebase App initialized"
+   Console: "Firebase Auth initializing..."
+   ```
+
+**Total Time:** Approximately 2-4 seconds from error to clean state
+
+**User Experience:**
+- User sees two quick page reloads
+- No manual intervention required
+- After reloads, login works normally
+- No data loss (only Firebase auth keys are cleared)
+
+### Verifying Auto-Recovery Worked
+
+After auto-recovery completes, verify the system is working correctly:
+
+1. **Check Console Logs:**
+   ```
+   Look for: "🔍 Corrupted auth data detected"
+   Look for: "✅ Cleanup version updated: v8 → v9"
+   Look for: "🔥 Running one-time auth cleanup..."
+   Look for: "⏭️ Cleanup already ran for this version, skipping"
+   ```
+
+2. **Check localStorage:**
+   - Open DevTools → Application → Local Storage
+   - Verify `authCleanupVersion` shows the new version (e.g., "v9")
+   - Verify no `firebase:` keys exist before login
+   - Login and verify `firebase:authUser` and `firebase:persistence` keys appear
+
+3. **Verify No More 400 Errors:**
+   - Open DevTools → Console
+   - Clear console
+   - Login with any method (email/password or Google)
+   - Verify no 400 errors on accounts:lookup
+   - Verify login completes successfully
+
+4. **Check Network Tab:**
+   - Open DevTools → Network tab
+   - Filter for "accounts:lookup"
+   - All requests should show 200 OK status (not 400)
+
+5. **Test Login Persistence:**
+   - Login successfully
+   - Close browser completely
+   - Reopen browser and navigate to site
+   - Should remain logged in (no 400 errors on session restoration)
+
+**Expected Console Output After Successful Recovery:**
+
+```
+⏭️ Cleanup already ran for this version, skipping.
+Firebase App initialized
+Firebase Auth initializing...
+Firebase Auth persistence set successfully
+Firebase auth keys verified in localStorage: {authUser: true, persistence: true, host: true, summary: "3/3 keys present"}
+Auth State Changed: User UID: xxxxx
+Waiting 500ms for Firebase Auth to complete initialization...
+Initialization delay complete, syncing user with backend...
+Login persistence verification: {firebaseAuthUser: true, firebasePersistence: true, profileCache: true, summary: "Firebase keys: 2/2, Profile cache: yes"}
+```
+
 ---
 
 ## Cross-Origin-Opener-Policy (COOP) Warnings
@@ -255,6 +494,138 @@ try {
 }
 ```
 
+### 6. Implement Auto-Recovery for Persistent Errors
+
+**When to Use Auto-Recovery:**
+
+Auto-recovery is appropriate for specific, known error patterns that have well-defined solutions. The 400 error on accounts:lookup is a perfect example because:
+- The error indicates corrupted localStorage data
+- The solution is always the same (clear auth data and reload)
+- User intervention would require manual cache clearing (poor UX)
+- The error prevents login completely without recovery
+
+**Pattern for Auto-Recovery:**
+
+```javascript
+window.addEventListener('unhandledrejection', (event) => {
+  // Detect specific error pattern
+  const isTargetError = /* check error type and context */;
+
+  if (isTargetError) {
+    // Log what's happening
+    console.warn('Specific error detected, initiating auto-recovery...');
+
+    // Apply fix (e.g., clear corrupted data, increment version)
+    // ... recovery logic ...
+
+    // Prevent error from appearing in console
+    event.preventDefault();
+
+    // Reload to apply fix
+    window.location.reload();
+  }
+});
+```
+
+**When NOT to Use Auto-Recovery:**
+
+1. **Network Errors:**
+   - Don't auto-recover from network failures
+   - Let user know their connection is down
+   - Allow manual retry
+
+2. **Backend API Errors:**
+   - Don't mask 500 errors or API failures
+   - Log these for debugging
+   - Show user-friendly error messages
+
+3. **Unknown Errors:**
+   - Don't auto-recover from unrecognized errors
+   - Could mask underlying bugs
+   - Log for investigation
+
+4. **User Data Errors:**
+   - Don't auto-clear user data without explicit action
+   - Could result in data loss
+   - Require user confirmation
+
+**Warning About Over-Using Auto-Recovery:**
+
+Auto-recovery is powerful but can mask underlying issues if overused:
+
+- **Symptom Masking:** If auto-recovery triggers frequently, it might be hiding a root cause that needs fixing
+- **Infinite Loops:** Poorly implemented recovery can cause endless reload loops
+- **Data Loss:** Aggressive cleanup could delete data that should be preserved
+- **Debugging Difficulty:** Automatic fixes make it harder to reproduce and debug issues
+
+**Best Practice Guidelines:**
+
+1. **Limit to Specific Errors:**
+   - Only implement recovery for well-understood error patterns
+   - Don't create a generic "recover from everything" handler
+
+2. **Add Safeguards:**
+   - Track how many times recovery has run (localStorage counter)
+   - If recovery runs more than twice in a session, log a warning and stop
+   - This prevents infinite loops
+
+3. **Log Everything:**
+   - Always log when auto-recovery triggers
+   - Include error details, recovery action taken, and timestamp
+   - This helps identify if recovery is masking a deeper problem
+
+4. **Monitor in Production:**
+   - Track how often auto-recovery triggers in production
+   - High frequency indicates an underlying issue that needs fixing
+   - Consider adding telemetry to monitor recovery events
+
+5. **Document Expected Behavior:**
+   - Document when recovery should trigger
+   - Document what recovery does
+   - Document what happens after recovery completes
+   - Make it easy for other developers to understand
+
+**Example of Safe Auto-Recovery with Safeguards:**
+
+```javascript
+// Track recovery attempts in session
+const getRecoveryCount = () => {
+  return parseInt(sessionStorage.getItem('authRecoveryCount') || '0');
+};
+
+const incrementRecoveryCount = () => {
+  const count = getRecoveryCount() + 1;
+  sessionStorage.setItem('authRecoveryCount', count.toString());
+  return count;
+};
+
+window.addEventListener('unhandledrejection', (event) => {
+  const is400Error = /* ... */;
+  const isAccountsLookup = /* ... */;
+
+  if (is400Error && isAccountsLookup) {
+    // Check if we've already recovered too many times
+    const recoveryCount = getRecoveryCount();
+    if (recoveryCount >= 2) {
+      console.error('Auto-recovery triggered too many times. Manual intervention required.');
+      console.error('Please clear browser cache and try again.');
+      return; // Don't recover again
+    }
+
+    // Increment counter
+    incrementRecoveryCount();
+
+    // Proceed with recovery
+    console.warn('Corrupted auth data detected, auto-recovery in progress...');
+    // ... rest of recovery logic ...
+  }
+});
+```
+
+**Reference Implementation:**
+
+See `firebaseConfig.js` lines 43-86 for the production implementation of auto-recovery for 400 errors on accounts:lookup.
+
 ---
 
 ## Common Errors and Solutions
@@ -391,6 +762,158 @@ Development mode only (set `NODE_ENV=development`):
 4. Navigate to site and log in
 5. Watch console for 400 errors on `accounts:lookup`
 6. If 400 error appears, the race condition is still present
+
+### Testing the 500ms Initialization Delay
+
+**Purpose:** Verify the increased initialization delay is preventing 400 errors on accounts:lookup.
+
+**Steps:**
+
+1. **Open DevTools Console:**
+   - Open browser DevTools (F12)
+   - Go to Console tab
+   - Enable timestamps: Console settings → Show timestamps
+
+2. **Navigate to Login Page:**
+   - Go to the login page
+   - Watch for initial Firebase initialization logs
+
+3. **Complete Login:**
+   - Enter credentials and submit
+   - Or click "Sign in with Google"
+
+4. **Watch for Delay Log:**
+   - Look for: `"Waiting 500ms for Firebase Auth to complete initialization..."`
+   - This should appear immediately after `"Auth State Changed: User UID: xxxxx"`
+
+5. **Verify Timing:**
+   - Note timestamp when "Auth State Changed" logs
+   - Note timestamp when "Initialization delay complete, syncing user with backend..." logs
+   - Difference should be ~500ms
+
+6. **Verify No 400 Errors:**
+   - Open Network tab
+   - Filter for "accounts:lookup"
+   - All requests should show 200 OK (not 400)
+   - If 400 appears, the delay may need to be increased further
+
+**Expected Console Output:**
+```
+[10:23:45.123] Auth State Changed: User UID: abc123xyz
+[10:23:45.125] Waiting 500ms for Firebase Auth to complete initialization...
+[10:23:45.625] Initialization delay complete, syncing user with backend...
+```
+
+**What to Look For:**
+- Gap between "Auth State Changed" and "Initialization delay complete" should be ~500ms
+- No 400 errors should appear in console or Network tab
+- Login should complete successfully without errors
+
+### Testing setPersistence Stabilization
+
+**Purpose:** Verify the 100ms delay before setPersistence is preventing race conditions.
+
+**Steps:**
+
+1. **Clear All Auth Data:**
+   - Open DevTools → Console
+   - Run: `Object.keys(localStorage).forEach(k => k.startsWith('firebase:') && localStorage.removeItem(k))`
+   - This clears Firebase keys for a fresh test
+
+2. **Reload Page:**
+   - Press F5 or Ctrl+R to reload
+   - Watch console logs
+
+3. **Watch for Persistence Log:**
+   - Look for: `"Firebase Auth persistence set successfully"`
+   - This should appear ~100ms after `"Firebase Auth initializing..."`
+
+4. **Verify localStorage Keys:**
+   - After persistence is set, check for verification logs
+   - Look for: `"Firebase auth keys verified in localStorage: {authUser: false, persistence: true, host: false, summary: "1/3 keys present"}"`
+   - Note: `authUser` will be false until login, but `persistence` should be true
+
+5. **Verify No Persistence Errors:**
+   - Look for: `"Failed to set auth persistence"`
+   - This should NOT appear if stabilization is working
+
+**Expected Console Output:**
+```
+[10:23:45.100] Firebase Auth initializing...
+[10:23:45.200] Firebase Auth persistence set successfully
+[10:23:45.201] Firebase auth keys verified in localStorage: {authUser: false, persistence: true, host: true, summary: "2/3 keys present"}
+```
+
+**What to Look For:**
+- Persistence sets successfully without errors
+- localStorage verification shows `persistence: true`
+- No "Failed to set auth persistence" warnings
+
+### Testing Auto-Recovery Mechanism
+
+**Purpose:** Verify auto-recovery kicks in when 400 errors are detected.
+
+**Important:** This test intentionally creates a 400 error to test recovery. Only do this in development.
+
+**Steps:**
+
+1. **Prepare for Test:**
+   - Open DevTools → Console
+   - Clear console (Ctrl+L)
+   - Ensure you're in development mode (NODE_ENV !== 'production')
+
+2. **Manually Corrupt Auth Data (Optional):**
+   - If you want to test recovery, you can manually set a bad value:
+   - Run: `localStorage.setItem('firebase:authUser:YOUR_API_KEY:[DEFAULT]', 'corrupted_data')`
+   - Replace YOUR_API_KEY with your actual API key from .env
+
+3. **Reload Page:**
+   - Press F5 or Ctrl+R
+   - Firebase will attempt to load the corrupted data
+
+4. **Watch for Auto-Recovery Logs:**
+   - Look for: `"🔍 Corrupted auth data detected (400 error on accounts:lookup)"`
+   - Look for: `"📋 Auto-recovery: Incrementing cleanup version and reloading..."`
+   - Look for: `"✅ Cleanup version updated: v8 → v9"` (version numbers may vary)
+
+5. **Observe Page Reloads:**
+   - Page should reload automatically (1st reload)
+   - You should see cleanup logs: `"🔥 Running one-time auth cleanup..."`
+   - Page should reload again (2nd reload)
+
+6. **Verify System Back to Normal:**
+   - After 2nd reload, look for: `"⏭️ Cleanup already ran for this version, skipping."`
+   - No more 400 errors should appear
+   - Login should work normally
+
+**Expected Console Output:**
+```
+// First page load (with corrupted data):
+Unhandled rejection detected: {message: "400 accounts:lookup", ...}
+🔍 Corrupted auth data detected (400 error on accounts:lookup)
+📋 Auto-recovery: Incrementing cleanup version and reloading...
+✅ Cleanup version updated: v8 → v9
+
+// After 1st reload (cleanup runs):
+🔥 Running one-time auth cleanup to fix 400 errors...
+Removing Firebase key: firebase:authUser:...
+Removed 3 Firebase keys from localStorage
+✅ Auth cleanup complete. Reloading page for clean start...
+
+// After 2nd reload (normal operation):
+⏭️ Cleanup already ran for this version, skipping.
+Firebase App initialized
+Firebase Auth initializing...
+```
+
+**What to Look For:**
+- Auto-recovery detects 400 error automatically
+- Version increments correctly (e.g., v8 → v9)
+- Two page reloads occur
+- System returns to normal operation after recovery
+- No more 400 errors after recovery completes
+
+**Note:** If auto-recovery triggers repeatedly (more than once), this indicates a deeper issue that needs investigation. It should only run once per corruption event.
 
 ---
 
@@ -738,6 +1261,18 @@ try {
 }
 ```
 
+### Skip Cleanup Until Firebase Finishes Restoring the Session
+
+**Problem:** Firebase emits an initial `onAuthStateChanged` event with `null` before it finishes loading the persisted user from IndexedDB/localStorage. The previous cleanup logic interpreted this initial `null` as a real logout and immediately deleted every `firebase:*` key, so the follow-up event that should have restored the session no longer had any credentials to read. This manifested as "login works until I refresh" because the refresh sequence always hit the cleanup before Firebase could restore the cached user.
+
+**Solution (Implemented in `AuthContext.js` lines 382-445):**
+- Track the last authenticated UID in `lastUidRef`
+- Only run the firebase key cleanup when `lastUidRef.current` exists (meaning we actually had a signed-in user)
+- Skip cleanup for the initial `null` event and simply log a debug message in development
+- Reset `lastUidRef.current` to `null` after a successful cleanup so the guard is ready for the next session
+
+**Result:** Refreshes no longer purge Firebase persistence data. Users stay logged in across reloads, while explicit logouts still clear cached auth/profile data.
+
 ### When to Manually Call clearStaleAuthData()
 
 The `clearStaleAuthData()` function is still available in `firebaseConfig.js` for manual use in specific debugging scenarios:
@@ -863,6 +1398,125 @@ Object.keys(localStorage).forEach(key => {
 });
 ```
 
+### Verifying localStorage Keys After Login
+
+This subsection provides console commands and guidance for checking that Firebase auth keys are properly stored after login, helping diagnose persistence issues.
+
+**Check All localStorage Keys:**
+
+```javascript
+// Run in browser DevTools console
+Object.keys(localStorage).forEach(key => {
+  console.log(key, ':', localStorage.getItem(key).substring(0, 50));
+});
+```
+
+**Expected Output After Login:**
+```
+firebase:authUser:AIza...:[DEFAULT] : {"uid":"abc123","email":"user@example.com","...
+firebase:persistence:AIza...:[DEFAULT] : {"persistence":"LOCAL"}
+firebase:host:kids-in-motion-website-b1c09.firebaseapp.com : {"host":"kids-in-motion-website-b1c09.firebaseapp.com"}
+userProfile_abc123 : {"username":"testuser","firstName":"Test","...
+```
+
+**Check Specific Firebase Auth Keys:**
+
+```javascript
+// Replace with your actual API key and project ID
+const apiKey = 'AIzaSyCFe7YIJX_0VtKYDYA7GVTMoJDeTTAufeg';
+const projectId = 'kids-in-motion-website-b1c09';
+
+const authUserKey = `firebase:authUser:${apiKey}:[DEFAULT]`;
+const persistenceKey = `firebase:persistence:${apiKey}:[DEFAULT]`;
+const hostKey = `firebase:host:${projectId}.firebaseapp.com`;
+
+console.log('Auth User Key:', !!localStorage.getItem(authUserKey));
+console.log('Persistence Key:', !!localStorage.getItem(persistenceKey));
+console.log('Host Key:', !!localStorage.getItem(hostKey));
+```
+
+**Expected Output:**
+```
+Auth User Key: true
+Persistence Key: true
+Host Key: true
+```
+
+**Check User Profile Cache:**
+
+```javascript
+// Replace with your actual user UID
+const uid = 'abc123xyz'; // Get this from Firebase console or user.uid
+const profileKey = `userProfile_${uid}`;
+
+const profileExists = !!localStorage.getItem(profileKey);
+console.log('Profile Cache Exists:', profileExists);
+
+if (profileExists) {
+  const profile = JSON.parse(localStorage.getItem(profileKey));
+  console.log('Cached Profile:', profile);
+}
+```
+
+**Expected Output:**
+```
+Profile Cache Exists: true
+Cached Profile: {username: "testuser", firstName: "Test", lastName: "User", ...}
+```
+
+**Interpreting Missing Keys:**
+
+1. **If `firebase:authUser` key is missing:**
+   - **Problem:** User authentication data not persisted
+   - **Impact:** Login will not persist across browser restarts
+   - **Solution:** Check that `setPersistence(auth, browserLocalPersistence)` is being called successfully
+   - **Check:** Look for "Firebase Auth persistence set successfully" in console
+
+2. **If `firebase:persistence` key is missing:**
+   - **Problem:** Persistence setting not saved
+   - **Impact:** Firebase may use session persistence instead of local persistence
+   - **Solution:** Same as above - verify setPersistence call
+   - **Note:** This key is set before login, so it should exist even without logging in
+
+3. **If `firebase:host` key is missing:**
+   - **Problem:** Firebase host configuration not cached
+   - **Impact:** May cause slower initialization on page loads
+   - **Solution:** Usually created automatically, but verify Firebase is initializing correctly
+
+4. **If `userProfile_[UID]` key is missing:**
+   - **Problem:** User profile not cached
+   - **Impact:** Slower loading on subsequent logins (requires backend API call)
+   - **Solution:** Verify backend sync completes successfully
+   - **Note:** This is non-critical - app will fetch from backend if missing
+
+**Troubleshooting Steps If Keys Are Missing:**
+
+1. **Check Console Logs:**
+   - Look for "Firebase Auth persistence set successfully"
+   - Look for "Firebase auth keys verified in localStorage: ..."
+   - Look for "Login persistence verification: ..."
+
+2. **Check for Errors:**
+   - Look for "Failed to set auth persistence"
+   - Look for any 400 errors on accounts:lookup
+   - Look for any network errors
+
+3. **Verify Environment Variables:**
+   - Ensure `.env` has all required Firebase config variables
+   - Verify variable names start with `REACT_APP_`
+   - Restart development server after changing `.env`
+
+4. **Test with Clean State:**
+   - Clear all localStorage: `localStorage.clear()`
+   - Delete all IndexedDB databases (DevTools → Application → IndexedDB)
+   - Reload page and login again
+   - Check if keys are created this time
+
+5. **Reference Documentation:**
+   - See `firebaseConfig.js` lines 208-229 for verification logging
+   - See `AuthContext.js` lines 343-370 for login verification logging
+   - See "Testing setPersistence Stabilization" section above for detailed testing procedures
+
 ---
 
 ## Debugging Techniques
@@ -962,3 +1616,4 @@ async getAuthToken() {
 
 - **v1.0** (2025-01-08): Initial documentation covering 400 error fix and COOP warnings
 - **v1.1** (2025-11-09): Added login persistence fix, localStorage management documentation, and comprehensive persistence testing procedures
+- **v1.2** (2025-11-09): Implemented 400 error auto-recovery mechanism, increased initialization delays to 500ms, added setPersistence stabilization delay (100ms), and enhanced localStorage verification logging

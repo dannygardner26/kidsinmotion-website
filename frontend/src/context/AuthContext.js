@@ -78,14 +78,66 @@ export const AuthProvider = ({ children }) => {
   const syncUserWithBackend = async (user, isGoogleOAuth = false, retryCount = 0) => {
     if (user) {
       try {
-        // Verify Firebase user object is fully initialized before making API calls
-        const isUserReady = user.uid && user.email && typeof user.getIdToken === 'function';
+        // Enhanced user validation to prevent 400 errors from corrupted accounts
+        const isUserReady = user.uid &&
+                           user.email &&
+                           typeof user.getIdToken === 'function' &&
+                           user.uid.length > 10 && // Valid UID should be longer than 10 chars
+                           user.email.includes('@'); // Basic email validation
+
         if (!isUserReady && retryCount < 3) {
           if (process.env.NODE_ENV !== 'production') {
             console.log(`Firebase user not fully ready, waiting 200ms (attempt ${retryCount + 1}/3)...`);
+            console.log('User validation:', {
+              hasUid: !!user.uid,
+              hasEmail: !!user.email,
+              hasGetIdToken: typeof user.getIdToken === 'function',
+              uidLength: user.uid?.length,
+              validEmail: user.email?.includes('@')
+            });
           }
           await new Promise(resolve => setTimeout(resolve, 200));
           return syncUserWithBackend(user, isGoogleOAuth, retryCount + 1);
+        }
+
+        // If user is still not ready after retries, this might be a corrupted account
+        if (!isUserReady) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('User account appears corrupted or incomplete:', {
+              uid: user.uid,
+              email: user.email,
+              hasGetIdToken: typeof user.getIdToken === 'function'
+            });
+          }
+
+          // Force sign out corrupted user and clear auth data
+          try {
+            await logout();
+          } catch (logoutError) {
+            console.warn('Error during corrupted user logout:', logoutError);
+            // Force reload to clear state
+            window.location.reload();
+          }
+          return;
+        }
+
+        // Validate the token before proceeding to catch auth/internal-error early
+        try {
+          await user.getIdToken(false); // Test token without forcing refresh
+        } catch (tokenError) {
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Token validation failed during sync, attempting refresh:', tokenError);
+          }
+
+          try {
+            await user.getIdToken(true); // Force refresh
+          } catch (refreshError) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.error('Token refresh failed, account may be corrupted:', refreshError);
+            }
+            await logout();
+            return;
+          }
         }
 
         // Check for cached profile first to speed up loading
@@ -308,87 +360,161 @@ export const AuthProvider = ({ children }) => {
         if (user) {
           // Track the last known UID for targeted cache cleanup on logout
           lastUidRef.current = user.uid;
+
           // Check if this is a restored session vs a fresh login
           const isRestoredSession = !isGoogleOAuthLogin;
 
           if (isRestoredSession && process.env.NODE_ENV !== 'production') {
             console.log("Restored session detected - trusting Firebase's built-in token validation");
-            // NOTE: Removed aggressive token validation that was causing premature logouts.
-            // Firebase automatically handles token refresh and will trigger onAuthStateChanged
-            // with user=null if the token is truly invalid. We should trust Firebase's
-            // built-in validation rather than forcing our own checks on every page load.
+          }
+
+          // Validate token before proceeding with backend sync
+          let tokenValid = false;
+          try {
+            // Test token validity by attempting to get fresh token
+            await user.getIdToken(false); // Don't force refresh, just validate existing
+            tokenValid = true;
+            if (process.env.NODE_ENV !== 'production') {
+              console.log("Token validation successful");
+            }
+          } catch (tokenError) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn("Token validation failed:", tokenError);
+            }
+
+            // Try to refresh the token once
+            try {
+              await user.getIdToken(true); // Force refresh
+              tokenValid = true;
+              if (process.env.NODE_ENV !== 'production') {
+                console.log("Token refresh successful");
+              }
+            } catch (refreshError) {
+              if (process.env.NODE_ENV !== 'production') {
+                console.error("Token refresh failed, signing out:", refreshError);
+              }
+              await logout();
+              return;
+            }
+          }
+
+          if (!tokenValid) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log("Invalid token, signing out");
+            }
+            await logout();
+            return;
           }
 
           // Add initialization delay to prevent race condition with Firebase Auth's internal initialization
-          // Firebase Auth needs time to complete its accounts:lookup call before we can safely make API requests
           if (process.env.NODE_ENV !== 'production') {
             console.log("Waiting 300ms for Firebase Auth to complete initialization...");
           }
 
           // Store timeout for cleanup
           syncTimeoutRef.current = setTimeout(async () => {
-            if (process.env.NODE_ENV !== 'production') {
-              console.log("Initialization delay complete, syncing user with backend...");
-            }
-
-            await syncUserWithBackend(user, isGoogleOAuthLogin);
-            setIsGoogleOAuthLogin(false); // Reset flag after use
-
-            // Update verification status
-            setIsEmailVerified(user.emailVerified);
-
-            setAuthReady(true);
-            setLoading(false);
-          }, 300); // Reduced delay since we're validating tokens first
-        } else {
-          // User is logged out - perform targeted localStorage cleanup
-          // Instead of localStorage.clear(), only remove Firebase auth keys and user profile cache
-          // This preserves other app data (preferences, settings, etc.)
-          try {
-            const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
-            const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
-
-            let removedCount = 0;
-
-            // Attempt targeted removal with exact keys
-            if (apiKey && projectId) {
-              const firebaseKeysToRemove = [
-                `firebase:authUser:${apiKey}:[DEFAULT]`,
-                `firebase:host:${projectId}.firebaseapp.com`,
-                `firebase:host:${projectId}.web.app`,
-                `firebase:persistence:${apiKey}:[DEFAULT]`,
-                `firebase:authTokenSyncURL:${apiKey}:[DEFAULT]`,
-                `firebase:pendingRedirect:${apiKey}:[DEFAULT]`
-              ];
-
-              firebaseKeysToRemove.forEach(key => {
-                if (localStorage.getItem(key)) {
-                  if (process.env.NODE_ENV !== 'production') {
-                    console.log("Removing Firebase auth key on logout:", key);
-                  }
-                  localStorage.removeItem(key);
-                  removedCount++;
-                }
-              });
-            }
-
-            // Fallback: prefix-based deletion if env vars are missing or no keys were removed
-            if (!apiKey || !projectId || removedCount === 0) {
+            try {
               if (process.env.NODE_ENV !== 'production') {
-                console.log("Using fallback prefix-based deletion for firebase: keys");
+                console.log("Initialization delay complete, syncing user with backend...");
               }
-              Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('firebase:')) {
-                  if (process.env.NODE_ENV !== 'production') {
-                    console.log("Removing Firebase key (fallback):", key);
-                  }
-                  localStorage.removeItem(key);
-                }
-              });
+
+              await syncUserWithBackend(user, isGoogleOAuthLogin);
+              setIsGoogleOAuthLogin(false); // Reset flag after use
+
+              // Update verification status
+              setIsEmailVerified(user.emailVerified);
+
+              setAuthReady(true);
+              setLoading(false);
+            } catch (syncError) {
+              if (process.env.NODE_ENV !== 'production') {
+                console.error("Backend sync failed:", syncError);
+              }
+              // Still set auth ready to allow app to load
+              setAuthReady(true);
+              setLoading(false);
             }
 
-            // Remove only the current user's profile cache using tracked UID
-            if (lastUidRef.current) {
+            // Verify that Firebase auth keys exist in localStorage after successful login
+            if (process.env.NODE_ENV !== 'production') {
+              const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+              const authUserKey = `firebase:authUser:${apiKey}:[DEFAULT]`;
+              const persistenceKey = `firebase:persistence:${apiKey}:[DEFAULT]`;
+              const userProfileKey = `userProfile_${user.uid}`;
+
+              const authUserExists = !!localStorage.getItem(authUserKey);
+              const persistenceExists = !!localStorage.getItem(persistenceKey);
+              const profileCacheExists = !!localStorage.getItem(userProfileKey);
+
+              const firebaseKeysPresent = [authUserExists, persistenceExists].filter(Boolean).length;
+
+              console.log('Login persistence verification:', {
+                firebaseAuthUser: authUserExists,
+                firebasePersistence: persistenceExists,
+                profileCache: profileCacheExists,
+                summary: `Firebase keys: ${firebaseKeysPresent}/2, Profile cache: ${profileCacheExists ? 'yes' : 'no'}`
+              });
+
+              // Warn if any critical keys are missing
+              if (!authUserExists) {
+                console.warn('⚠️ Warning: firebase:authUser key is missing - login may not persist');
+              }
+              if (!persistenceExists) {
+                console.warn('⚠️ Warning: firebase:persistence key is missing - login may not persist');
+              }
+            }
+          }, 500); // Increased from 300ms to 500ms to prevent 400 errors
+        } else {
+          const hadPreviousUser = Boolean(lastUidRef.current);
+
+          if (hadPreviousUser) {
+            // User explicitly signed out - perform targeted localStorage cleanup
+            // Instead of localStorage.clear(), only remove Firebase auth keys and user profile cache
+            // This preserves other app data (preferences, settings, etc.)
+            try {
+              const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+              const projectId = process.env.REACT_APP_FIREBASE_PROJECT_ID;
+
+              let removedCount = 0;
+
+              // Attempt targeted removal with exact keys
+              if (apiKey && projectId) {
+                const firebaseKeysToRemove = [
+                  `firebase:authUser:${apiKey}:[DEFAULT]`,
+                  `firebase:host:${projectId}.firebaseapp.com`,
+                  `firebase:host:${projectId}.web.app`,
+                  `firebase:persistence:${apiKey}:[DEFAULT]`,
+                  `firebase:authTokenSyncURL:${apiKey}:[DEFAULT]`,
+                  `firebase:pendingRedirect:${apiKey}:[DEFAULT]`
+                ];
+
+                firebaseKeysToRemove.forEach(key => {
+                  if (localStorage.getItem(key)) {
+                    if (process.env.NODE_ENV !== 'production') {
+                      console.log("Removing Firebase auth key on logout:", key);
+                    }
+                    localStorage.removeItem(key);
+                    removedCount++;
+                  }
+                });
+              }
+
+              // Fallback: prefix-based deletion if env vars are missing or no keys were removed
+              if (!apiKey || !projectId || removedCount === 0) {
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log("Using fallback prefix-based deletion for firebase: keys");
+                }
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith('firebase:')) {
+                    if (process.env.NODE_ENV !== 'production') {
+                      console.log("Removing Firebase key (fallback):", key);
+                    }
+                    localStorage.removeItem(key);
+                  }
+                });
+              }
+
+              // Remove only the current user's profile cache using tracked UID
               const userProfileKey = `userProfile_${lastUidRef.current}`;
               if (localStorage.getItem(userProfileKey)) {
                 if (process.env.NODE_ENV !== 'production') {
@@ -396,11 +522,14 @@ export const AuthProvider = ({ children }) => {
                 }
                 localStorage.removeItem(userProfileKey);
               }
+            } catch (cleanupError) {
+              console.warn("Error during logout localStorage cleanup:", cleanupError);
             }
-          } catch (cleanupError) {
-            console.warn("Error during logout localStorage cleanup:", cleanupError);
+          } else if (process.env.NODE_ENV !== 'production') {
+            console.log("Auth resolved with no prior session - skipping firebase:* key cleanup");
           }
 
+          lastUidRef.current = null;
           setUserProfile(null);
           setIsEmailVerified(false);
           setIsPhoneVerified(false);
@@ -462,19 +591,39 @@ export const AuthProvider = ({ children }) => {
     // setLoading(false) is handled by the onAuthStateChanged listener when user becomes null
   };
 
-  // Function to get the current user's ID token
-  const getIdToken = async () => {
+  // Function to get the current user's ID token with improved error handling
+  const getIdToken = async (forceRefresh = false) => {
     if (currentUser) {
       try {
-        const token = await currentUser.getIdToken(true); // Force refresh token if needed
+        const token = await currentUser.getIdToken(forceRefresh);
         return token;
       } catch (error) {
         if (process.env.NODE_ENV !== 'production') {
           console.error("Error getting ID token:", error);
         }
-        // Handle error, maybe force logout or re-authentication
-        if (error.code === 'auth/user-token-expired' || error.code === 'auth/internal-error') {
-           await logout(); // Force logout if token is invalid/expired
+
+        // Handle specific auth errors
+        if (error.code === 'auth/user-token-expired' ||
+            error.code === 'auth/internal-error' ||
+            error.code === 'auth/network-request-failed') {
+
+          // Try one more time with forced refresh before giving up
+          if (!forceRefresh) {
+            try {
+              const refreshedToken = await currentUser.getIdToken(true);
+              return refreshedToken;
+            } catch (refreshError) {
+              if (process.env.NODE_ENV !== 'production') {
+                console.error("Token refresh also failed, signing out:", refreshError);
+              }
+              await logout();
+              return null;
+            }
+          } else {
+            // Already tried refresh, sign out
+            await logout();
+            return null;
+          }
         }
         return null;
       }

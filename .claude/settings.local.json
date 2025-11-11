@@ -147,7 +147,8 @@
       "Bash(set REACT_APP_ENABLE_FIRESTORE_SYNC=true)",
       "Bash(gsutil cors get:*)",
       "Bash(gcloud storage buckets describe:*)",
-      "Bash(gcloud storage buckets update:*)"
+      "Bash(gcloud storage buckets update:*)",
+      "Bash(nul)"
     ],
     "deny": []
   }
