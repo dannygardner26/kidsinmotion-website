@@ -197,31 +197,19 @@ const CreateEvent = () => {
       console.log('Full event data object:', eventData);
 
       if (isEditMode) {
-        try {
-          await apiService.updateEvent(eventId, eventData);
-          navigate('/admin', {
-            state: { message: 'Event updated successfully!' }
-          });
-        } catch (apiError) {
-          console.log('API update failed, trying Firestore directly:', apiError);
-          await firestoreEventService.updateEvent(eventId, eventData);
-          navigate('/admin', {
-            state: { message: 'Event updated successfully! (via Firestore)' }
-          });
-        }
+        // Use Firestore directly for real-time sync across all components
+        await firestoreEventService.updateEvent(eventId, eventData);
+        console.log('Event updated via Firestore for real-time sync');
+        navigate('/admin', {
+          state: { message: 'Event updated successfully!' }
+        });
       } else {
-        try {
-          await apiService.createEvent(eventData);
-          navigate('/admin', {
-            state: { message: 'Event created successfully!' }
-          });
-        } catch (apiError) {
-          console.log('API creation failed, trying Firestore directly:', apiError);
-          await firestoreEventService.createEvent(eventData);
-          navigate('/admin', {
-            state: { message: 'Event created successfully! (via Firestore)' }
-          });
-        }
+        // Use Firestore directly for real-time sync across all components
+        await firestoreEventService.createEvent(eventData);
+        console.log('Event created via Firestore for real-time sync');
+        navigate('/admin', {
+          state: { message: 'Event created successfully!' }
+        });
       }
     } catch (error) {
       console.error(`Error ${isEditMode ? 'updating' : 'creating'} event:`, error);

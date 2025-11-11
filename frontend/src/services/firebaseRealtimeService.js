@@ -3,13 +3,21 @@ import { collection, doc, onSnapshot, query, where, orderBy, addDoc, serverTimes
 
 class FirebaseRealtimeService {
   constructor() {
+    this.init();
+  }
+
+  // Initialize or reinitialize the service
+  init() {
     this.listeners = new Map(); // Track active listeners for cleanup
   }
 
-  // Ensure listeners map is always initialized
+  // Ensure listeners map is always initialized and service is healthy
   ensureListeners() {
-    if (!this.listeners) {
-      this.listeners = new Map();
+    if (!this.listeners || typeof this.listeners.set !== 'function') {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('🔧 Realtime service corrupted, reinitializing...');
+      }
+      this.init();
     }
   }
 
@@ -477,7 +485,25 @@ class FirebaseRealtimeService {
   }
 }
 
-// Create a singleton instance
-const firebaseRealtimeService = new FirebaseRealtimeService();
+// Create a robust singleton instance that can recover from corruption
+let firebaseRealtimeService = new FirebaseRealtimeService();
 
-export default firebaseRealtimeService;
+// Export a proxy that ensures the service is always healthy
+export default new Proxy(firebaseRealtimeService, {
+  get(target, prop) {
+    // If the service is corrupted, recreate it
+    if (!target || typeof target[prop] === 'undefined') {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('🔧 Service proxy detected corruption, recreating service...');
+      }
+      firebaseRealtimeService = new FirebaseRealtimeService();
+      target = firebaseRealtimeService;
+    }
+
+    const value = target[prop];
+    if (typeof value === 'function') {
+      return value.bind(target);
+    }
+    return value;
+  }
+});
