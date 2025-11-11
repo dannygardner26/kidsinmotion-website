@@ -92,52 +92,69 @@ if (!window.__authUnhandledRejectionRegistered) {
   });
 }
 
-// Aggressive cleanup to prevent auth token corruption
-// This forces a clean slate on every page load to prevent 400 errors
-const clearAllFirebaseData = () => {
-  console.log('🔧 Force clearing ALL Firebase data to prevent corruption...');
+// Smart Firebase data cleanup - only clear when corrupted
+const AUTH_FIX_VERSION = 'v13-smart-cleanup';
+const lastCleanup = localStorage.getItem('authLastCleanup');
 
-  // Remove ALL Firebase localStorage keys
+// Function to detect if we need cleanup
+const needsCleanup = () => {
+  // Check if we've done smart cleanup recently
+  if (lastCleanup === AUTH_FIX_VERSION) {
+    return false;
+  }
+
+  // Check for signs of corruption
+  const apiKey = process.env.REACT_APP_FIREBASE_API_KEY;
+  if (!apiKey) return true;
+
+  const authUserKey = `firebase:authUser:${apiKey}:[DEFAULT]`;
+  const authUser = localStorage.getItem(authUserKey);
+
+  if (authUser) {
+    try {
+      const userData = JSON.parse(authUser);
+      // Only clear if we detect actual corruption
+      if (!userData.uid ||
+          !userData.email ||
+          !userData.stsTokenManager ||
+          userData.uid.length < 10) {
+        console.warn('🔍 Detected corrupted auth data');
+        return true;
+      }
+    } catch (error) {
+      console.warn('🔍 Cannot parse auth data - corrupted');
+      return true;
+    }
+  }
+
+  return false;
+};
+
+// Only clear if actually needed
+if (needsCleanup()) {
+  console.log('🔧 Smart cleanup: Clearing only corrupted Firebase data...');
+
+  // Clear only when necessary
   const allKeys = Object.keys(localStorage);
   allKeys.forEach(key => {
-    if (key.startsWith('firebase:') ||
-        key.startsWith('userProfile_') ||
-        key.startsWith('authDataFixed')) {
+    if (key.startsWith('firebase:') || key.startsWith('userProfile_')) {
       localStorage.removeItem(key);
     }
   });
 
-  // Clear sessionStorage too
-  const sessionKeys = Object.keys(sessionStorage);
-  sessionKeys.forEach(key => {
-    if (key.startsWith('firebase:')) {
-      sessionStorage.removeItem(key);
-    }
-  });
-
-  // Delete ALL Firebase IndexedDB databases
+  // Clear IndexedDB only when needed
   if (window.indexedDB) {
-    const dbsToDelete = [
-      'firebaseLocalStorageDb',
-      'firebase-heartbeat-database',
-      'firebase-installations-database',
-      'firebase-messaging-database',
-      'firebase-app-check-database'
-    ];
-
-    dbsToDelete.forEach(dbName => {
+    ['firebaseLocalStorageDb', 'firebase-heartbeat-database'].forEach(dbName => {
       const req = indexedDB.deleteDatabase(dbName);
       req.onsuccess = () => console.log(`✅ Cleared ${dbName}`);
-      req.onerror = () => console.warn(`⚠️ Could not clear ${dbName}`);
     });
   }
 
-  console.log('✅ All Firebase data cleared');
-};
-
-// For now, always clear to prevent corruption issues
-// This forces users to log in fresh each time but prevents 400 errors
-clearAllFirebaseData();
+  localStorage.setItem('authLastCleanup', AUTH_FIX_VERSION);
+  console.log('✅ Smart cleanup completed');
+} else {
+  console.log('🟢 Firebase auth data looks clean, preserving login state');
+}
 
 // Initialize Firebase AFTER cleanup check
 const app = initializeApp(firebaseConfig);

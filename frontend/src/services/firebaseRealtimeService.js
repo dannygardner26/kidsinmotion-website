@@ -6,6 +6,13 @@ class FirebaseRealtimeService {
     this.listeners = new Map(); // Track active listeners for cleanup
   }
 
+  // Ensure listeners map is always initialized
+  ensureListeners() {
+    if (!this.listeners) {
+      this.listeners = new Map();
+    }
+  }
+
   // Listen to a specific event document
   subscribeToEvent(eventId, callback, errorCallback) {
     const listenerKey = `event_${eventId}`;
@@ -364,13 +371,8 @@ class FirebaseRealtimeService {
 
   // Unsubscribe from a specific listener
   unsubscribe(listenerKey) {
-    // Guard against corrupted state after Firebase data cleanup
-    if (!this.listeners) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn(`Listeners map not initialized for: ${listenerKey}`);
-      }
-      return;
-    }
+    // Ensure listeners map exists
+    this.ensureListeners();
 
     const unsubscribe = this.listeners.get(listenerKey);
     if (unsubscribe && typeof unsubscribe === 'function') {
