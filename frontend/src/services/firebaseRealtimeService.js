@@ -364,12 +364,26 @@ class FirebaseRealtimeService {
 
   // Unsubscribe from a specific listener
   unsubscribe(listenerKey) {
-    const unsubscribe = this.listeners.get(listenerKey);
-    if (unsubscribe) {
-      unsubscribe();
-      this.listeners.delete(listenerKey);
+    // Guard against corrupted state after Firebase data cleanup
+    if (!this.listeners) {
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`Unsubscribed from: ${listenerKey}`);
+        console.warn(`Listeners map not initialized for: ${listenerKey}`);
+      }
+      return;
+    }
+
+    const unsubscribe = this.listeners.get(listenerKey);
+    if (unsubscribe && typeof unsubscribe === 'function') {
+      try {
+        unsubscribe();
+        this.listeners.delete(listenerKey);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`Unsubscribed from: ${listenerKey}`);
+        }
+      } catch (error) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(`Failed to unsubscribe from ${listenerKey}:`, error);
+        }
       }
     }
   }
