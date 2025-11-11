@@ -50,103 +50,8 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 // Handle Firebase Auth persistence issues more carefully
-// Instead of intercepting fetch, let's improve the auth state handling
-
-// CRITICAL: Define and run cleanup BEFORE Firebase initialization
-// This ensures corrupted auth data is cleared before Firebase tries to load it
-const clearStaleAuthData = async () => {
-  try {
-    console.log("Starting aggressive auth cleanup...");
-
-    // Remove ALL firebase: prefixed keys (most aggressive approach)
-    const allKeys = Object.keys(localStorage);
-    let removedCount = 0;
-
-    allKeys.forEach(key => {
-      if (key.startsWith('firebase:')) {
-        console.log("Removing Firebase key:", key);
-        localStorage.removeItem(key);
-        removedCount++;
-      }
-    });
-
-    console.log(`Removed ${removedCount} Firebase keys from localStorage`);
-
-    // Clear IndexedDB which Firebase uses for auth persistence
-    // CRITICAL: Wait for this to complete before continuing
-    if (window.indexedDB) {
-      await new Promise((resolve, reject) => {
-        const dbDeleteRequest = indexedDB.deleteDatabase('firebaseLocalStorageDb');
-        dbDeleteRequest.onsuccess = () => {
-          console.log("✅ Cleared Firebase IndexedDB");
-          resolve();
-        };
-        dbDeleteRequest.onerror = () => {
-          console.warn("⚠️ Could not clear Firebase IndexedDB");
-          resolve(); // Resolve anyway to not block initialization
-        };
-        dbDeleteRequest.onblocked = () => {
-          console.warn("⚠️ IndexedDB deletion blocked - close other tabs and refresh");
-          resolve(); // Resolve anyway
-        };
-      });
-    }
-  } catch (error) {
-    console.warn("Could not clear stale auth data:", error);
-  }
-};
-
-// One-time cleanup: Clear corrupted auth data that's causing 400 errors
-// This runs once per browser BEFORE Firebase initializes
-const AUTH_CLEANUP_VERSION = 'v7'; // Increment this to force cleanup again
-const cleanupFlag = localStorage.getItem('authCleanupVersion');
-
-console.log('=== AUTH CLEANUP CHECK ===');
-console.log('Current cleanup flag in localStorage:', cleanupFlag);
-console.log('Required cleanup version:', AUTH_CLEANUP_VERSION);
-console.log('Will run cleanup?', cleanupFlag !== AUTH_CLEANUP_VERSION);
-
-// Run cleanup synchronously if needed
-if (cleanupFlag !== AUTH_CLEANUP_VERSION) {
-  console.log('🔥 Running one-time auth cleanup to fix 400 errors (BEFORE Firebase init)...');
-
-  // Synchronously clear localStorage
-  const allKeys = Object.keys(localStorage);
-  let removedCount = 0;
-  allKeys.forEach(key => {
-    if (key.startsWith('firebase:')) {
-      console.log("Removing Firebase key:", key);
-      localStorage.removeItem(key);
-      removedCount++;
-    }
-  });
-  console.log(`Removed ${removedCount} Firebase keys from localStorage`);
-
-  // Delete ALL Firebase IndexedDB databases
-  if (window.indexedDB) {
-    const firebaseDBs = [
-      'firebaseLocalStorageDb',
-      'firebase-heartbeat-database',
-      'firebase-installations-database'
-    ];
-
-    firebaseDBs.forEach(dbName => {
-      const dbDeleteRequest = indexedDB.deleteDatabase(dbName);
-      dbDeleteRequest.onsuccess = () => console.log(`✅ Cleared ${dbName}`);
-      dbDeleteRequest.onerror = () => console.warn(`⚠️ Could not clear ${dbName}`);
-      dbDeleteRequest.onblocked = () => console.warn(`⚠️ ${dbName} deletion blocked`);
-    });
-  }
-
-  localStorage.setItem('authCleanupVersion', AUTH_CLEANUP_VERSION);
-  console.log('✅ Auth cleanup complete. Reloading page for clean start...');
-
-  // CRITICAL: Reload the page to ensure Firebase starts with clean IndexedDB
-  window.location.reload();
-  throw new Error('Page reloading for clean auth state'); // Stop execution
-} else {
-  console.log('⏭️ Cleanup already ran for this version, skipping.');
-}
+// The aggressive cleanup code has been removed to prevent logout on refresh.
+// Firebase's built-in token validation and persistence is sufficient.
 
 // Initialize Firebase AFTER cleanup check
 const app = initializeApp(firebaseConfig);
@@ -168,19 +73,6 @@ setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.warn("Failed to set auth persistence:", error.code || error);
     console.warn("Auth will still work but sessions won't persist across browser restarts");
-
-    // If there's a persistence error, clear all auth storage and retry once
-    if (error.code === 'auth/invalid-api-key' || error.code === 'auth/network-request-failed') {
-      console.warn("Clearing all auth state due to persistence error");
-      clearStaleAuthData();
-
-      // Retry setting persistence once
-      setTimeout(() => {
-        setPersistence(auth, browserLocalPersistence)
-          .then(() => console.log("Firebase Auth persistence retry successful"))
-          .catch((retryError) => console.warn("Firebase Auth persistence retry failed:", retryError));
-      }, 100);
-    }
   });
 let analytics;
 
