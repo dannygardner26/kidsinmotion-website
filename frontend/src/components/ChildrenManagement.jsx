@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { apiService } from '../services/api';
 import firebaseRealtimeService from '../services/firebaseRealtimeService';
+import firestoreChildrenService from '../services/firestoreChildrenService';
 import { useAuth } from '../context/AuthContext';
 
 const ChildrenManagement = () => {
@@ -50,7 +50,7 @@ const ChildrenManagement = () => {
   const fetchChildren = async () => {
     try {
       setIsLoading(true);
-      const data = await apiService.getChildren();
+      const data = await firestoreChildrenService.getChildren(currentUser.uid);
       setChildren(data);
     } catch (error) {
       console.error('Error fetching children:', error);
@@ -120,20 +120,18 @@ const ChildrenManagement = () => {
 
     try {
       if (editingChild) {
-        const result = await apiService.updateChild(editingChild.id, payload);
+        const result = await firestoreChildrenService.updateChild(editingChild.id, payload);
         console.log('Update child result:', result);
       } else {
-        const result = await apiService.createChild(payload);
+        const result = await firestoreChildrenService.createChild(payload, currentUser.uid);
         console.log('Create child result:', result);
       }
 
-      await fetchChildren();
+      // No need to call fetchChildren() because real-time listener will update the list
       resetForm();
       setError(null); // Clear any previous errors
-      // Show success notification
-      setTimeout(() => {
-        alert(editingChild ? 'Child updated successfully!' : 'Child added successfully!');
-      }, 100);
+
+      // Remove alert popup - real-time update provides feedback
     } catch (error) {
       console.error('Error saving child:', error);
       console.error('Error details:', error);
@@ -163,13 +161,10 @@ const ChildrenManagement = () => {
   };
 
   const handleDelete = async (childId) => {
-    if (!window.confirm('Are you sure you want to delete this child? This action cannot be undone.')) {
-      return;
-    }
-
     try {
-      await apiService.deleteChild(childId);
-      await fetchChildren();
+      await firestoreChildrenService.deleteChild(childId);
+      // No need to call fetchChildren() because real-time listener will update the list
+      console.log('Child deleted successfully');
     } catch (error) {
       console.error('Error deleting child:', error);
       setError(error.message);

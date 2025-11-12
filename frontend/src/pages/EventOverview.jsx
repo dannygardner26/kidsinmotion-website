@@ -503,12 +503,12 @@ const EventOverview = () => {
                 <div className="event-meta-content">
                   <div className="event-meta-label">Date & Time</div>
                   <div className="event-meta-value">
-                    {new Date(event.date).toLocaleDateString('en-US', {
+                    {event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString('en-US', {
                       weekday: 'long',
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'
-                    })}
+                    }) : 'Date TBD'}
                   </div>
                   <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)' }}>
                     {(() => {

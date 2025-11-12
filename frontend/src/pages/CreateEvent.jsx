@@ -182,9 +182,9 @@ const CreateEvent = () => {
       };
 
       console.log('=== FRONTEND EVENT UPDATE DEBUG ===');
-      console.log('Original stored event data:', originalEvent);
-      console.log('Current form data:', formData);
-      console.log('Processed event data for update:', eventData);
+      console.log('Original stored event data:', JSON.stringify(originalEvent, null, 2));
+      console.log('Current form data:', JSON.stringify(formData, null, 2));
+      console.log('Processed event data for update:', JSON.stringify(eventData, null, 2));
 
       // Add update timestamp to ensure change detection
       eventData.updatedAt = new Date().toISOString();

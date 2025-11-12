@@ -10,6 +10,13 @@ import ReportsAndAnalytics from '../components/ReportsAndAnalytics';
 import PosterTemplateSelector from '../components/PosterTemplateSelector';
 import { formatAgeRange } from '../utils/eventFormatters';
 
+// Utility function to format dates without timezone issues
+const formatEventDate = (dateString) => {
+  if (!dateString) return 'No date';
+  // Add T00:00:00 to ensure local timezone interpretation
+  return new Date(dateString + 'T00:00:00').toLocaleDateString();
+};
+
 const AdminDashboard = () => {
   const { userProfile } = useAuth();
   const [searchParams] = useSearchParams();
@@ -57,12 +64,21 @@ const AdminDashboard = () => {
   const [selectedEventForPoster, setSelectedEventForPoster] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Debug effect to track when events state changes
+  useEffect(() => {
+    console.log('AdminDashboard: Events state changed - length:', events.length);
+    console.log('AdminDashboard: Current events state:', JSON.stringify(events, null, 2));
+  }, [events]);
+
   useEffect(() => {
     // Subscribe to live events using Firestore listeners
     firebaseRealtimeService.subscribeToAllEvents(
       (eventsData) => {
-        console.log('AdminDashboard: Real-time events update:', eventsData);
+        console.log('AdminDashboard: Real-time events update:', JSON.stringify(eventsData, null, 2));
+        console.log('AdminDashboard: Previous events state length:', events.length);
+        console.log('AdminDashboard: New events data length:', eventsData.length);
         setEvents(eventsData);
+        console.log('AdminDashboard: setEvents called with new data');
         setIsLoading(false); // Set loading to false when data is received
 
         // For each event, subscribe to participants and volunteers to keep eventStats in sync
@@ -303,7 +319,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td>
-                          <div>{new Date(event.date).toLocaleDateString()}</div>
+                          <div>{formatEventDate(event.date)}</div>
                           {event.startTime && event.endTime ? (
                             <div className="small text-info">
                               {formatEventTime(event.startTime)} - {formatEventTime(event.endTime)}

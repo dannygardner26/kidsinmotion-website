@@ -372,7 +372,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
 
           <div className="event-summary mb-4">
             <h4>Event Details</h4>
-            <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+            <p><strong>Date:</strong> {event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString() : 'TBD'}</p>
             {event.location && <p><strong>Location:</strong> {event.location}</p>}
             {(() => {
               if (event.minAge !== null && event.minAge !== undefined && event.maxAge !== null && event.maxAge !== undefined) {

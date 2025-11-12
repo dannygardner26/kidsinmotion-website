@@ -80,7 +80,7 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
 
           <div className="event-summary mb-4">
             <h4>Event Details</h4>
-            <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+            <p><strong>Date:</strong> {event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString() : 'TBD'}</p>
             {event.location && <p><strong>Location:</strong> {event.location}</p>}
             <p><strong>Description:</strong> {event.description}</p>
           </div>
@@ -92,7 +92,7 @@ const VolunteerSignupForm = ({ event, onSuccess, onCancel }) => {
                 <p>
                   <strong>Event Duration:</strong> {event.startTime && event.endTime
                     ? `${event.startTime} to ${event.endTime}`
-                    : 'Full event duration'} on {new Date(event.date).toLocaleDateString()}
+                    : 'Full event duration'} on {event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString() : 'TBD'}
                 </p>
                 <label className="checkbox-label attendance-checkbox">
                   <input

@@ -69,8 +69,8 @@ class FirestoreEventService {
       };
 
       console.log('=== FIRESTORE UPDATE COMPARISON ===');
-      console.log('Current Firestore data:', currentData);
-      console.log('New Firestore data:', firestoreEventData);
+      console.log('Current Firestore data:', JSON.stringify(currentData, null, 2));
+      console.log('New Firestore data:', JSON.stringify(firestoreEventData, null, 2));
       if (currentData) {
         console.log('Date change:', { from: currentData.date, to: firestoreEventData.date, changing: currentData.date !== firestoreEventData.date });
         console.log('Name change:', { from: currentData.name, to: firestoreEventData.name, changing: currentData.name !== firestoreEventData.name });

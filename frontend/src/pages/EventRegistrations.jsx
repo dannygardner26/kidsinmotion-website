@@ -77,7 +77,7 @@ const EventRegistrations = () => {
             <div className="card mb-4">
               <div className="card-body">
                 <h5>Event Details</h5>
-                <p><strong>Date:</strong> {new Date(event.date).toLocaleDateString()}</p>
+                <p><strong>Date:</strong> {event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString() : 'Date TBD'}</p>
                 <p><strong>Location:</strong> {event.location || 'Not specified'}</p>
                 <p><strong>Capacity:</strong> {event.capacity || 'Unlimited'}</p>
                 <p><strong>Age Range:</strong> {formatAgeRange(event)}</p>

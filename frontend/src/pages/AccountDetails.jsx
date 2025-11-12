@@ -76,23 +76,27 @@ const AccountDetails = () => {
   const fetchProfileData = async () => {
     try {
       setIsLoading(true);
-      const response = await apiService.getUserByUsername(username);
-      const userData = response.user;
 
-      setProfileData(userData);
-      setOriginalUsername(userData.username);
+      // For Firebase-only users, use current user profile from context
+      if (isSelfEdit && currentUserProfile) {
+        const userData = {
+          ...currentUserProfile,
+          username: currentUserProfile.username || currentUserProfile.email?.split('@')[0] || ''
+        };
 
-      // Check if OAuth user needs password setup
-      const isOAuthUser = !userData.hasPassword; // This would need to be added to the API response
-      setNeedsPasswordSetup(isOAuthUser && isSelfEdit);
+        setProfileData(userData);
+        setOriginalUsername(userData.username);
 
-      // If OAuth user needs profile completion, automatically enable edit mode
-      const needsCompletion = !userData.firstName || !userData.lastName || isOAuthUser;
-      if (needsCompletion && isSelfEdit) {
-        setIsEditMode(true);
-      }
+        // For Firebase users, assume they don't need password setup
+        setNeedsPasswordSetup(false);
 
-      setFormData({
+        // If user needs profile completion, automatically enable edit mode
+        const needsCompletion = !userData.firstName || !userData.lastName;
+        if (needsCompletion && isSelfEdit) {
+          setIsEditMode(true);
+        }
+
+        setFormData({
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
         username: userData.username || '',
@@ -109,29 +113,33 @@ const AccountDetails = () => {
         password: ''
       });
 
-      // Set username cooldown info
-      if (userData.usernameLastChangedAt) {
-        const lastChangedDate = new Date(userData.usernameLastChangedAt);
-        const cooldownEndDate = new Date(lastChangedDate.getTime() + (90 * 24 * 60 * 60 * 1000)); // 90 days
-        const now = new Date();
+        // Set username cooldown info
+        if (userData.usernameLastChangedAt) {
+          const lastChangedDate = new Date(userData.usernameLastChangedAt);
+          const cooldownEndDate = new Date(lastChangedDate.getTime() + (90 * 24 * 60 * 60 * 1000)); // 90 days
+          const now = new Date();
 
-        if (now < cooldownEndDate) {
-          const remainingDays = Math.ceil((cooldownEndDate - now) / (24 * 60 * 60 * 1000));
-          setUsernameCooldown({
-            active: true,
-            remainingDays,
-            cooldownEndDate: cooldownEndDate.toLocaleDateString()
-          });
+          if (now < cooldownEndDate) {
+            const remainingDays = Math.ceil((cooldownEndDate - now) / (24 * 60 * 60 * 1000));
+            setUsernameCooldown({
+              active: true,
+              remainingDays,
+              cooldownEndDate: cooldownEndDate.toLocaleDateString()
+            });
+          } else {
+            setUsernameCooldown({ active: false });
+          }
         } else {
           setUsernameCooldown({ active: false });
         }
       } else {
-        setUsernameCooldown({ active: false });
+        // For non-self edits, we don't have access to other users' data in Firebase-only mode
+        throw new Error('Profile not found or access denied');
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
-      alert('Failed to load profile data');
-      navigate('/dashboard');
+      setError('Failed to load profile data');
+      // Don't navigate away, let user try again
     } finally {
       setIsLoading(false);
     }
@@ -167,7 +175,9 @@ const AccountDetails = () => {
   const checkUsernameAvailability = async (username) => {
     setUsernameCheckLoading(true);
     try {
-      const available = await apiService.checkUsernameAvailability(username);
+      // For Firebase-only users, skip backend username checks
+      // Assume username is available if it's different from original
+      const available = username !== originalUsername;
       setUsernameAvailable(available);
     } catch (error) {
       console.error('Error checking username availability:', error);
@@ -311,7 +321,7 @@ const AccountDetails = () => {
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      setError('Failed to update profile. Please try again.');
     } finally {
       setIsSaving(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
+import firestoreUserService from '../services/firestoreUserService';
 
 const getTeamDisplayName = (team) => {
   const teamNames = {
@@ -66,15 +67,50 @@ const UsersAndRegistrations = () => {
   const fetchAllData = async () => {
     setIsLoading(true);
     try {
-      const usersData = await apiService.getAllUsers().catch(err => {
-        console.warn('Failed to fetch users:', err);
-        return { users: [] };
+      // Fetch users from both backend API and Firestore
+      const [backendUsersData, firestoreUsers] = await Promise.allSettled([
+        apiService.getAllUsers().catch(err => {
+          console.warn('Failed to fetch backend users:', err);
+          return { users: [] };
+        }),
+        firestoreUserService.getAllUsers().catch(err => {
+          console.warn('Failed to fetch Firestore users:', err);
+          return [];
+        })
+      ]);
+
+      // Extract backend users
+      const backendUsers = backendUsersData.status === 'fulfilled'
+        ? (backendUsersData.value.users || backendUsersData.value || [])
+        : [];
+
+      // Extract Firestore users
+      const firebaseUsers = firestoreUsers.status === 'fulfilled' ? firestoreUsers.value : [];
+
+      console.log('Backend users:', backendUsers.length);
+      console.log('Firebase users:', firebaseUsers.length);
+
+      // Combine users, avoiding duplicates by email
+      const allUsers = [...backendUsers];
+      const backendEmails = new Set(backendUsers.map(u => u.email));
+
+      // Add Firebase users that aren't already in backend
+      firebaseUsers.forEach(user => {
+        if (!backendEmails.has(user.email)) {
+          // Convert Firebase user format to match backend format
+          allUsers.push({
+            ...user,
+            // Add fields that admin dashboard expects
+            createdTimestamp: user.createdAt,
+            lastLoginTimestamp: user.lastLoginAt,
+            // Mark as Firebase-only user
+            source: 'firebase'
+          });
+        }
       });
 
-      console.log('Admin fetched users for management:', usersData);
-      // Extract users array from response object
-      const usersArray = usersData.users || usersData || [];
-      setUsers(Array.isArray(usersArray) ? usersArray : []);
+      console.log('Combined users for admin dashboard:', allUsers.length);
+      setUsers(Array.isArray(allUsers) ? allUsers : []);
 
     } catch (error) {
       console.error('Error fetching data:', error);

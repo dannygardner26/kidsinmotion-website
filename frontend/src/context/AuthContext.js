@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import { apiService } from '../services/api';
+import firestoreUserService from '../services/firestoreUserService';
 
 const AuthContext = createContext();
 
@@ -13,6 +14,14 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
       console.log('Admin account - no profile completion needed:', profile.userType);
     }
     return false;
+  }
+
+  // New users need onboarding to select account type
+  if (profile?.needsOnboarding === true) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('New user needs onboarding (account type selection)');
+    }
+    return true;
   }
 
   const hasRequiredFields = profile?.username && profile?.firstName && profile?.lastName;
@@ -183,6 +192,7 @@ export const AuthProvider = ({ children }) => {
           userType: 'USER',
           roles: ['ROLE_USER'],
           emailVerified: user.emailVerified,
+          needsOnboarding: true, // New users need to select account type
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString()
         };
@@ -191,12 +201,24 @@ export const AuthProvider = ({ children }) => {
         if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
           profile.userType = 'ADMIN';
           profile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
+          profile.needsOnboarding = false; // Admins skip onboarding
           if (process.env.NODE_ENV !== 'production') {
             console.log("Automatically granted admin privileges to:", user.email);
           }
         }
 
         setUserProfile(profile);
+
+        // Store user in Firestore for admin dashboard visibility
+        try {
+          await firestoreUserService.ensureUserExists(user, profile);
+          if (process.env.NODE_ENV !== 'production') {
+            console.log("User stored/updated in Firestore for admin dashboard");
+          }
+        } catch (error) {
+          console.error("Error storing user in Firestore:", error);
+          // Don't block the login process if Firestore fails
+        }
 
         // Check if profile completion is needed
         const needsCompletion = computeNeedsProfileCompletion(profile);
@@ -283,30 +305,18 @@ export const AuthProvider = ({ children }) => {
 
         setCurrentUser(mockUser);
 
-        // Sync test admin user with backend
-        const syncTestUser = async () => {
-          try {
-            await apiService.syncUser();
-            const profile = await apiService.getUserProfile();
-            setUserProfile(profile);
-            if (process.env.NODE_ENV !== 'production') {
-              console.log("Test admin user synced with backend:", profile);
-            }
-          } catch (error) {
-            if (process.env.NODE_ENV !== 'production') {
-              console.error("Failed to sync test admin user with backend:", error);
-            }
-            // Use cached user data as fallback
-            setUserProfile({
-              ...userData,
-              roles: userData.roles || ['ROLE_USER', 'ROLE_ADMIN']
-            });
-          }
-          setAuthReady(true);
-          setLoading(false);
-        };
+        // Use Firebase-only profile for test admin user (no backend sync)
+        setUserProfile({
+          ...userData,
+          roles: userData.roles || ['ROLE_USER', 'ROLE_ADMIN']
+        });
 
-        syncTestUser();
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Test admin user profile set (Firebase-only):", userData);
+        }
+
+        setAuthReady(true);
+        setLoading(false);
         return true;
       }
       return false;
@@ -613,9 +623,33 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
-      await apiService.updateUserProfile(profileData);
-      const updatedProfile = await apiService.getUserProfile();
+      // Firebase-only profile update (no backend sync)
+      const updatedProfile = {
+        ...userProfile,
+        ...profileData,
+        updatedAt: new Date().toISOString()
+      };
+
       setUserProfile(updatedProfile);
+
+      // Cache the updated profile
+      localStorage.setItem(`userProfile_${currentUser.uid}`, JSON.stringify(updatedProfile));
+
+      // Update in Firestore for admin dashboard
+      try {
+        await firestoreUserService.updateUser(currentUser.uid, updatedProfile);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Profile updated in Firestore for admin dashboard");
+        }
+      } catch (error) {
+        console.error("Error updating profile in Firestore:", error);
+        // Don't block the profile update if Firestore fails
+      }
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log("Profile updated (Firebase-only):", updatedProfile);
+      }
+
       return updatedProfile;
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
@@ -670,10 +704,9 @@ export const AuthProvider = ({ children }) => {
       const emailVerified = currentUser.emailVerified;
       setIsEmailVerified(emailVerified);
 
-      // Also refresh profile to get phone verification status
-      const profile = await apiService.getUserProfile();
-      const phoneVerified = profile.phoneVerified || false;
-      setIsPhoneVerified(phoneVerified);
+      // Phone verification is handled separately via Firebase SMS
+      // For now, assume not verified (can be updated when SMS verification is implemented)
+      setIsPhoneVerified(false);
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
         console.error('Error refreshing verification status:', error);
@@ -685,7 +718,37 @@ export const AuthProvider = ({ children }) => {
     if (!currentUser) return null;
 
     try {
-      const profile = await apiService.getUserProfile();
+      // Use cached profile or create minimal Firebase profile
+      const cachedProfile = localStorage.getItem(`userProfile_${currentUser.uid}`);
+      let profile;
+
+      if (cachedProfile) {
+        profile = JSON.parse(cachedProfile);
+      } else {
+        // Create minimal profile from Firebase user
+        profile = {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          firstName: currentUser.displayName?.split(' ')[0] || '',
+          lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+          username: currentUser.email.split('@')[0],
+          userType: 'USER',
+          roles: ['ROLE_USER'],
+          emailVerified: currentUser.emailVerified,
+          needsOnboarding: true, // Flag for new users needing account type selection
+          createdAt: new Date().toISOString()
+        };
+
+        // Auto-admin for specific emails
+        if (currentUser.email === 'kidsinmotion0@gmail.com' || currentUser.email === 'danny@dannygardner.com') {
+          profile.userType = 'ADMIN';
+          profile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
+          profile.needsOnboarding = false;
+        }
+
+        localStorage.setItem(`userProfile_${currentUser.uid}`, JSON.stringify(profile));
+      }
+
       setUserProfile(profile);
 
       // Check if profile completion is needed

@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout';
+import AccountTypeSelector from './components/AccountTypeSelector';
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -89,21 +90,25 @@ const PublicRoute = ({ children }) => {
     return children;
 }
 
-const App = () => {
+// Component to handle onboarding flow
+const AppWithOnboarding = () => {
+  const { currentUser, userProfile, loading } = useAuth();
+
+  // Show account type selector for new users who need onboarding
+  const shouldShowOnboarding = currentUser && userProfile && userProfile.needsOnboarding === true;
+
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <Router>
-          <Layout>
-            <Suspense fallback={
-              <div className="container mt-4">
-                <div className="loading-container">
-                  <div className="loading-spinner"></div>
-                  <p>Loading...</p>
-                </div>
-              </div>
-            }>
-              <Routes>
+    <>
+      <Layout>
+        <Suspense fallback={
+          <div className="container mt-4">
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Loading...</p>
+            </div>
+          </div>
+        }>
+          <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/events" element={<Events />} />
@@ -249,11 +254,32 @@ const App = () => {
               </Routes>
             </Suspense>
           </Layout>
-        </Router>
-      </NotificationProvider>
-    </AuthProvider>
-  );
-};
+
+          {/* Account Type Selection Modal for new users */}
+          {shouldShowOnboarding && (
+            <AccountTypeSelector
+              onComplete={(profile) => {
+                console.log('Onboarding completed:', profile);
+                // Redirect to profile completion
+                window.location.href = '/account-details';
+              }}
+            />
+          )}
+        </>
+      );
+    };
+
+    const App = () => {
+      return (
+        <AuthProvider>
+          <NotificationProvider>
+            <Router>
+              <AppWithOnboarding />
+            </Router>
+          </NotificationProvider>
+        </AuthProvider>
+      );
+    };
 
 export default App;
 

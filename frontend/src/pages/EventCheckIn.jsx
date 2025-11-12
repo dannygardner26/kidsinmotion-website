@@ -178,7 +178,7 @@ const EventCheckIn = () => {
               <h2 className="event-title">{event.name}</h2>
               <p className="event-details">
                 <i className="fas fa-calendar mr-2"></i>
-                {new Date(event.date).toLocaleDateString()}
+                {event.date ? new Date(event.date + 'T00:00:00').toLocaleDateString() : 'Date TBD'}
                 {event.location && (
                   <>
                     <span className="mx-2">•</span>
