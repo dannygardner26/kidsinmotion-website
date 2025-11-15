@@ -468,19 +468,20 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                 )}
                 <div className="children-selection">
                   {children.map(child => {
+                    const isSelected = selectedChildren.includes(child.id);
                     return (
-                      <div key={child.id} className="child-selection-card">
-                        <label className="child-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={selectedChildren.includes(child.id)}
-                            onChange={() => handleChildSelection(child.id)}
-                          />
-                          <span className="checkmark"></span>
-                          <div className="child-info">
-                            <div className="child-header">
-                              <h4>{child.firstName} {child.lastName}</h4>
-                            </div>
+                      <div
+                        key={child.id}
+                        className={`child-card ${isSelected ? 'selected' : ''}`}
+                        onClick={() => handleChildSelection(child.id)}
+                      >
+                        <div className="selection-indicator">
+                          <div className={`checkbox-circle ${isSelected ? 'checked' : ''}`}>
+                            {isSelected && <i className="fas fa-check"></i>}
+                          </div>
+                        </div>
+                        <div className="child-info">
+                          <h4 className="child-name">{child.firstName} {child.lastName}</h4>
                           <div className="child-details">
                             <span className="detail-item">
                               <i className="fas fa-birthday-cake mr-1"></i>
@@ -509,8 +510,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                               )}
                             </div>
                           )}
-                          </div>
-                        </label>
+                        </div>
                       </div>
                     );
                   })}
@@ -750,102 +750,95 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
           margin-top: 1rem;
         }
 
-        .child-selection-card {
+        .child-card {
           background: white;
-          border: 2px solid #e9ecef;
-          border-radius: 12px;
-          padding: 1.25rem;
-          transition: all 0.3s ease;
+          border: 3px solid #e9ecef;
+          border-radius: 16px;
+          padding: 1.5rem;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
           position: relative;
           overflow: hidden;
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
         }
 
-        .child-selection-card::before {
+        .child-card::before {
           content: '';
           position: absolute;
           top: 0;
           left: 0;
           width: 100%;
-          height: 4px;
-          background: linear-gradient(135deg, var(--primary), var(--primary-light));
-          transform: scaleX(0);
-          transition: transform 0.3s ease;
-        }
-
-        .child-selection-card:hover {
-          border-color: var(--primary);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(47, 80, 106, 0.15);
-        }
-
-        .child-selection-card:hover::before {
-          transform: scaleX(1);
-        }
-
-        .child-checkbox {
-          display: flex;
-          align-items: flex-start;
-          gap: 1rem;
-          cursor: pointer;
-          width: 100%;
-        }
-
-        .child-checkbox input[type="checkbox"] {
-          position: absolute;
+          height: 100%;
+          background: linear-gradient(135deg, rgba(47, 80, 106, 0.02), rgba(47, 80, 106, 0.05));
           opacity: 0;
-          cursor: pointer;
-          width: 0;
-          height: 0;
+          transition: opacity 0.3s ease;
         }
 
-        .checkmark {
-          position: relative;
-          height: 24px;
-          width: 24px;
-          background-color: white;
-          border: 3px solid #e9ecef;
-          border-radius: 6px;
-          transition: all 0.3s ease;
+        .child-card:hover {
+          border-color: var(--primary);
+          transform: translateY(-3px) scale(1.02);
+          box-shadow: 0 12px 40px rgba(47, 80, 106, 0.15);
+        }
+
+        .child-card:hover::before {
+          opacity: 1;
+        }
+
+        .child-card.selected {
+          border-color: var(--primary);
+          background: linear-gradient(135deg, rgba(47, 80, 106, 0.08), rgba(47, 80, 106, 0.04));
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(47, 80, 106, 0.2);
+        }
+
+        .selection-indicator {
           flex-shrink: 0;
-          margin-top: 2px;
         }
 
-        .child-checkbox:hover .checkmark {
+        .checkbox-circle {
+          width: 32px;
+          height: 32px;
+          border: 3px solid #dee2e6;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .checkbox-circle.checked {
+          background: linear-gradient(135deg, var(--primary), #3a5674);
           border-color: var(--primary);
-          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1);
+          transform: scale(1.1);
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.3);
         }
 
-        .child-checkbox input:checked ~ .checkmark {
-          background-color: var(--primary);
+        .checkbox-circle.checked i {
+          color: white;
+          font-size: 16px;
+          font-weight: bold;
+        }
+
+        .child-card:hover .checkbox-circle {
           border-color: var(--primary);
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.2);
         }
 
-        .checkmark:after {
-          content: "";
-          position: absolute;
-          display: none;
-          left: 7px;
-          top: 3px;
-          width: 6px;
-          height: 12px;
-          border: solid white;
-          border-width: 0 3px 3px 0;
-          transform: rotate(45deg);
-        }
-
-        .child-checkbox input:checked ~ .checkmark:after {
-          display: block;
-        }
 
         .child-info {
           flex: 1;
         }
 
-        .child-info h4 {
-          margin: 0 0 0.5rem 0;
+        .child-name {
+          margin: 0 0 0.75rem 0;
           color: var(--primary);
-          font-size: 1.2rem;
-          font-weight: 600;
+          font-size: 1.3rem;
+          font-weight: 700;
+          letter-spacing: -0.02em;
         }
 
         .child-details {

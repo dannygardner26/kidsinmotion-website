@@ -368,7 +368,7 @@ const Events = () => {
                         )}
                       </div>
 
-                      {/* Register Button */}
+                      {/* Action Buttons */}
                       {filter !== 'past' && (
                         <>
                           {!currentUser && (
@@ -376,12 +376,20 @@ const Events = () => {
                               <i className="fas fa-lock"></i> Login Required
                             </span>
                           )}
-                          <Link
-                            to={currentUser ? `/events/${event.id}/register` : `/login?redirect=/events/${event.id}/register`}
-                            className="register-btn"
-                          >
-                            {currentUser ? 'Register Now' : 'Login to Register'}
-                          </Link>
+                          <div className="event-action-buttons">
+                            <Link
+                              to={`/events/${event.id}`}
+                              className="view-event-btn"
+                            >
+                              View Event
+                            </Link>
+                            <Link
+                              to={currentUser ? `/events/${event.id}/register` : `/login?redirect=/events/${event.id}/register`}
+                              className="register-btn"
+                            >
+                              {currentUser ? 'Register Now' : 'Login to Register'}
+                            </Link>
+                          </div>
                         </>
                       )}
                     </div>
@@ -724,8 +732,33 @@ const Events = () => {
           font-weight: 500;
         }
 
+        .event-action-buttons {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: auto;
+        }
+
+        .view-event-btn {
+          flex: 1;
+          background-color: transparent;
+          color: var(--primary);
+          border: 2px solid var(--primary);
+          padding: 0.75rem 1rem;
+          border-radius: 9999px;
+          text-decoration: none;
+          text-align: center;
+          font-weight: 500;
+          transition: all 0.15s ease;
+        }
+
+        .view-event-btn:hover {
+          background-color: var(--primary);
+          color: white;
+          text-decoration: none;
+        }
+
         .register-btn {
-          width: 100%;
+          flex: 1;
           background-color: var(--secondary);
           color: white;
           padding: 0.75rem 1rem;
@@ -734,7 +767,6 @@ const Events = () => {
           text-align: center;
           font-weight: 500;
           transition: all 0.15s ease;
-          margin-top: auto;
         }
 
         .register-btn:hover {

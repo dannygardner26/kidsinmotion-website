@@ -100,431 +100,636 @@ const EventDetail = () => {
   const sportBackground = getSportBackground(event.ageGroup);
   
   return (
-    <>
-      {/* Event hero section */}
-      <section className="hero" style={{ minHeight: '40vh', display: 'flex', alignItems: 'center' }}>
-        <div className="hero-bg" style={{ backgroundImage: `url("${sportBackground}")` }}></div>
-        
-        <div className="container hero-content">
-          <span className="event-badge">{formatAgeRange(event)}</span>
-          <h1>{event.name}</h1>
-          <div className="event-meta-highlights">
-            <div className="event-meta-item">
-              <i className="far fa-calendar"></i>
-              <span>{formatDate(event.date, event.startTime, event.endTime)}</span>
+    <div className="event-detail-container">
+      {/* Top Navigation Bar */}
+      <div className="event-nav-bar">
+        <div className="container">
+          <div className="nav-content">
+            <Link to="/events" className="back-btn">
+              <i className="fas fa-arrow-left"></i>
+              <span>Back to Events</span>
+            </Link>
+            <div className="nav-actions">
+              <button className="share-btn">
+                <i className="fas fa-share-alt"></i>
+                Share Event
+              </button>
             </div>
-            <div className="event-meta-item">
-              <i className="fas fa-map-marker-alt"></i>
-              <span>{event.location || 'TBD'}</span>
-            </div>
-            {event.price && event.price > 0 && (
-              <div className="event-meta-item">
-                <i className="fas fa-dollar-sign"></i>
-                <span>${event.price}</span>
-              </div>
-            )}
           </div>
         </div>
-        
-        <div className="hero-wave">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100" preserveAspectRatio="none">
-            <path
-              fill="#ede9e7"
-              fillOpacity="1"
-              d="M0,64L60,58.7C120,53,240,43,360,48C480,53,600,75,720,75C840,75,960,53,1080,48C1200,43,1320,53,1380,58.7L1440,64L1440,320L1380,320C1320,320,1200,320,1080,320C960,320,840,320,720,320C600,320,480,320,360,320C240,320,120,320,60,320L0,320Z"
-            ></path>
-          </svg>
-        </div>
-      </section>
+      </div>
 
-      <section className="section">
-        <div className="container">
-          {!currentUser && !isPastEvent && (
-            <div className="account-requirement-banner fade-in" style={{ marginBottom: '2rem' }}>
-              <div className="banner-icon">
-                <i className="fas fa-info-circle"></i>
-              </div>
-              <div className="banner-content">
-                <h3>Account Required</h3>
-                <p>You need a Kids in Motion account to register for this event. Please log in or create an account to continue.</p>
-              </div>
-              <div className="banner-actions">
-                <Link
-                  to={`/login?redirect=/events/${event.id}`}
-                  className="btn btn-primary"
-                >
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="btn btn-outline"
-                >
-                  Create Account
-                </Link>
+      <div className="container">
+        {/* Main Event Content - No Scroll Layout */}
+        <div className="event-layout">
+          {/* Left Column: Event Info */}
+          <div className="event-info-column">
+            {/* Event Header */}
+            <div className="event-header">
+              <div className="event-badge">{formatAgeRange(event)}</div>
+              <h1 className="event-title">{event.name}</h1>
+              <div className="event-quick-meta">
+                <div className="meta-item">
+                  <i className="fas fa-calendar-alt"></i>
+                  <span>{formatDate(event.date, event.startTime, event.endTime)}</span>
+                </div>
+                <div className="meta-item">
+                  <i className="fas fa-map-marker-alt"></i>
+                  <span>{event.location || 'TBD'}</span>
+                </div>
+                {event.price && event.price > 0 && (
+                  <div className="meta-item">
+                    <i className="fas fa-dollar-sign"></i>
+                    <span>${event.price}</span>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-          <div className="row">
-            <div className="col-two-thirds">
-              <div className="card mb-4 fade-in">
-                <div className="card-header">
-                  <h2>About This Event</h2>
-                </div>
-                <div className="card-body">
-                  <p className="mb-3">{event.description}</p>
-                  
-                  <h3>Event Details</h3>
-                  <div className="event-meta mb-3">
-                    <p><i className="far fa-calendar"></i> <strong>Date:</strong> {formatDate(event.date, event.startTime, event.endTime)}</p>
-                    <p><i className="fas fa-map-marker-alt"></i> <strong>Location:</strong> {event.location || 'TBD'}</p>
-                    <p><i className="fas fa-child"></i> <strong>Age Range:</strong> {formatAgeRange(event)}</p>
-                    {event.tags && event.tags.trim() && (
-                      <div style={{marginTop: '1rem'}}>
-                        <p><i className="fas fa-tags"></i> <strong>Tags:</strong></p>
-                        <div className="event-tags-display">
-                          {event.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                            <span key={tag} className="event-tag-badge">{tag}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {event.capacity && (
-                      <p><i className="fas fa-users"></i> <strong>Capacity:</strong> {event.capacity}</p>
-                    )}
-                    {event.price && event.price > 0 && (
-                      <p><i className="fas fa-dollar-sign"></i> <strong>Price:</strong> ${event.price}</p>
-                    )}
-                  </div>
-                  
-                  <h3>What to Bring</h3>
-                  <ul className="what-to-bring-list">
-                    <li><i className="fas fa-tint"></i> Water bottle</li>
-                    <li><i className="fas fa-tshirt"></i> Comfortable athletic clothes</li>
-                    <li><i className="fas fa-shoe-prints"></i> Appropriate athletic footwear</li>
-                    <li><i className="fas fa-smile"></i> Positive attitude and ready to have fun!</li>
-                  </ul>
-                </div>
-              </div>
-              
-              {!isPastEvent && (
-                <div className="card mb-4 fade-in">
-                  <div className="card-header">
-                    <h2>Frequently Asked Questions</h2>
-                  </div>
-                  <div className="card-body">
-                    <div className="accordion">
-                      <div className="accordion-item">
-                        <button className="accordion-toggle">
-                          <h4>What age groups is this event for?</h4>
-                          <i className="fas fa-chevron-down"></i>
-                        </button>
-                        <div className="accordion-content">
-                          <p>Our events are generally designed for children ages 6-14, but specific age requirements may vary by event. Please contact us if you have questions about your child's eligibility.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="accordion-item">
-                        <button className="accordion-toggle">
-                          <h4>Do I need to bring equipment?</h4>
-                          <i className="fas fa-chevron-down"></i>
-                        </button>
-                        <div className="accordion-content">
-                          <p>While we encourage participants to bring their own equipment if they have it, we will provide all necessary equipment for those who need it.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="accordion-item">
-                        <button className="accordion-toggle">
-                          <h4>What if my child has special needs?</h4>
-                          <i className="fas fa-chevron-down"></i>
-                        </button>
-                        <div className="accordion-content">
-                          <p>We strive to make our events inclusive for all children. Please note any special needs during registration, and we'll do our best to accommodate them.</p>
-                        </div>
-                      </div>
-                      
-                      <div className="accordion-item">
-                        <button className="accordion-toggle">
-                          <h4>What if it rains?</h4>
-                          <i className="fas fa-chevron-down"></i>
-                        </button>
-                        <div className="accordion-content">
-                          <p>In case of inclement weather, we will notify all registered participants of any changes via email. We may reschedule the event or move it to an indoor location if available.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+
+            {/* Event Description */}
+            <div className="event-description-box">
+              <h3>About This Event</h3>
+              <p>{event.description}</p>
             </div>
-            
-            <div className="col-third">
-              <div className="card sticky-card slide-in-right">
-                <div className="card-header">
-                  <h3>Registration</h3>
+
+            {/* Event Details Grid */}
+            <div className="details-grid">
+              <div className="detail-card">
+                <div className="detail-header">
+                  <i className="fas fa-info-circle"></i>
+                  <h4>Event Details</h4>
                 </div>
-                <div className="card-body">
-                  {isPastEvent ? (
-                    <div className="text-center">
-                      <div className="status-icon past">
-                        <i className="fas fa-history"></i>
-                      </div>
-                      <p>This event has already taken place.</p>
-                      <Link to="/events" className="btn btn-outline btn-block mt-3">View Upcoming Events</Link>
+                <div className="detail-list">
+                  <div className="detail-item">
+                    <span className="label">Age Range:</span>
+                    <span className="value">{formatAgeRange(event)}</span>
+                  </div>
+                  {event.capacity && (
+                    <div className="detail-item">
+                      <span className="label">Capacity:</span>
+                      <span className="value">{event.capacity}</span>
                     </div>
-                  ) : (
-                    <>
-                      <div className="spots-indicator">
-                        <div className="spots-label">Capacity</div>
-                        <div className="spots-count">{event.capacity || 'Unlimited'}</div>
-                        {event.capacity && (
-                          <div className="spots-progress">
-                            <div 
-                              className="spots-progress-bar" 
-                              style={{ 
-                                width: '20%'
-                              }}
-                            ></div>
-                          </div>
-                        )}
+                  )}
+                  {event.tags && event.tags.trim() && (
+                    <div className="detail-item">
+                      <span className="label">Tags:</span>
+                      <div className="event-tags-display">
+                        {event.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                          <span key={tag} className="event-tag-badge">{tag}</span>
+                        ))}
                       </div>
-                      
-                      {!isPastEvent ? (
-                        currentUser ? (
-                          <div className="d-grid gap-2">
-                            <Link
-                              to={`/events/${event.id}/register`}
-                              className="btn btn-primary btn-block register-btn"
-                            >
-                              Register Your Child
-                            </Link>
-                            <Link
-                              to={`/events/${event.id}/parent-view`}
-                              className="btn btn-outline btn-block"
-                            >
-                              View Event Dashboard
-                            </Link>
-                          </div>
-                        ) : (
-                          <div className="login-prompt">
-                            <div className="login-prompt-icon">
-                              <i className="fas fa-user-lock"></i>
-                            </div>
-                            <p className="login-prompt-text"><strong>Account Required:</strong> Please log in or create an account to register your child for this event.</p>
-                            <Link
-                              to={`/login?redirect=/events/${event.id}/register`}
-                              className="btn btn-primary btn-block mt-2"
-                            >
-                              Login to Register
-                            </Link>
-                            <Link
-                              to="/register"
-                              className="btn btn-outline btn-block mt-2"
-                            >
-                              Create an Account
-                            </Link>
-                          </div>
-                        )
-                      ) : (
-                        <div className="text-center">
-                          <p>This event has ended.</p>
-                        </div>
-                      )}
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
-              
-              {!isPastEvent && (
-                <div className="card mt-4 slide-in-right" style={{ animationDelay: '0.2s' }}>
-                  <div className="card-header volunteers-header">
-                    <h3>Volunteer</h3>
+
+              <div className="detail-card">
+                <div className="detail-header">
+                  <i className="fas fa-backpack"></i>
+                  <h4>What to Bring</h4>
+                </div>
+                <div className="bring-list">
+                  <div className="bring-item">
+                    <i className="fas fa-tint"></i>
+                    <span>Water bottle</span>
                   </div>
-                  <div className="card-body">
-                    <div className="spots-indicator">
-                      <div className="spots-label">Help Make This Event Great!</div>
-                      <div className="spots-count"><i className="fas fa-hands-helping"></i></div>
+                  <div className="bring-item">
+                    <i className="fas fa-tshirt"></i>
+                    <span>Athletic clothes</span>
+                  </div>
+                  <div className="bring-item">
+                    <i className="fas fa-shoe-prints"></i>
+                    <span>Athletic footwear</span>
+                  </div>
+                  <div className="bring-item">
+                    <i className="fas fa-smile"></i>
+                    <span>Positive attitude!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Actions */}
+          <div className="event-actions-column">
+            {/* Account Required Banner */}
+            {!currentUser && !isPastEvent && (
+              <div className="account-banner">
+                <div className="banner-icon">
+                  <i className="fas fa-user-lock"></i>
+                </div>
+                <div className="banner-text">
+                  <h4>Account Required</h4>
+                  <p>Please log in or create an account to register</p>
+                </div>
+              </div>
+            )}
+
+            {/* Registration Card */}
+            <div className="action-card registration-card">
+              <div className="card-header">
+                <h3>
+                  <i className="fas fa-user-plus"></i>
+                  Registration
+                </h3>
+              </div>
+              <div className="card-content">
+                {isPastEvent ? (
+                  <div className="status-message">
+                    <div className="status-icon past">
+                      <i className="fas fa-history"></i>
                     </div>
-                    
+                    <p>This event has ended</p>
+                    <Link to="/events" className="btn-secondary">View Upcoming Events</Link>
+                  </div>
+                ) : (
+                  <>
+                    <div className="capacity-display">
+                      <div className="capacity-number">{event.capacity || '∞'}</div>
+                      <div className="capacity-label">Available Spots</div>
+                    </div>
+
                     {currentUser ? (
-                      <Link
-                        to={`/events/${event.id}/volunteer`}
-                        className="btn btn-secondary btn-block mt-3"
-                      >
-                        Sign Up to Volunteer
-                      </Link>
-                    ) : (
-                      <div className="login-prompt">
-                        <p>Please login to sign up as a volunteer.</p>
+                      <div className="action-buttons">
                         <Link
-                          to={`/login?redirect=/events/${event.id}/volunteer`}
-                          className="btn btn-secondary btn-block mt-2"
+                          to={`/events/${event.id}/register`}
+                          className="btn-primary register-pulse"
                         >
-                          Login to Volunteer
+                          <i className="fas fa-plus-circle"></i>
+                          Register Your Child
+                        </Link>
+                        <Link
+                          to={`/events/${event.id}/parent-view`}
+                          className="btn-outline"
+                        >
+                          <i className="fas fa-dashboard"></i>
+                          Event Dashboard
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="action-buttons">
+                        <Link
+                          to={`/login?redirect=/events/${event.id}/register`}
+                          className="btn-primary"
+                        >
+                          <i className="fas fa-sign-in-alt"></i>
+                          Login to Register
+                        </Link>
+                        <Link
+                          to="/register"
+                          className="btn-outline"
+                        >
+                          <i className="fas fa-user-plus"></i>
+                          Create Account
                         </Link>
                       </div>
                     )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Volunteer Card */}
+            {!isPastEvent && (
+              <div className="action-card volunteer-card">
+                <div className="card-header volunteer-header">
+                  <h3>
+                    <i className="fas fa-hands-helping"></i>
+                    Volunteer
+                  </h3>
+                </div>
+                <div className="card-content">
+                  <p className="volunteer-text">Help make this event amazing!</p>
+                  {currentUser ? (
+                    <Link
+                      to={`/events/${event.id}/volunteer`}
+                      className="btn-secondary"
+                    >
+                      <i className="fas fa-heart"></i>
+                      Sign Up to Volunteer
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/login?redirect=/events/${event.id}/volunteer`}
+                      className="btn-secondary"
+                    >
+                      <i className="fas fa-sign-in-alt"></i>
+                      Login to Volunteer
+                    </Link>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Quick Info Card */}
+            <div className="action-card info-card">
+              <div className="card-header">
+                <h3>
+                  <i className="fas fa-info-circle"></i>
+                  Quick Info
+                </h3>
+              </div>
+              <div className="card-content">
+                <div className="quick-info-grid">
+                  <div className="quick-info-item">
+                    <div className="info-icon">
+                      <i className="fas fa-clock"></i>
+                    </div>
+                    <div className="info-text">
+                      <span className="info-label">Duration</span>
+                      <span className="info-value">2-3 hours</span>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              <div className="card mt-4 slide-in-right" style={{ animationDelay: '0.4s' }}>
-                <div className="card-header">
-                  <h3>Share</h3>
-                </div>
-                <div className="card-body">
-                  <button className="btn btn-outline btn-block mb-2 social-share-btn">
-                    <i className="fab fa-facebook-f mr-2"></i> Share on Facebook
-                  </button>
-                  <button className="btn btn-outline btn-block mb-2 social-share-btn">
-                    <i className="fab fa-twitter mr-2"></i> Share on Twitter
-                  </button>
-                  <button className="btn btn-outline btn-block social-share-btn">
-                    <i className="fas fa-envelope mr-2"></i> Share via Email
-                  </button>
+                  <div className="quick-info-item">
+                    <div className="info-icon">
+                      <i className="fas fa-users"></i>
+                    </div>
+                    <div className="info-text">
+                      <span className="info-label">Ages</span>
+                      <span className="info-value">{formatAgeRange(event)}</span>
+                    </div>
+                  </div>
+                  <div className="quick-info-item">
+                    <div className="info-icon">
+                      <i className="fas fa-phone"></i>
+                    </div>
+                    <div className="info-text">
+                      <span className="info-label">Contact</span>
+                      <span className="info-value">(484) 885-6284</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
-      
-      {/* Custom CSS for this page */}
+      </div>
+      {/* Custom CSS for no-scroll layout */}
       <style>{`
-        .event-badge {
-          display: inline-block;
-          background-color: var(--secondary);
-          color: white;
-          padding: 0.4rem 1rem;
-          border-radius: 50px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          margin-bottom: 1rem;
-          text-transform: uppercase;
-          letter-spacing: 1px;
+        .event-detail-container {
+          min-height: 100vh;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         }
-        
-        .event-meta-highlights {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 1.5rem;
-          margin-top: 1.5rem;
+
+        .event-nav-bar {
+          background: white;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 1rem 0;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
-        
-        .event-meta-item {
-          display: flex;
-          align-items: center;
-          color: white;
-          background-color: rgba(255, 255, 255, 0.2);
-          padding: 0.5rem 1rem;
-          border-radius: 4px;
-        }
-        
-        .event-meta-item i {
-          margin-right: 0.5rem;
-          font-size: 1.2rem;
-        }
-        
-        .what-to-bring-list {
-          list-style: none;
-          padding: 0;
-        }
-        
-        .what-to-bring-list li {
-          padding: 0.5rem 0;
-          border-bottom: 1px solid #eee;
-        }
-        
-        .what-to-bring-list li:last-child {
-          border-bottom: none;
-        }
-        
-        .what-to-bring-list li i {
-          margin-right: 0.8rem;
-          color: var(--primary);
-        }
-        
-        .accordion-item {
-          border: 1px solid #eee;
-          border-radius: 4px;
-          margin-bottom: 1rem;
-          overflow: hidden;
-        }
-        
-        .accordion-toggle {
+
+        .nav-content {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          width: 100%;
-          text-align: left;
-          padding: 1rem;
-          background-color: #f8f8f8;
+        }
+
+        .back-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: var(--primary);
+          text-decoration: none;
+          font-weight: 500;
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+          background: rgba(47, 80, 106, 0.1);
+          color: var(--primary);
+          text-decoration: none;
+        }
+
+        .share-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: var(--secondary);
+          color: white;
           border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          font-weight: 500;
           cursor: pointer;
-          transition: background-color 0.3s ease;
+          transition: all 0.2s ease;
         }
-        
-        .accordion-toggle:hover {
-          background-color: #f1f1f1;
+
+        .share-btn:hover {
+          background: rgba(230, 79, 80, 0.9);
         }
-        
-        .accordion-toggle h4 {
-          margin: 0;
-          font-size: 1.1rem;
-        }
-        
-        .accordion-content {
-          padding: 0 1rem;
-          max-height: 0;
+
+        .event-layout {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 2rem;
+          padding: 2rem 0;
+          max-height: calc(100vh - 120px);
           overflow: hidden;
-          transition: max-height 0.3s ease, padding 0.3s ease;
         }
-        
-        .accordion-item.active .accordion-content {
-          max-height: 200px;
-          padding: 1rem;
+
+        .event-info-column {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          overflow-y: auto;
+          padding-right: 1rem;
         }
-        
-        .accordion-item.active .accordion-toggle i {
-          transform: rotate(180deg);
+
+        .event-actions-column {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
         }
-        
-        .sticky-card {
-          position: sticky;
-          top: 100px;
+
+        .event-header {
+          background: white;
+          border-radius: 1rem;
+          padding: 2rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
-        .spots-indicator {
-          text-align: center;
+
+        .event-badge {
+          display: inline-block;
+          background: var(--secondary);
+          color: white;
+          padding: 0.5rem 1rem;
+          border-radius: 50px;
+          font-size: 0.875rem;
+          font-weight: 600;
           margin-bottom: 1rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
-        
-        .spots-label {
-          font-size: 0.9rem;
-          margin-bottom: 0.3rem;
-          color: var(--text-light);
-        }
-        
-        .spots-count {
+
+        .event-title {
           font-size: 2.5rem;
           font-weight: 700;
           color: var(--primary);
+          margin: 0 0 1.5rem 0;
+          line-height: 1.2;
         }
-        
-        .spots-progress {
-          height: 6px;
-          background-color: #eee;
-          border-radius: 3px;
-          margin-top: 0.5rem;
+
+        .event-quick-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .meta-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(47, 80, 106, 0.1);
+          padding: 0.5rem 1rem;
+          border-radius: 0.5rem;
+          color: var(--primary);
+          font-weight: 500;
+        }
+
+        .meta-item i {
+          font-size: 1.1rem;
+        }
+
+        .event-description-box {
+          background: white;
+          border-radius: 1rem;
+          padding: 2rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-description-box h3 {
+          color: var(--primary);
+          margin: 0 0 1rem 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+        }
+
+        .event-description-box p {
+          color: #64748b;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .details-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1.5rem;
+        }
+
+        .detail-card {
+          background: white;
+          border-radius: 1rem;
+          padding: 1.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+
+        .detail-header i {
+          color: var(--primary);
+          font-size: 1.2rem;
+        }
+
+        .detail-header h4 {
+          color: var(--primary);
+          margin: 0;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .detail-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 0;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .detail-item:last-child {
+          border-bottom: none;
+        }
+
+        .detail-item .label {
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .detail-item .value {
+          color: var(--primary);
+          font-weight: 600;
+        }
+
+        .bring-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .bring-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          color: #64748b;
+        }
+
+        .bring-item i {
+          color: var(--primary);
+          font-size: 1.1rem;
+          width: 20px;
+          text-align: center;
+        }
+
+        .account-banner {
+          background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+          border-radius: 1rem;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .banner-icon {
+          font-size: 2rem;
+          color: #92400e;
+        }
+
+        .banner-text h4 {
+          margin: 0 0 0.25rem 0;
+          color: #92400e;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .banner-text p {
+          margin: 0;
+          color: #92400e;
+          font-size: 0.875rem;
+        }
+
+        .action-card {
+          background: white;
+          border-radius: 1rem;
           overflow: hidden;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
-        .spots-progress-bar {
-          height: 100%;
-          background-color: var(--primary);
-          transition: width 0.3s ease;
+
+        .card-header {
+          background: var(--primary);
+          color: white;
+          padding: 1.25rem;
         }
-        
+
+        .card-header h3 {
+          margin: 0;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+
+        .volunteer-header {
+          background: var(--secondary);
+        }
+
+        .card-content {
+          padding: 1.5rem;
+        }
+
+        .capacity-display {
+          text-align: center;
+          margin-bottom: 1.5rem;
+        }
+
+        .capacity-number {
+          font-size: 3rem;
+          font-weight: 700;
+          color: var(--primary);
+          line-height: 1;
+        }
+
+        .capacity-label {
+          color: #64748b;
+          font-size: 0.875rem;
+          font-weight: 500;
+        }
+
+        .action-buttons {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .btn-primary, .btn-secondary, .btn-outline {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.875rem 1.5rem;
+          border-radius: 0.75rem;
+          font-weight: 600;
+          text-decoration: none;
+          border: 2px solid transparent;
+          transition: all 0.2s ease;
+          text-align: center;
+        }
+
+        .btn-primary {
+          background: var(--primary);
+          color: white;
+        }
+
+        .btn-primary:hover {
+          background: rgba(47, 80, 106, 0.9);
+          color: white;
+          text-decoration: none;
+        }
+
+        .btn-secondary {
+          background: var(--secondary);
+          color: white;
+        }
+
+        .btn-secondary:hover {
+          background: rgba(230, 79, 80, 0.9);
+          color: white;
+          text-decoration: none;
+        }
+
+        .btn-outline {
+          background: transparent;
+          color: var(--primary);
+          border-color: var(--primary);
+        }
+
+        .btn-outline:hover {
+          background: var(--primary);
+          color: white;
+          text-decoration: none;
+        }
+
+        .register-pulse {
+          animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+          0% { box-shadow: 0 0 0 0 rgba(47, 80, 106, 0.4); }
+          70% { box-shadow: 0 0 0 8px rgba(47, 80, 106, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(47, 80, 106, 0); }
+        }
+
+        .status-message {
+          text-align: center;
+        }
+
         .status-icon {
           display: flex;
           align-items: center;
@@ -535,83 +740,78 @@ const EventDetail = () => {
           margin: 0 auto 1rem;
           font-size: 1.5rem;
         }
-        
+
         .status-icon.past {
-          background-color: #f8f8f8;
-          color: var(--text-light);
+          background: #f1f5f9;
+          color: #64748b;
         }
-        
-        .status-icon.full {
-          background-color: #fff2f2;
-          color: var(--secondary);
-        }
-        
-        .login-prompt {
+
+        .volunteer-text {
           text-align: center;
-          padding: 1rem 0;
+          color: #64748b;
+          margin: 0 0 1rem 0;
+          font-style: italic;
         }
 
-        .login-prompt-icon {
-          font-size: 2rem;
-          color: var(--primary);
-          margin-bottom: 0.5rem;
+        .quick-info-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
         }
 
-        .login-prompt-text {
-          font-size: 0.95rem;
-          line-height: 1.5;
-        }
-
-        .account-requirement-banner {
+        .quick-info-item {
           display: flex;
           align-items: center;
-          gap: 1.5rem;
-          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-          border-left: 4px solid var(--primary);
-          padding: 1.5rem;
-          border-radius: 8px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          gap: 1rem;
         }
 
-        .banner-icon {
-          flex-shrink: 0;
-          font-size: 2.5rem;
-          color: var(--primary);
-        }
-
-        .banner-content {
-          flex: 1;
-        }
-
-        .banner-content h3 {
-          margin: 0 0 0.5rem 0;
-          color: var(--primary);
-          font-size: 1.3rem;
-        }
-
-        .banner-content p {
-          margin: 0;
-          color: #1976d2;
-        }
-
-        .banner-actions {
+        .info-icon {
+          width: 40px;
+          height: 40px;
+          background: rgba(47, 80, 106, 0.1);
+          border-radius: 0.5rem;
           display: flex;
-          gap: 0.75rem;
+          align-items: center;
+          justify-content: center;
+          color: var(--primary);
+          font-size: 1.1rem;
           flex-shrink: 0;
         }
-        
-        .volunteers-header {
-          background-color: var(--secondary);
+
+        .info-text {
+          display: flex;
+          flex-direction: column;
         }
-        
-        .social-share-btn {
-          transition: all 0.3s ease;
+
+        .info-label {
+          font-size: 0.75rem;
+          color: #64748b;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
-        
-        .social-share-btn:hover {
-          transform: translateY(-3px);
+
+        .info-value {
+          color: var(--primary);
+          font-weight: 600;
         }
-        
+
+        .event-tags-display {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .event-tag-badge {
+          background: #e3f2fd;
+          color: #1976d2;
+          padding: 0.25rem 0.75rem;
+          border-radius: 1rem;
+          font-size: 0.75rem;
+          font-weight: 500;
+          border: 1px solid #bbdefb;
+        }
+
         .loading-spinner-container {
           display: flex;
           flex-direction: column;
@@ -619,7 +819,7 @@ const EventDetail = () => {
           justify-content: center;
           height: 300px;
         }
-        
+
         .loading-spinner {
           display: inline-block;
           width: 50px;
@@ -630,96 +830,61 @@ const EventDetail = () => {
           animation: spin 1s ease-in-out infinite;
           margin-bottom: 1rem;
         }
-        
+
         .error-card {
           text-align: center;
         }
-        
+
         .error-icon {
           font-size: 3rem;
           color: var(--secondary);
           margin-bottom: 1rem;
         }
-        
-        .register-btn {
-          animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-          0% {
-            box-shadow: 0 0 0 0 rgba(47, 80, 106, 0.4);
-          }
-          70% {
-            box-shadow: 0 0 0 10px rgba(47, 80, 106, 0);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(47, 80, 106, 0);
-          }
-        }
-        
+
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        
-        .event-tags-display {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 0.5rem;
-          margin-top: 0.5rem;
-        }
 
-        .event-tag-badge {
-          background-color: #e3f2fd;
-          color: #1976d2;
-          padding: 0.25rem 0.75rem;
-          border-radius: 1rem;
-          font-size: 0.75rem;
-          font-weight: 500;
-          border: 1px solid #bbdefb;
+        /* Mobile responsiveness */
+        @media (max-width: 1024px) {
+          .event-layout {
+            grid-template-columns: 1fr;
+            max-height: none;
+            overflow: visible;
+          }
+
+          .event-info-column {
+            overflow-y: visible;
+            padding-right: 0;
+          }
+
+          .details-grid {
+            grid-template-columns: 1fr;
+          }
         }
 
         @media (max-width: 768px) {
-          .event-meta-highlights {
+          .nav-content {
             flex-direction: column;
-            gap: 0.5rem;
+            gap: 1rem;
           }
 
-          .sticky-card {
-            position: static;
+          .event-title {
+            font-size: 1.875rem;
           }
 
-          .account-requirement-banner {
+          .event-quick-meta {
+            flex-direction: column;
+          }
+
+          .account-banner {
             flex-direction: column;
             text-align: center;
-          }
-
-          .banner-actions {
-            flex-direction: column;
-            width: 100%;
-          }
-
-          .banner-actions .btn {
-            width: 100%;
+            gap: 1rem;
           }
         }
       `}</style>
-      
-      {/* JavaScript for accordion functionality */}
-      <script>
-        {`
-          document.addEventListener('DOMContentLoaded', function() {
-            const accordionToggles = document.querySelectorAll('.accordion-toggle');
-            
-            accordionToggles.forEach(toggle => {
-              toggle.addEventListener('click', function() {
-                const accordionItem = this.parentElement;
-                accordionItem.classList.toggle('active');
-              });
-            });
-          });
-        `}
-      </script>
-    </>
+    </div>
   );
 };
 
