@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { parseEmergencyContact } from '../utils/emergencyContactParser';
+import { useAuth } from '../context/AuthContext';
+import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
+  const { currentUser } = useAuth();
   const [children, setChildren] = useState([]);
   const [selectedChildren, setSelectedChildren] = useState([]);
   const [existingRegistrations, setExistingRegistrations] = useState([]);
@@ -19,11 +22,32 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
   const [showEmailNotification, setShowEmailNotification] = useState(false);
 
   useEffect(() => {
-    fetchChildren();
-    fetchExistingRegistrations();
-  }, []);
+    if (!currentUser) return;
 
-  const fetchChildren = async () => {
+    // Set up real-time listener for children (same as ChildrenManagement)
+    firebaseRealtimeService.subscribeToUserChildren(
+      currentUser.uid,
+      (childrenData) => {
+        console.log('EventRegistrationForm: Real-time children update:', childrenData);
+        setChildren(childrenData);
+        setIsLoadingChildren(false);
+      },
+      (error) => {
+        console.error('EventRegistrationForm: Real-time children error:', error);
+        // Fallback to manual fetch
+        fetchChildrenFallback();
+      }
+    );
+
+    fetchExistingRegistrations();
+
+    return () => {
+      // Clean up listener when component unmounts
+      firebaseRealtimeService.unsubscribe(`user_children_${currentUser.uid}`);
+    };
+  }, [currentUser]);
+
+  const fetchChildrenFallback = async () => {
     try {
       setIsLoadingChildren(true);
       const childrenData = await apiService.getChildren();
