@@ -261,7 +261,7 @@ const AppWithOnboarding = () => {
               onComplete={(profile) => {
                 console.log('Onboarding completed:', profile);
                 // Redirect to profile completion
-                window.location.href = '/account-details';
+                window.location.href = `/account/${profile.username}?complete=true`;
               }}
             />
           )}

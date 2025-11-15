@@ -42,6 +42,7 @@ public class UserFirestore {
     private Boolean emailVerified;
     private Boolean isEmailVerified; // Alternative naming
     private Boolean phoneVerified;
+    private Boolean needsOnboarding; // Flag for users needing to complete onboarding flow
     private Long createdTimestamp;
     private Long updatedTimestamp;
 
@@ -99,9 +100,34 @@ public class UserFirestore {
         map.put("emailVerified", emailVerified);
         map.put("isEmailVerified", isEmailVerified);
         map.put("phoneVerified", phoneVerified);
+        map.put("needsOnboarding", needsOnboarding);
         map.put("createdTimestamp", createdTimestamp);
         map.put("updatedTimestamp", System.currentTimeMillis());
         return map;
+    }
+
+    // Helper method to safely convert Object to Long, handling both Long and String types
+    private static Long safeLongFromMap(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Long) {
+            return (Long) value;
+        }
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                System.err.println("Warning: Could not parse '" + value + "' as Long for key '" + key + "'");
+                return null;
+            }
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        System.err.println("Warning: Unexpected type for Long field '" + key + "': " + value.getClass().getSimpleName());
+        return null;
     }
 
     // Create from Firestore Map
@@ -122,7 +148,7 @@ public class UserFirestore {
         user.setSchool((String) map.get("school"));
         user.setUsername((String) map.get("username"));
         user.setUsernameLowercase((String) map.get("usernameLowercase"));
-        user.setUsernameLastChangedAt((Long) map.get("usernameLastChangedAt"));
+        user.setUsernameLastChangedAt(safeLongFromMap(map, "usernameLastChangedAt"));
 
 
         // Emergency contact information
@@ -134,17 +160,23 @@ public class UserFirestore {
         user.setProfileVisibility((String) map.get("profileVisibility"));
         user.setProfilePictureUrl((String) map.get("profilePictureUrl"));
         user.setProfileColor((String) map.get("profileColor"));
-        user.setLastLoginAt((Long) map.get("lastLoginAt"));
+        user.setLastLoginAt(safeLongFromMap(map, "lastLoginAt"));
         user.setIsBanned(map.get("isBanned") != null ? (Boolean) map.get("isBanned") : false);
-        user.setBannedAt((Long) map.get("bannedAt"));
+        user.setBannedAt(safeLongFromMap(map, "bannedAt"));
         user.setBannedReason((String) map.get("bannedReason"));
         Boolean emailVerifiedValue = map.get("emailVerified") != null ? (Boolean) map.get("emailVerified") :
                                      (map.get("isEmailVerified") != null ? (Boolean) map.get("isEmailVerified") : false);
         user.setEmailVerified(emailVerifiedValue);
         user.setIsEmailVerified(emailVerifiedValue); // Keep in sync for backward compatibility
         user.setPhoneVerified(map.get("phoneVerified") != null ? (Boolean) map.get("phoneVerified") : false);
-        user.setCreatedTimestamp(map.get("createdTimestamp") != null ? (Long) map.get("createdTimestamp") : System.currentTimeMillis());
-        user.setUpdatedTimestamp(map.get("updatedTimestamp") != null ? (Long) map.get("updatedTimestamp") : System.currentTimeMillis());
+        user.setNeedsOnboarding(map.get("needsOnboarding") != null ? (Boolean) map.get("needsOnboarding") : false);
+
+        Long createdTimestamp = safeLongFromMap(map, "createdTimestamp");
+        user.setCreatedTimestamp(createdTimestamp != null ? createdTimestamp : System.currentTimeMillis());
+
+        Long updatedTimestamp = safeLongFromMap(map, "updatedTimestamp");
+        user.setUpdatedTimestamp(updatedTimestamp != null ? updatedTimestamp : System.currentTimeMillis());
+
         return user;
     }
 
@@ -262,4 +294,7 @@ public class UserFirestore {
 
     public String getBannedReason() { return bannedReason; }
     public void setBannedReason(String bannedReason) { this.bannedReason = bannedReason; }
+
+    public Boolean getNeedsOnboarding() { return needsOnboarding; }
+    public void setNeedsOnboarding(Boolean needsOnboarding) { this.needsOnboarding = needsOnboarding; }
 }

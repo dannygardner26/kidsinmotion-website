@@ -4,12 +4,14 @@ import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, sign
 import { auth } from '../firebaseConfig'; // Import the auth instance
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 
 const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setIsGoogleOAuthLogin } = useAuth();
+  const { addNotification } = useNotifications();
   const googleButtonDivRef = useRef(null);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -187,7 +189,8 @@ const Register = () => {
           userType: formData.role,
           grade: formData.grade || null,
           school: formData.school || null,
-          email: formData.email // Ensure email is included for backend consistency
+          email: formData.email, // Ensure email is included for backend consistency
+          needsOnboarding: false // Regular registration users have completed profile
         };
 
         await apiService.syncUser();
@@ -201,8 +204,12 @@ const Register = () => {
           await sendEmailVerification(user);
           console.log("Email verification sent successfully.");
 
-          // Show success message
-          alert("Account created successfully! Please check your email for verification link.");
+          // Add success notification
+          addNotification({
+            type: 'success',
+            title: 'Account Created',
+            message: 'Check your email to verify your account.'
+          });
         } catch (verificationError) {
           console.warn("Failed to send verification email:", verificationError);
           // Don't block registration if verification email fails

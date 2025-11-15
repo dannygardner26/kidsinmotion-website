@@ -8,14 +8,10 @@ import AdminMessaging from '../components/AdminMessaging';
 import UsersAndRegistrations from '../components/UsersAndRegistrations';
 import ReportsAndAnalytics from '../components/ReportsAndAnalytics';
 import PosterTemplateSelector from '../components/PosterTemplateSelector';
-import { formatAgeRange } from '../utils/eventFormatters';
+import { formatAgeRange, formatEventDate } from '../utils/eventFormatters';
 
-// Utility function to format dates without timezone issues
-const formatEventDate = (dateString) => {
-  if (!dateString) return 'No date';
-  // Add T00:00:00 to ensure local timezone interpretation
-  return new Date(dateString + 'T00:00:00').toLocaleDateString();
-};
+// Local alias for consistency
+const formatEventDateLocal = formatEventDate;
 
 const AdminDashboard = () => {
   const { userProfile } = useAuth();
@@ -307,7 +303,7 @@ const AdminDashboard = () => {
                     const registrationCount = stats.registrationCount || 0;
                     const volunteerCount = stats.volunteerCount || 0;
                     const capacity = event.capacity;
-                    const isUpcoming = new Date(event.date) > new Date();
+                    const isUpcoming = new Date(event.date + 'T00:00:00') > new Date();
                     const revenue = stats.revenue || 0;
 
                     return (
@@ -319,7 +315,7 @@ const AdminDashboard = () => {
                           </div>
                         </td>
                         <td>
-                          <div>{formatEventDate(event.date)}</div>
+                          <div>{formatEventDateLocal(event.date)}</div>
                           {event.startTime && event.endTime ? (
                             <div className="small text-info">
                               {formatEventTime(event.startTime)} - {formatEventTime(event.endTime)}

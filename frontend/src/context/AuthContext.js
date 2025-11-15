@@ -24,6 +24,14 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return true;
   }
 
+  // Users who completed regular registration or are test accounts
+  if (profile?.needsOnboarding === false) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('User has needsOnboarding=false - no profile completion needed');
+    }
+    return false;
+  }
+
   const hasRequiredFields = profile?.username && profile?.firstName && profile?.lastName;
   const hasContact = profile?.email || profile?.phoneNumber;
 
@@ -41,22 +49,17 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return true;
   }
 
-  // Check if OAuth user needs password setup
-  const isOAuthUser = !profile?.hasPassword; // This would need to be added to the API response
-  if (isOAuthUser && process.env.NODE_ENV !== 'production') {
-    console.log('OAuth user needs password setup');
-  }
-
+  // If user has all required fields and contact info, only prompt if needsOnboarding is explicitly true
   if (process.env.NODE_ENV !== 'production') {
     console.log('Profile completion check:', {
       hasRequiredFields,
       hasContact,
-      isOAuthUser,
-      needsCompletion: isOAuthUser
+      needsOnboarding: profile?.needsOnboarding,
+      needsCompletion: profile?.needsOnboarding === true
     });
   }
 
-  return isOAuthUser;
+  return profile?.needsOnboarding === true;
 };
 
 export const useAuth = () => {
@@ -192,7 +195,9 @@ export const AuthProvider = ({ children }) => {
           userType: 'USER',
           roles: ['ROLE_USER'],
           emailVerified: user.emailVerified,
-          needsOnboarding: true, // New users need to select account type
+          needsOnboarding: isGoogleOAuth ? true : false, // OAuth users need onboarding, regular registration users don't
+          registrationSource: isGoogleOAuth ? 'oauth' : 'password',
+          hasPassword: !isGoogleOAuth, // Track if user has password
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString()
         };
@@ -735,7 +740,8 @@ export const AuthProvider = ({ children }) => {
           userType: 'USER',
           roles: ['ROLE_USER'],
           emailVerified: currentUser.emailVerified,
-          needsOnboarding: true, // Flag for new users needing account type selection
+          needsOnboarding: false, // Default to false for existing users
+          hasPassword: true, // Assume existing users have passwords
           createdAt: new Date().toISOString()
         };
 

@@ -1420,34 +1420,55 @@ public class UserController {
             }
 
             Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(userId);
-            if (!userOpt.isPresent()) {
+
+            boolean deletedFromFirestore = false;
+            boolean deletedFromFirebaseAuth = false;
+
+            // If user exists in Firestore, delete it
+            if (userOpt.isPresent()) {
+                UserFirestore user = userOpt.get();
+                String reason = request.get("reason");
+
+                // Prevent deleting other admin users
+                if (user.isAdmin() && !user.getFirebaseUid().equals(adminFirebaseUid)) {
+                    return ResponseEntity.status(403).body(Map.of("error", "Cannot delete other admin users"));
+                }
+
+                // Delete user from Firestore
+                try {
+                    userFirestoreRepository.deleteById(user.getId());
+                    deletedFromFirestore = true;
+                    System.out.println("Deleted user from Firestore: " + userId);
+                } catch (Exception e) {
+                    System.err.println("Failed to delete user from Firestore: " + e.getMessage());
+                }
+            } else {
+                System.out.println("User not found in Firestore: " + userId);
+            }
+
+            // Try to delete from Firebase Auth (regardless of Firestore status)
+            try {
+                firebaseAuthService.deleteUser(userId);
+                deletedFromFirebaseAuth = true;
+                System.out.println("Deleted user from Firebase Auth: " + userId);
+            } catch (Exception e) {
+                System.err.println("Failed to delete user from Firebase Auth (may not exist): " + e.getMessage());
+                // Don't fail the request if user doesn't exist in Firebase Auth
+            }
+
+            // Return success if deleted from at least one system
+            if (deletedFromFirestore || deletedFromFirebaseAuth) {
+                String message = String.format("User deleted successfully (Firestore: %s, Firebase Auth: %s)",
+                    deletedFromFirestore, deletedFromFirebaseAuth);
+                return ResponseEntity.ok(Map.of("message", message));
+            } else {
                 return ResponseEntity.notFound().build();
             }
 
-            UserFirestore user = userOpt.get();
-            String reason = request.get("reason");
-
-            // Prevent deleting other admin users
-            if (user.isAdmin() && !user.getFirebaseUid().equals(adminFirebaseUid)) {
-                return ResponseEntity.status(403).body(Map.of("error", "Cannot delete other admin users"));
-            }
-
-            // Delete user from Firebase Auth
-            try {
-                firebaseAuthService.deleteUser(user.getFirebaseUid());
-            } catch (Exception e) {
-                System.err.println("Failed to delete user from Firebase Auth: " + e.getMessage());
-                return ResponseEntity.internalServerError().body(Map.of("error", "Failed to delete user from authentication system"));
-            }
-
-            // Delete user from Firestore
-            userFirestoreRepository.deleteById(user.getId());
-
-            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
-
         } catch (Exception e) {
             System.err.println("Error deleting user: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error deleting user"));
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error deleting user: " + e.getMessage()));
         }
     }
 }

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { assetUrls } from '../utils/firebaseAssets';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatEventDateTime } from '../utils/eventFormatters';
 
 const Home = () => {
   const { currentUser } = useAuth();
@@ -62,35 +63,9 @@ const Home = () => {
     setCurrentSlide((prev) => (prev - 1 + photoSlides.length) % photoSlides.length);
   };
   
-  // Format date for display
+  // Format date for display - using fixed timezone utility
   const formatDate = (dateString, startTime, endTime) => {
-    const date = new Date(dateString);
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    let formattedDate = date.toLocaleDateString(undefined, dateOptions);
-
-    // Add time range if available
-    if (startTime && endTime) {
-      const startTimeFormatted = new Date(`2000-01-01T${startTime}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      const endTimeFormatted = new Date(`2000-01-01T${endTime}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      formattedDate += ` • ${startTimeFormatted} - ${endTimeFormatted}`;
-    } else if (startTime) {
-      const startTimeFormatted = new Date(`2000-01-01T${startTime}`).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit'
-      });
-      formattedDate += ` • ${startTimeFormatted}`;
-    } else {
-      // Fallback times for testing - showing typical clinic times
-      formattedDate += ` • 5:30 PM - 7:30 PM`;
-    }
-
-    return formattedDate;
+    return formatEventDateTime(dateString, startTime, endTime);
   };
   
   return (

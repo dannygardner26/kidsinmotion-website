@@ -1629,17 +1629,15 @@ body.transparent-header-page-body .hero { /* Keep this for the Home page */
 /* Non-scrollable login and register pages */
 .login-page-container,
 .register-page-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   padding-top: 5rem; /* Account for fixed navbar */
 }
 
 @media (max-width: 768px) {
   .login-page-container,
   .register-page-container {
-    height: auto;
     min-height: 100vh;
     padding-top: 4rem; /* Smaller padding for mobile navbar */
   }

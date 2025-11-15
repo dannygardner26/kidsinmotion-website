@@ -83,7 +83,8 @@ async function createTestAccounts() {
       phoneNumber: '4848856284',
       userType: 'PARENT',
       emailVerified: true,
-      phoneVerified: false // Set to false to test phone verification
+      phoneVerified: false, // Set to false to test phone verification
+      needsOnboarding: false // Test account has complete profile
     };
 
     const parentUser = await createTestUser(parentUserData, parentAuthData);
@@ -105,7 +106,8 @@ async function createTestAccounts() {
       phoneNumber: '4848856284',
       userType: 'VOLUNTEER',
       emailVerified: true,
-      phoneVerified: false // Set to false to test phone verification
+      phoneVerified: false, // Set to false to test phone verification
+      needsOnboarding: false // Test account has complete profile
     };
 
     const volunteerUser = await createTestUser(volunteerUserData, volunteerAuthData);

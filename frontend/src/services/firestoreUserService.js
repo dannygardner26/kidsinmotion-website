@@ -10,6 +10,7 @@ class FirestoreUserService {
       // Prepare user data for Firestore
       const firestoreUserData = {
         uid: firebaseUid,
+        firebaseUid: firebaseUid, // Add firebaseUid for backend compatibility
         email: userData.email || '',
         firstName: userData.firstName || '',
         lastName: userData.lastName || '',
@@ -18,11 +19,12 @@ class FirestoreUserService {
         roles: userData.roles || ['ROLE_USER'],
         phoneNumber: userData.phoneNumber || '',
         emailVerified: userData.emailVerified || false,
+        needsOnboarding: userData.needsOnboarding !== undefined ? userData.needsOnboarding : false,
         createdAt: userData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lastLoginAt: userData.lastLoginAt || new Date().toISOString(),
         isActive: true,
-        registrationSource: 'firebase'
+        registrationSource: userData.registrationSource || 'firebase'
       };
 
       // Use setDoc with the Firebase UID as the document ID for easy lookup
@@ -145,8 +147,10 @@ class FirestoreUserService {
           userType: userProfile?.userType || 'USER',
           roles: userProfile?.roles || ['ROLE_USER'],
           emailVerified: firebaseUser.emailVerified,
+          needsOnboarding: userProfile?.needsOnboarding !== undefined ? userProfile.needsOnboarding : false,
           createdAt: userProfile?.createdAt || new Date().toISOString(),
-          lastLoginAt: new Date().toISOString()
+          lastLoginAt: new Date().toISOString(),
+          firebaseUid: firebaseUser.uid // Add firebaseUid for backend compatibility
         };
 
         return await this.createUser(userData, firebaseUser.uid);

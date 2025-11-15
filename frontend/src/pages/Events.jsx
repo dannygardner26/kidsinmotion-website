@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 import firestoreEventService from '../services/firestoreEventService';
-import { formatAgeRange } from '../utils/eventFormatters';
+import { formatAgeRange, formatEventDate, formatEventDateTime } from '../utils/eventFormatters';
 import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const Events = () => {
@@ -36,9 +36,9 @@ const Events = () => {
         // Filter events based on filter setting
         let filteredData = eventsData;
         if (filter === 'upcoming') {
-          filteredData = eventsData.filter(event => new Date(event.date) >= new Date());
+          filteredData = eventsData.filter(event => new Date(event.date + 'T00:00:00') >= new Date());
         } else if (filter === 'past') {
-          filteredData = eventsData.filter(event => new Date(event.date) < new Date());
+          filteredData = eventsData.filter(event => new Date(event.date + 'T00:00:00') < new Date());
         }
 
         setEvents(filteredData);
@@ -121,9 +121,9 @@ const Events = () => {
 
       // Filter events based on filter setting
       if (filter === 'upcoming') {
-        data = data.filter(event => new Date(event.date) >= new Date());
+        data = data.filter(event => new Date(event.date + 'T00:00:00') >= new Date());
       } else if (filter === 'past') {
-        data = data.filter(event => new Date(event.date) < new Date());
+        data = data.filter(event => new Date(event.date + 'T00:00:00') < new Date());
       }
 
 
@@ -147,60 +147,9 @@ const Events = () => {
     }
   };
   
-  // Format date and time for display
+  // Format date and time for display - using fixed timezone utility
   const formatDate = (dateString, startTime, endTime) => {
-    const date = new Date(dateString);
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    let formattedDate = date.toLocaleDateString(undefined, dateOptions);
-
-    // Helper function to format time from various possible formats
-    const formatTime = (timeValue) => {
-      if (!timeValue) return null;
-
-      try {
-        // Handle time formats like "17:00:00", "17:00", or already formatted times
-        let timeString = timeValue.toString();
-
-        // If it already looks like a formatted time (contains AM/PM), return as is
-        if (timeString.includes('AM') || timeString.includes('PM')) {
-          return timeString;
-        }
-
-        // If it's in HH:mm:ss or HH:mm format, parse it
-        if (timeString.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
-          // Split to check if we have seconds
-          const timeParts = timeString.split(':');
-
-          // If we only have hours and minutes, add seconds
-          if (timeParts.length === 2) {
-            timeString = timeString + ':00';
-          }
-
-          const timeDate = new Date(`2000-01-01T${timeString}`);
-          return timeDate.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit'
-          });
-        }
-
-        return null;
-      } catch (error) {
-        console.error('Error parsing time:', timeValue, error);
-        return null;
-      }
-    };
-
-    const formattedStartTime = formatTime(startTime);
-    const formattedEndTime = formatTime(endTime);
-
-    // Check for valid formatted times
-    if (formattedStartTime && formattedEndTime) {
-      formattedDate += ` • ${formattedStartTime} - ${formattedEndTime}`;
-    } else if (formattedStartTime) {
-      formattedDate += ` • ${formattedStartTime}`;
-    }
-
-    return formattedDate;
+    return formatEventDateTime(dateString, startTime, endTime);
   };
 
   // Clear all filters

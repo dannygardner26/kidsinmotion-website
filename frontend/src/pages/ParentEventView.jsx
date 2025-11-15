@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/api';
-import EventChat from '../components/EventChat';
 import firestoreParticipantService from '../services/firestoreParticipantService';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -323,6 +322,7 @@ const ParentEventView = () => {
                     <p className="mb-0">Volunteers Helping</p>
                   </div>
                 </div>
+              </div>
             </div>
           </div>
 
@@ -362,7 +362,6 @@ const ParentEventView = () => {
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

@@ -241,6 +241,8 @@ public class AdminController {
                 newUser.setUsernameLowercase(username.toLowerCase());
                 newUser.setEmailVerified(true);
                 newUser.setIsEmailVerified(true);
+                newUser.setPhoneVerified(false);
+                newUser.setNeedsOnboarding(false); // Test accounts have complete profiles
                 newUser.setCreatedTimestamp(System.currentTimeMillis());
                 newUser.setUpdatedTimestamp(System.currentTimeMillis());
 

@@ -417,7 +417,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
               }
               return <p><strong>Age Range:</strong> All Ages</p>;
             })()}
-            {event.price && <p><strong>Price:</strong> ${event.price}</p>}
+            <p><strong>Price:</strong> ${event.price || '0'}</p>
             {event.capacity && (
               <p><strong>Capacity:</strong> {event.capacity} participants</p>
             )}
@@ -445,6 +445,12 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
               <div className="form-group">
                 <label>Select Children to Register *</label>
                 <p className="help-text">Select which children you'd like to register for this event. Click on a child card to select them.</p>
+                {existingRegistrations.length > 0 && (
+                  <div className="alert alert-warning mb-3">
+                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Important:</strong> Deselecting a child who is already registered will remove them from this event.
+                  </div>
+                )}
                 <div className="children-selection">
                   {children.map(child => {
                     const isAlreadyRegistered = isChildAlreadyRegistered(child);
@@ -461,12 +467,6 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                           <div className="child-info">
                             <div className="child-header">
                               <h4>{child.firstName} {child.lastName}</h4>
-                              {isAlreadyRegistered && (
-                                <span className="registration-status">
-                                  <i className="fas fa-check-circle mr-1"></i>
-                                  Already Registered
-                                </span>
-                              )}
                             </div>
                           <div className="child-details">
                             <span className="detail-item">
@@ -912,19 +912,21 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
         .checkbox-label {
           display: flex;
           align-items: flex-start;
-          gap: 1rem;
+          gap: 0.75rem;
           cursor: pointer;
-          padding: 1rem;
-          border: 2px solid #e9ecef;
-          border-radius: 12px;
+          padding: 1.25rem;
+          border: 2px solid #dee2e6;
+          border-radius: 10px;
           transition: all 0.3s ease;
-          background: white;
+          background: #fafafa;
+          line-height: 1.5;
         }
 
         .checkbox-label:hover {
           border-color: var(--primary);
-          background: rgba(47, 80, 106, 0.05);
+          background: rgba(47, 80, 106, 0.08);
           transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(47, 80, 106, 0.1);
         }
 
         .checkbox-label input[type="checkbox"] {
@@ -935,14 +937,14 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
 
         .custom-checkbox {
           position: relative;
-          height: 20px;
-          width: 20px;
+          height: 22px;
+          width: 22px;
           background-color: white;
-          border: 2px solid #e9ecef;
-          border-radius: 4px;
+          border: 2px solid #dee2e6;
+          border-radius: 5px;
           transition: all 0.3s ease;
           flex-shrink: 0;
-          margin-top: 2px;
+          margin-top: 1px;
         }
 
         .checkbox-label:hover .custom-checkbox {
@@ -952,14 +954,15 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
         .checkbox-label input:checked ~ .custom-checkbox {
           background-color: var(--primary);
           border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.2);
         }
 
         .custom-checkbox:after {
           content: "";
           position: absolute;
           display: none;
-          left: 6px;
-          top: 2px;
+          left: 7px;
+          top: 3px;
           width: 5px;
           height: 10px;
           border: solid white;

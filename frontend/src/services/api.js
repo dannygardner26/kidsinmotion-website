@@ -2,7 +2,7 @@ import { auth, db } from '../firebaseConfig';
 import { parseEmergencyContact } from '../utils/emergencyContactParser';
 import firestoreEventService from './firestoreEventService';
 import firestoreParticipantService from './firestoreParticipantService';
-import firestoreChildService from './firestoreChildService';
+import firestoreChildrenService from './firestoreChildrenService';
 import { collection, addDoc, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8082/api';
@@ -874,7 +874,11 @@ class ApiService {
     } catch (error) {
       console.log('getChildren API failed, trying Firestore:', error);
       try {
-        const firestoreData = await firestoreChildService.getChildren();
+        const user = auth.currentUser;
+        if (!user) {
+          throw new Error('No authenticated user');
+        }
+        const firestoreData = await firestoreChildrenService.getChildren(user.uid);
         console.log('getChildren Firestore fallback succeeded:', firestoreData);
         return firestoreData;
       } catch (firestoreError) {
