@@ -310,13 +310,13 @@ const ParentEventView = () => {
             </div>
             <div className="card-body">
               <div className="row text-center">
-                <div className="col-md-4">
+                <div className="col-md-6">
                   <div className="border rounded p-3">
                     <h4 className="text-primary">{totalParticipants}</h4>
                     <p className="mb-0">Total Participants</p>
                   </div>
                 </div>
-                <div className="col-md-4">
+                <div className="col-md-6">
                   <div className="border rounded p-3">
                     <h4 className="text-success">{volunteerCount}</h4>
                     <p className="mb-0">Volunteers Helping</p>

@@ -109,7 +109,6 @@ const AccountDetails = () => {
         emergencyContactName: userData.emergencyContactName || '',
         emergencyContactPhone: userData.emergencyContactPhone || '',
         emergencyContactRelationship: userData.emergencyContactRelationship || '',
-        profileVisibility: userData.profileVisibility || 'PUBLIC',
         password: ''
       });
 
@@ -138,7 +137,7 @@ const AccountDetails = () => {
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
-      setError('Failed to load profile data');
+      setErrors({ general: 'Failed to load profile data' });
       // Don't navigate away, let user try again
     } finally {
       setIsLoading(false);
@@ -265,8 +264,7 @@ const AccountDetails = () => {
         phoneNumber: formData.phoneNumber,
         emergencyContactName: formData.emergencyContactName,
         emergencyContactPhone: formData.emergencyContactPhone,
-        emergencyContactRelationship: formData.emergencyContactRelationship,
-        profileVisibility: formData.profileVisibility
+        emergencyContactRelationship: formData.emergencyContactRelationship
       };
 
       // Include email for admin editing others when changed
@@ -321,7 +319,7 @@ const AccountDetails = () => {
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError('Failed to update profile. Please try again.');
+      setErrors({ general: 'Failed to update profile. Please try again.' });
     } finally {
       setIsSaving(false);
     }
@@ -342,7 +340,6 @@ const AccountDetails = () => {
       emergencyContactName: profileData.emergencyContactName || '',
       emergencyContactPhone: profileData.emergencyContactPhone || '',
       emergencyContactRelationship: profileData.emergencyContactRelationship || '',
-      profileVisibility: profileData.profileVisibility || 'PUBLIC',
       password: ''
     });
     setErrors({});
@@ -436,6 +433,13 @@ const AccountDetails = () => {
                 </div>
               )}
 
+              {errors.general && (
+                <div className="alert alert-danger">
+                  <i className="fas fa-exclamation-triangle mr-2"></i>
+                  {errors.general}
+                </div>
+              )}
+
               {needsPasswordSetup && isEditMode && (
                 <div className="alert alert-info">
                   <i className="fas fa-info-circle mr-2"></i>
@@ -524,22 +528,6 @@ const AccountDetails = () => {
                     </div>
                   </div>
 
-                  <div className="row mb-3">
-                    <div className="col-md-6">
-                      <div className="info-card">
-                        <label className="info-label">Profile Visibility</label>
-                        <div className="info-value">{profileData.profileVisibility}</div>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="info-card">
-                        <label className="info-label">Account Created</label>
-                        <div className="info-value">
-                          {profileData.createdTimestamp ? new Date(profileData.createdTimestamp).toLocaleDateString() : 'Not available'}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
                   {/* Emergency Contact */}
                   <div className="section-header">
@@ -726,18 +714,26 @@ const AccountDetails = () => {
                       </div>
                     </div>
                     <div className="col-md-6">
-                      <div className="form-group">
-                        <label htmlFor="profileVisibility">Profile Visibility</label>
-                        <select
-                          className="form-control"
-                          id="profileVisibility"
-                          name="profileVisibility"
-                          value={formData.profileVisibility}
-                          onChange={handleInputChange}
-                        >
-                          <option value="PUBLIC">Public - Anyone can view</option>
-                          <option value="PRIVATE">Private - Only me</option>
-                        </select>
+                      <div className="account-actions">
+                        <label className="info-label">Account Management</label>
+                        <div className="action-buttons">
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm mb-2"
+                            onClick={() => alert('Password reset functionality coming soon')}
+                          >
+                            <i className="fas fa-key mr-1"></i>
+                            Reset Password
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary btn-sm mb-2"
+                            onClick={() => alert('Email change functionality coming soon')}
+                          >
+                            <i className="fas fa-envelope mr-1"></i>
+                            Change Email
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -906,38 +902,125 @@ const AccountDetails = () => {
       </div>
 
       <style jsx>{`
-        .info-card {
-          background: #f8f9fa;
-          border: 1px solid #e9ecef;
+        .container {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          min-height: 100vh;
+          padding-top: 2rem;
+          padding-bottom: 2rem;
+        }
+
+        .card {
+          background: white;
+          border: none;
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(47, 80, 106, 0.12);
+          overflow: hidden;
+        }
+
+        .card-header {
+          background: linear-gradient(135deg, var(--primary) 0%, #3a5674 100%);
+          border: none;
+          color: white;
+          padding: 2rem;
+        }
+
+        .card-header h2 {
+          color: white;
+          margin: 0;
+          font-weight: 600;
+        }
+
+        .card-body {
+          padding: 2.5rem;
+        }
+
+        .btn {
           border-radius: 8px;
-          padding: 15px;
-          margin-bottom: 15px;
-          min-height: 70px;
+          font-weight: 500;
+          padding: 0.6rem 1.5rem;
+          transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg, var(--primary), #3a5674);
+          border: none;
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.3);
+        }
+
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(47, 80, 106, 0.4);
+        }
+
+        .form-control {
+          border: 2px solid #e9ecef;
+          border-radius: 10px;
+          padding: 0.8rem 1rem;
+          font-size: 0.95rem;
+          transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+          border-color: var(--primary);
+          box-shadow: 0 0 0 4px rgba(47, 80, 106, 0.1);
+          transform: translateY(-1px);
+        }
+        .info-card {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin-bottom: 1.5rem;
+          min-height: 80px;
+          transition: all 0.3s ease;
+        }
+
+        .info-card:hover {
+          border-color: var(--primary);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.1);
         }
 
         .info-label {
           font-weight: 600;
-          color: #495057;
-          font-size: 0.875rem;
-          margin-bottom: 5px;
+          color: var(--primary);
+          font-size: 0.9rem;
+          margin-bottom: 0.5rem;
           display: block;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         .info-value {
-          color: #212529;
-          font-size: 1rem;
+          color: #2c3e50;
+          font-size: 1.1rem;
+          font-weight: 500;
           word-break: break-word;
         }
 
         .section-header {
-          border-bottom: 2px solid #007bff;
-          margin-bottom: 20px;
-          padding-bottom: 10px;
+          border-bottom: 3px solid var(--primary);
+          margin-bottom: 2rem;
+          padding-bottom: 1rem;
+          position: relative;
+        }
+
+        .section-header::after {
+          content: '';
+          position: absolute;
+          bottom: -3px;
+          left: 0;
+          width: 60px;
+          height: 3px;
+          background: var(--secondary);
+          border-radius: 2px;
         }
 
         .section-header h4 {
-          color: #007bff;
-          margin-bottom: 5px;
+          color: var(--primary);
+          margin-bottom: 0.5rem;
+          font-size: 1.4rem;
+          font-weight: 600;
         }
 
         .admin-section {
@@ -949,9 +1032,74 @@ const AccountDetails = () => {
         }
 
         .form-actions {
-          border-top: 1px solid #e9ecef;
-          padding-top: 20px;
-          margin-top: 30px;
+          border-top: 2px solid #e9ecef;
+          padding-top: 2rem;
+          margin-top: 3rem;
+          text-align: center;
+        }
+
+        .account-actions {
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          padding: 1.5rem;
+          text-align: center;
+        }
+
+        .action-buttons {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .badge {
+          font-size: 0.75rem;
+          padding: 0.4rem 0.8rem;
+          border-radius: 20px;
+          font-weight: 600;
+        }
+
+        .badge-success {
+          background: linear-gradient(135deg, #28a745, #20c997);
+          color: white;
+        }
+
+        .badge-warning {
+          background: linear-gradient(135deg, #ffc107, #ff8f00);
+          color: white;
+        }
+
+        .alert {
+          border: none;
+          border-radius: 12px;
+          padding: 1.25rem;
+          font-weight: 500;
+        }
+
+        .alert-success {
+          background: linear-gradient(135deg, #d4edda, #c3e6cb);
+          color: #155724;
+        }
+
+        .alert-danger {
+          background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+          color: #721c24;
+        }
+
+        @media (max-width: 768px) {
+          .container {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+          }
+
+          .card-header,
+          .card-body {
+            padding: 1.5rem;
+          }
+
+          .action-buttons {
+            flex-direction: column;
+          }
         }
       `}</style>
     </div>

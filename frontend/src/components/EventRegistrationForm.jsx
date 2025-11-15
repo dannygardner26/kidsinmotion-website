@@ -49,6 +49,21 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
     };
   }, [currentUser]);
 
+  // Auto-select children who are already registered when data is loaded
+  useEffect(() => {
+    if (children.length > 0 && existingRegistrations.length > 0) {
+      const registeredChildIds = children.filter(child => {
+        return isChildAlreadyRegistered(child);
+      }).map(child => child.id);
+
+      setSelectedChildren(prev => {
+        // Only add new IDs that aren't already selected
+        const newIds = registeredChildIds.filter(id => !prev.includes(id));
+        return [...prev, ...newIds];
+      });
+    }
+  }, [children, existingRegistrations]);
+
   const fetchChildrenFallback = async () => {
     try {
       setIsLoadingChildren(true);
@@ -453,10 +468,8 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                 )}
                 <div className="children-selection">
                   {children.map(child => {
-                    const isAlreadyRegistered = isChildAlreadyRegistered(child);
-
                     return (
-                      <div key={child.id} className={`child-selection-card ${isAlreadyRegistered ? 'already-registered' : ''}`}>
+                      <div key={child.id} className="child-selection-card">
                         <label className="child-checkbox">
                           <input
                             type="checkbox"
@@ -885,24 +898,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
           margin-bottom: 0.75rem;
         }
 
-        .registration-status {
-          background: linear-gradient(135deg, #28a745, #20c997);
-          color: white;
-          padding: 0.4rem 0.8rem;
-          border-radius: 20px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-          margin-left: 1rem;
-          box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-        }
 
-        .child-selection-card.already-registered {
-          background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-          border-color: #28a745;
-        }
 
         /* Checkbox Options */
         .checkbox-option {
