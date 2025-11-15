@@ -11,7 +11,9 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
   const [selectedChildren, setSelectedChildren] = useState([]);
   const [existingRegistrations, setExistingRegistrations] = useState([]);
   const [formData, setFormData] = useState({
-    emergencyContact: '',
+    emergencyContactFirstName: '',
+    emergencyContactLastName: '',
+    emergencyContactPhone: '',
     needsFood: false,
     additionalNotes: '',
     confirmDropoffPickup: false
@@ -124,15 +126,20 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
       return;
     }
 
-    if (!formData.emergencyContact || !formData.emergencyContact.trim()) {
-      setError('Please provide an emergency contact name and phone number.');
+    if (!formData.emergencyContactFirstName || !formData.emergencyContactFirstName.trim()) {
+      setError('Please provide an emergency contact first name.');
       setIsSubmitting(false);
       return;
     }
 
-    const emergencyContactInfo = parseEmergencyContact(formData.emergencyContact);
-    if (!emergencyContactInfo.name || !emergencyContactInfo.name.trim() || !emergencyContactInfo.phone || !emergencyContactInfo.phone.trim()) {
-      setError('Please enter an emergency contact name and phone number.');
+    if (!formData.emergencyContactLastName || !formData.emergencyContactLastName.trim()) {
+      setError('Please provide an emergency contact last name.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.emergencyContactPhone || !formData.emergencyContactPhone.trim()) {
+      setError('Please provide an emergency contact phone number or email.');
       setIsSubmitting(false);
       return;
     }
@@ -238,8 +245,8 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
           participantLastName: child.lastName,
           participantAge: participantAge,
           participantAgeGroup: getAgeGroup(participantAge),
-          emergencyContactName: emergencyContactInfo.name,
-          emergencyContactPhone: emergencyContactInfo.phone,
+          emergencyContactName: `${formData.emergencyContactFirstName} ${formData.emergencyContactLastName}`.trim(),
+          emergencyContactPhone: formData.emergencyContactPhone,
           medicalInfo: child.medicalConcerns || null,
           specialRequests: specialRequests
         };
@@ -497,18 +504,49 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="emergencyContact">Emergency Contact *</label>
-                <input
-                  type="text"
-                  id="emergencyContact"
-                  name="emergencyContact"
-                  className="form-control"
-                  value={formData.emergencyContact}
-                  onChange={handleInputChange}
-                  placeholder="Emergency contact name and phone number"
-                  required
-                />
+              <div className="form-section">
+                <h4>Emergency Contact Information</h4>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="emergencyContactFirstName">Emergency Contact First Name *</label>
+                    <input
+                      type="text"
+                      id="emergencyContactFirstName"
+                      name="emergencyContactFirstName"
+                      className="form-control"
+                      value={formData.emergencyContactFirstName}
+                      onChange={handleInputChange}
+                      placeholder="First name"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label htmlFor="emergencyContactLastName">Emergency Contact Last Name *</label>
+                    <input
+                      type="text"
+                      id="emergencyContactLastName"
+                      name="emergencyContactLastName"
+                      className="form-control"
+                      value={formData.emergencyContactLastName}
+                      onChange={handleInputChange}
+                      placeholder="Last name"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="emergencyContactPhone">Phone Number or Email *</label>
+                  <input
+                    type="text"
+                    id="emergencyContactPhone"
+                    name="emergencyContactPhone"
+                    className="form-control"
+                    value={formData.emergencyContactPhone}
+                    onChange={handleInputChange}
+                    placeholder="Phone number or email address"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="info-note">
@@ -591,116 +629,459 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
       </div>
 
       <style>{`
+        /* Event Registration Form - Unified Design System */
         .registration-form {
-          max-width: 600px;
+          max-width: 700px;
           margin: 0 auto;
-        }
-
-        /* Force checkbox styles with maximum specificity */
-        .registration-form .child-selection-card .child-checkbox,
-        .registration-form .checkbox-option .checkbox-label {
-          display: flex !important;
-          align-items: flex-start !important;
-          gap: 1rem !important;
-          cursor: pointer !important;
-          margin: 0 !important;
-          padding: 1.25rem !important;
-          border: 2px solid #e9ecef !important;
-          border-radius: 12px !important;
-          transition: all 0.3s ease !important;
-          background: white !important;
-          width: 100% !important;
-          box-sizing: border-box !important;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-        }
-
-        .registration-form .child-selection-card .child-checkbox:hover,
-        .registration-form .checkbox-option .checkbox-label:hover {
-          border-color: #2f506a !important;
-          background-color: rgba(47, 80, 106, 0.05) !important;
-          transform: translateY(-1px) !important;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .registration-form .child-checkbox input[type="checkbox"],
-        .registration-form .checkbox-label input[type="checkbox"] {
-          position: absolute !important;
-          opacity: 0 !important;
-          cursor: pointer !important;
-          width: 0 !important;
-          height: 0 !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-
-        .registration-form .child-checkbox .checkmark,
-        .registration-form .checkbox-label .custom-checkbox {
-          position: relative !important;
-          min-height: 24px !important;
-          min-width: 24px !important;
-          height: 24px !important;
-          width: 24px !important;
-          background-color: #fff !important;
-          border: 3px solid #ced4da !important;
-          border-radius: 6px !important;
-          transition: all 0.3s ease !important;
-          flex-shrink: 0 !important;
-          margin-top: 0px !important;
-          display: inline-block !important;
-          box-sizing: border-box !important;
-        }
-
-        .registration-form .child-checkbox:hover .checkmark,
-        .registration-form .checkbox-label:hover .custom-checkbox {
-          border-color: #2f506a !important;
-          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.15) !important;
-        }
-
-        .registration-form .child-checkbox input:checked ~ .checkmark,
-        .registration-form .checkbox-label input:checked ~ .custom-checkbox {
-          background-color: #2f506a !important;
-          border-color: #2f506a !important;
-        }
-
-        .registration-form .child-checkbox .checkmark:after,
-        .registration-form .checkbox-label .custom-checkbox:after {
-          content: "" !important;
-          position: absolute !important;
-          display: none !important;
-          left: 7px !important;
-          top: 3px !important;
-          width: 6px !important;
-          height: 12px !important;
-          border: solid white !important;
-          border-width: 0 3px 3px 0 !important;
-          transform: rotate(45deg) !important;
-        }
-
-        .registration-form .child-checkbox input:checked ~ .checkmark:after,
-        .registration-form .checkbox-label input:checked ~ .custom-checkbox:after {
-          display: block !important;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(47, 80, 106, 0.1);
+          padding: 2rem;
         }
 
         .event-summary {
-          background-color: #f8f9fa;
-          padding: 1rem;
-          border-radius: 8px;
-          border-left: 4px solid var(--primary);
+          background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+          color: white;
+          padding: 1.5rem;
+          border-radius: 12px;
+          margin-bottom: 2rem;
+          box-shadow: 0 4px 16px rgba(47, 80, 106, 0.2);
         }
 
         .event-summary h4 {
-          margin-bottom: 0.75rem;
-          color: var(--primary);
+          color: white;
+          margin-bottom: 1rem;
+          font-size: 1.3rem;
         }
 
         .event-summary p {
           margin-bottom: 0.5rem;
+          opacity: 0.95;
         }
 
+        /* Form Sections */
+        .form-section {
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          background: #f8f9fa;
+          border-radius: 12px;
+          border: 1px solid #e9ecef;
+        }
+
+        .form-section h4 {
+          color: var(--primary);
+          margin-bottom: 1rem;
+          font-size: 1.2rem;
+          font-weight: 600;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+          .form-row {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        /* Form Groups */
         .form-group {
           margin-bottom: 1.5rem;
         }
 
+        .form-group label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+          color: var(--primary);
+          font-size: 0.95rem;
+        }
+
+        /* Form Controls */
+        .form-control {
+          width: 100%;
+          padding: 0.875rem;
+          border: 2px solid #e9ecef;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          background: white;
+          box-sizing: border-box;
+        }
+
+        .form-control:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .form-control::placeholder {
+          color: #9ca3af;
+          opacity: 1;
+        }
+
+        textarea.form-control {
+          resize: vertical;
+          min-height: 120px;
+          line-height: 1.6;
+        }
+
+        /* Children Selection */
+        .children-selection {
+          display: grid;
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .child-selection-card {
+          background: white;
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          padding: 1.25rem;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .child-selection-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: linear-gradient(135deg, var(--primary), var(--primary-light));
+          transform: scaleX(0);
+          transition: transform 0.3s ease;
+        }
+
+        .child-selection-card:hover {
+          border-color: var(--primary);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(47, 80, 106, 0.15);
+        }
+
+        .child-selection-card:hover::before {
+          transform: scaleX(1);
+        }
+
+        .child-checkbox {
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+          cursor: pointer;
+          width: 100%;
+        }
+
+        .child-checkbox input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+          width: 0;
+          height: 0;
+        }
+
+        .checkmark {
+          position: relative;
+          height: 24px;
+          width: 24px;
+          background-color: white;
+          border: 3px solid #e9ecef;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .child-checkbox:hover .checkmark {
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(47, 80, 106, 0.1);
+        }
+
+        .child-checkbox input:checked ~ .checkmark {
+          background-color: var(--primary);
+          border-color: var(--primary);
+        }
+
+        .checkmark:after {
+          content: "";
+          position: absolute;
+          display: none;
+          left: 7px;
+          top: 3px;
+          width: 6px;
+          height: 12px;
+          border: solid white;
+          border-width: 0 3px 3px 0;
+          transform: rotate(45deg);
+        }
+
+        .child-checkbox input:checked ~ .checkmark:after {
+          display: block;
+        }
+
+        .child-info {
+          flex: 1;
+        }
+
+        .child-info h4 {
+          margin: 0 0 0.5rem 0;
+          color: var(--primary);
+          font-size: 1.2rem;
+          font-weight: 600;
+        }
+
+        .child-details {
+          display: flex;
+          gap: 1.5rem;
+          margin-bottom: 0.75rem;
+          flex-wrap: wrap;
+        }
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          color: #6c757d;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        .detail-item i {
+          margin-right: 0.5rem;
+          color: var(--primary);
+        }
+
+        .health-info {
+          margin-top: 1rem;
+          padding-top: 1rem;
+          border-top: 2px solid #e9ecef;
+        }
+
+        .health-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        .health-item.medical {
+          color: #dc3545;
+        }
+
+        .health-item.allergies {
+          color: #fd7e14;
+        }
+
+        .child-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 0.75rem;
+        }
+
+        .registration-status {
+          background: linear-gradient(135deg, #28a745, #20c997);
+          color: white;
+          padding: 0.4rem 0.8rem;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+          margin-left: 1rem;
+          box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        }
+
+        .child-selection-card.already-registered {
+          background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+          border-color: #28a745;
+        }
+
+        /* Checkbox Options */
+        .checkbox-option {
+          margin: 1.5rem 0;
+        }
+
+        .checkbox-label {
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+          cursor: pointer;
+          padding: 1rem;
+          border: 2px solid #e9ecef;
+          border-radius: 12px;
+          transition: all 0.3s ease;
+          background: white;
+        }
+
+        .checkbox-label:hover {
+          border-color: var(--primary);
+          background: rgba(47, 80, 106, 0.05);
+          transform: translateY(-1px);
+        }
+
+        .checkbox-label input[type="checkbox"] {
+          position: absolute;
+          opacity: 0;
+          cursor: pointer;
+        }
+
+        .custom-checkbox {
+          position: relative;
+          height: 20px;
+          width: 20px;
+          background-color: white;
+          border: 2px solid #e9ecef;
+          border-radius: 4px;
+          transition: all 0.3s ease;
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .checkbox-label:hover .custom-checkbox {
+          border-color: var(--primary);
+        }
+
+        .checkbox-label input:checked ~ .custom-checkbox {
+          background-color: var(--primary);
+          border-color: var(--primary);
+        }
+
+        .custom-checkbox:after {
+          content: "";
+          position: absolute;
+          display: none;
+          left: 6px;
+          top: 2px;
+          width: 5px;
+          height: 10px;
+          border: solid white;
+          border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+
+        .checkbox-label input:checked ~ .custom-checkbox:after {
+          display: block;
+        }
+
+        /* Info Notes & Alerts */
+        .info-note {
+          margin: 2rem 0;
+        }
+
+        .alert {
+          padding: 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+        }
+
+        .alert-info {
+          background: linear-gradient(135deg, #d1ecf1, #b8daff);
+          border: 1px solid #bee5eb;
+          color: #0c5460;
+        }
+
+        .alert-danger {
+          background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+          border: 1px solid #f5c6cb;
+          color: #721c24;
+        }
+
+        .alert i {
+          margin-top: 2px;
+          font-size: 1.1rem;
+        }
+
+        /* Form Actions */
+        .form-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 1rem;
+          margin-top: 2.5rem;
+          padding-top: 1.5rem;
+          border-top: 2px solid #e9ecef;
+        }
+
+        .btn {
+          padding: 0.875rem 2rem;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 1rem;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          min-width: 140px;
+          border: 2px solid transparent;
+          cursor: pointer;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .btn::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .btn:active::before {
+          width: 300px;
+          height: 300px;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg, var(--primary), var(--primary-light));
+          color: white;
+          border-color: var(--primary);
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.2);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 25px rgba(47, 80, 106, 0.3);
+          background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .btn-outline {
+          background: white;
+          color: var(--primary);
+          border-color: var(--primary);
+          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.1);
+        }
+
+        .btn-outline:hover:not(:disabled) {
+          background: var(--primary);
+          color: white;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 25px rgba(47, 80, 106, 0.2);
+        }
+
+        .btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        /* Loading States */
         .loading-container {
           text-align: center;
           padding: 3rem;
@@ -709,7 +1090,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
         .loading-spinner {
           width: 50px;
           height: 50px;
-          border: 3px solid rgba(47, 80, 106, 0.3);
+          border: 3px solid rgba(47, 80, 106, 0.2);
           border-radius: 50%;
           border-top-color: var(--primary);
           animation: spin 1s ease-in-out infinite;
@@ -722,296 +1103,100 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
 
         .no-children-state {
           text-align: center;
-          padding: 2rem;
-        }
-
-        .children-selection {
-          display: grid;
-          gap: 1rem;
-          margin-top: 1rem;
-        }
-
-        .child-selection-card {
-          border: 2px solid #e9ecef;
+          padding: 3rem;
+          background: #f8f9fa;
           border-radius: 12px;
-          padding: 1rem;
-          transition: all 0.3s ease;
-          background: white;
+          border: 2px dashed #dee2e6;
         }
 
-        .child-selection-card:hover {
-          border-color: var(--primary);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-
-        .child-info {
-          flex: 1;
-        }
-
-        .child-info h4 {
-          margin: 0 0 0.5rem 0;
-          color: var(--primary);
-          font-size: 1.2rem;
-        }
-
-        .child-details {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 0.75rem;
-          flex-wrap: wrap;
-        }
-
-        .detail-item {
-          display: flex;
-          align-items: center;
+        .no-children-state h3 {
           color: #6c757d;
-          font-size: 0.9rem;
-        }
-
-        .health-info {
-          margin-top: 0.75rem;
-          padding-top: 0.75rem;
-          border-top: 1px solid #e9ecef;
-        }
-
-        .health-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 0.5rem;
-          margin-bottom: 0.5rem;
-          font-size: 0.9rem;
-        }
-
-        .health-item.medical {
-          color: #dc3545;
-        }
-
-        .health-item.allergies {
-          color: #fd7e14;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 600;
-          color: var(--text);
-        }
-
-        .help-text {
-          color: #6c757d;
-          font-size: 0.9rem;
-          margin: 0.5rem 0 1rem 0;
-          font-style: italic;
-        }
-
-        .info-note {
-          margin: 1.5rem 0;
-        }
-
-        .alert-info {
-          background-color: #d1ecf1;
-          border: 1px solid #bee5eb;
-          color: #0c5460;
-          padding: 1rem;
-          border-radius: 4px;
-          display: flex;
-          align-items: flex-start;
-          gap: 0.5rem;
-        }
-
-        .form-control {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 1rem;
-          transition: border-color 0.3s ease;
-        }
-
-        .form-control:focus {
-          outline: none;
-          border-color: var(--primary);
-          box-shadow: 0 0 0 2px rgba(47, 80, 106, 0.1);
-        }
-
-        textarea.form-control {
-          resize: vertical;
-          min-height: 100px;
-        }
-
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: 1rem;
-          margin-top: 2rem;
-          padding-top: 1rem;
-          border-top: 1px solid #eee;
-          position: relative;
-          z-index: 10;
-        }
-
-        .form-actions .btn {
-          pointer-events: auto;
-          cursor: pointer;
-          padding: 0.75rem 2rem;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 1rem;
-          text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-          min-width: 140px;
-          border: 2px solid transparent;
-        }
-
-        .form-actions .btn-primary {
-          background: linear-gradient(135deg, var(--primary), var(--primary-light));
-          color: white;
-          border-color: var(--primary);
-          box-shadow: 0 4px 12px rgba(47, 80, 106, 0.2);
-        }
-
-        .form-actions .btn-primary:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(47, 80, 106, 0.3);
-          background: linear-gradient(135deg, var(--primary-light), var(--primary));
-        }
-
-        .form-actions .btn-outline {
-          background: white;
-          color: var(--primary);
-          border-color: var(--primary);
-          box-shadow: 0 2px 8px rgba(47, 80, 106, 0.1);
-        }
-
-        .form-actions .btn-outline:hover:not(:disabled) {
-          background: var(--primary);
-          color: white;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(47, 80, 106, 0.2);
-        }
-
-        .form-actions .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none !important;
-          box-shadow: none !important;
-        }
-
-        .alert {
-          padding: 1rem;
-          border-radius: 4px;
           margin-bottom: 1rem;
         }
 
-        .alert-danger {
-          background-color: #f8d7da;
-          border: 1px solid #f5c6cb;
-          color: #721c24;
-        }
-
-        .checkbox-option {
-          margin: 1rem 0;
-        }
-
-
-        .child-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 0.5rem;
-        }
-
-        .registration-status {
-          background-color: #d4edda;
-          color: #155724;
-          padding: 0.25rem 0.5rem;
-          border-radius: 12px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-          margin-left: 1rem;
-        }
-
-        .child-selection-card.already-registered {
-          background-color: #f8f9fa;
-          border-color: #28a745;
-        }
-
-        .child-selection-card.already-registered:hover {
-          border-color: #20c997;
-          background-color: #f0fff4;
-        }
-
-        .mr-3 {
-          margin-right: 1rem;
-        }
-
-        /* Email notification banner styles */
+        /* Email Notification */
         .email-notification {
-          background-color: #d4edda !important;
-          border: 1px solid #c3e6cb !important;
-          color: #155724 !important;
-          border-radius: 8px !important;
-          padding: 1rem !important;
-          margin-bottom: 1rem !important;
+          background: linear-gradient(135deg, #d4edda, #c3e6cb);
+          border: 1px solid #c3e6cb;
+          color: #155724;
+          border-radius: 12px;
+          padding: 1.5rem;
+          margin-bottom: 2rem;
+          box-shadow: 0 4px 15px rgba(21, 87, 36, 0.1);
         }
 
         .notification-content {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: space-between !important;
-          gap: 1rem !important;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
         }
 
         .notification-content span {
-          flex: 1 !important;
-          font-weight: 600 !important;
+          flex: 1;
+          font-weight: 500;
         }
 
-        .close-btn {
-          background: none !important;
-          border: none !important;
-          color: #155724 !important;
-          cursor: pointer !important;
-          padding: 0.25rem !important;
-          border-radius: 4px !important;
-          transition: background-color 0.2s ease !important;
-          flex-shrink: 0 !important;
-        }
-
-        .close-btn:hover {
-          background-color: rgba(21, 87, 36, 0.1) !important;
-        }
-
-        .close-btn i {
-          font-size: 1rem !important;
-        }
-
+        /* Responsive Design */
         @media (max-width: 768px) {
+          .registration-form {
+            margin: 1rem;
+            padding: 1.5rem;
+            box-shadow: none;
+            border: 1px solid #e9ecef;
+          }
+
           .form-actions {
-            flex-direction: column;
+            flex-direction: column-reverse;
           }
 
           .form-actions .btn {
             width: 100%;
-            margin-bottom: 0.5rem;
+            min-width: auto;
+          }
+
+          .child-details {
+            flex-direction: column;
+            gap: 0.75rem;
           }
 
           .child-header {
             flex-direction: column;
-            align-items: flex-start;
+            gap: 0.5rem;
           }
 
           .registration-status {
             margin-left: 0;
-            margin-top: 0.5rem;
+            align-self: flex-start;
           }
+        }
+
+        /* Utility Classes */
+        .mr-3 {
+          margin-right: 1rem !important;
+        }
+
+        .text-muted {
+          color: #6c757d !important;
+        }
+
+        .close-btn {
+          background: none;
+          border: none;
+          color: #155724;
+          cursor: pointer;
+          padding: 0.25rem;
+          border-radius: 4px;
+          transition: background-color 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .close-btn:hover {
+          background-color: rgba(21, 87, 36, 0.1);
+        }
+
+        .close-btn i {
+          font-size: 1rem;
         }
       `}</style>
     </div>

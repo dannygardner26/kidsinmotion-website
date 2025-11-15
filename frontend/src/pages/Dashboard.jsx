@@ -1277,8 +1277,8 @@ const Dashboard = () => {
                                       <div className="children-list">
                                         {eventGroup.children.map((child, index) => (
                                           <div key={child.id} className="child-item">
-                                            <span className="child-name">{child.childFirstName} {child.childLastName}</span>
-                                            {child.childAge && <span className="child-age">Age {child.childAge}</span>}
+                                            <span className="child-name">{child.participantFirstName || child.childFirstName} {child.participantLastName || child.childLastName}</span>
+                                            {(child.participantAge || child.childAge) && <span className="child-age">Age {child.participantAge || child.childAge}</span>}
                                           </div>
                                         ))}
                                       </div>
@@ -1547,7 +1547,7 @@ const Dashboard = () => {
                                 <div className="event-details">
                                   <h4 className="event-title">{registration.event?.title || 'Unknown Event'}</h4>
                                   <div className="participant-name">
-                                    <strong>Child:</strong> {registration.childFirstName} {registration.childLastName}
+                                    <strong>Child:</strong> {registration.participantFirstName || registration.childFirstName} {registration.participantLastName || registration.childLastName}
                                   </div>
                                   <div className="parent-info">
                                     <strong>Parent:</strong> {registration.parentEmail}
