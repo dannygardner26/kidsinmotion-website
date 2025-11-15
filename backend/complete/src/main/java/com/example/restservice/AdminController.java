@@ -10,6 +10,7 @@ import com.example.restservice.repository.firestore.VolunteerFirestoreRepository
 import com.example.restservice.repository.firestore.UserFirestoreRepository;
 import com.example.restservice.security.FirebaseAuthService;
 import com.example.restservice.service.MessagingService;
+import com.example.restservice.service.EmailDeliveryService;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.FieldValue;
@@ -52,6 +53,9 @@ public class AdminController {
 
     @Autowired
     private MessagingService messagingService;
+
+    @Autowired
+    private EmailDeliveryService emailDeliveryService;
 
     @Autowired(required = false)
     private Firestore firestore;
@@ -287,6 +291,63 @@ public class AdminController {
         return errors.isEmpty() ?
             ResponseEntity.ok(response) :
             ResponseEntity.status(500).body(response);
+    }
+
+    // Test email delivery functionality
+    @GetMapping("/test-email")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> testEmail(HttpServletRequest request) {
+        logger.info("Testing email delivery functionality...");
+
+        Map<String, Object> response = new HashMap<>();
+
+        if (!emailDeliveryService.isEnabled()) {
+            response.put("success", false);
+            response.put("error", "Email delivery service is not properly configured");
+            return ResponseEntity.status(500).body(response);
+        }
+
+        // Test sending an email to the admin email (from the request context)
+        String adminEmail = (String) request.getAttribute("firebaseEmail");
+        if (adminEmail == null) {
+            response.put("success", false);
+            response.put("error", "No admin email found in request context");
+            return ResponseEntity.status(400).body(response);
+        }
+
+        String testSubject = "Kids in Motion - Email Test from " + System.currentTimeMillis();
+        String testBody = "This is a test email from the Kids in Motion system.\n\n" +
+                         "Email delivery configuration test performed at: " + new Date() + "\n\n" +
+                         "If you receive this email, the email delivery system is working correctly!\n\n" +
+                         "Test details:\n" +
+                         "- From: info@kidsinmotionpa.org\n" +
+                         "- To: " + adminEmail + "\n" +
+                         "- SendGrid Integration: Active\n" +
+                         "- Domain Authentication: kidsinmotionpa.org\n\n" +
+                         "Best regards,\n" +
+                         "Kids in Motion System";
+
+        try {
+            boolean emailSent = emailDeliveryService.sendEmail(adminEmail, testSubject, testBody);
+
+            if (emailSent) {
+                response.put("success", true);
+                response.put("message", "Test email sent successfully to " + adminEmail);
+                response.put("details", "Check your inbox for the test email. It may take a few minutes to arrive.");
+                logger.info("Test email sent successfully to {}", adminEmail);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("error", "Failed to send test email - check server logs for details");
+                logger.error("Failed to send test email to {}", adminEmail);
+                return ResponseEntity.status(500).body(response);
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", "Exception while sending test email: " + e.getMessage());
+            logger.error("Exception while sending test email to {}: {}", adminEmail, e.getMessage(), e);
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     // Helper method to remove user from event's allowedUserIds array
