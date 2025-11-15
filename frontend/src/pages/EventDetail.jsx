@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
-import { formatAgeRange } from '../utils/eventFormatters';
+import { formatAgeRange, formatEventDateTime } from '../utils/eventFormatters';
 import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const EventDetail = () => {
@@ -49,61 +49,10 @@ const EventDetail = () => {
   };
 
   
-  // Format date for display
+  // Format date for display - using fixed timezone utility
   const formatDate = (dateString, startTime, endTime) => {
     if (!dateString) return 'TBD';
-    const date = new Date(dateString);
-    const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-    let formattedDate = date.toLocaleDateString(undefined, dateOptions);
-
-    // Helper function to format time from various possible formats
-    const formatTime = (timeValue) => {
-      if (!timeValue) return null;
-
-      try {
-        // Handle time formats like "17:00:00", "17:00", or already formatted times
-        let timeString = timeValue.toString();
-
-        // If it already looks like a formatted time (contains AM/PM), return as is
-        if (timeString.includes('AM') || timeString.includes('PM')) {
-          return timeString;
-        }
-
-        // If it's in HH:mm:ss or HH:mm format, parse it
-        if (timeString.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
-          // Split to check if we have seconds
-          const timeParts = timeString.split(':');
-
-          // If we only have hours and minutes, add seconds
-          if (timeParts.length === 2) {
-            timeString = timeString + ':00';
-          }
-
-          const timeDate = new Date(`2000-01-01T${timeString}`);
-          return timeDate.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit'
-          });
-        }
-
-        return null;
-      } catch (error) {
-        console.error('Error parsing time:', timeValue, error);
-        return null;
-      }
-    };
-
-    const formattedStartTime = formatTime(startTime);
-    const formattedEndTime = formatTime(endTime);
-
-    // Check for valid formatted times
-    if (formattedStartTime && formattedEndTime) {
-      formattedDate += ` • ${formattedStartTime} - ${formattedEndTime}`;
-    } else if (formattedStartTime) {
-      formattedDate += ` • ${formattedStartTime}`;
-    }
-
-    return formattedDate;
+    return formatEventDateTime(dateString, startTime, endTime);
   };
   
   // Format duration
@@ -147,7 +96,7 @@ const EventDetail = () => {
     );
   }
   
-  const isPastEvent = new Date(event.date) < new Date();
+  const isPastEvent = new Date(event.date + 'T00:00:00') < new Date();
   const sportBackground = getSportBackground(event.ageGroup);
   
   return (
@@ -342,12 +291,20 @@ const EventDetail = () => {
                       
                       {!isPastEvent ? (
                         currentUser ? (
-                          <Link 
-                            to={`/events/${event.id}/register`} 
-                            className="btn btn-primary btn-block mt-3 register-btn"
-                          >
-                            Register Your Child
-                          </Link>
+                          <div className="d-grid gap-2">
+                            <Link
+                              to={`/events/${event.id}/register`}
+                              className="btn btn-primary btn-block register-btn"
+                            >
+                              Register Your Child
+                            </Link>
+                            <Link
+                              to={`/events/${event.id}/parent-view`}
+                              className="btn btn-outline btn-block"
+                            >
+                              View Event Dashboard
+                            </Link>
+                          </div>
                         ) : (
                           <div className="login-prompt">
                             <div className="login-prompt-icon">

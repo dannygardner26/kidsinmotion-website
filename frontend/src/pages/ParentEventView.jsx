@@ -215,7 +215,7 @@ const ParentEventView = () => {
 
       <div className="row">
         {/* Event Information Column */}
-        <div className="col-lg-8">
+        <div className="col-12">
           {/* Event Information Card */}
           <div className="card mb-4">
             <div className="card-header">
@@ -235,7 +235,6 @@ const ParentEventView = () => {
                 <div className="col-md-6">
                   <p><strong>Location:</strong> {event.location}</p>
                   <p><strong>Price:</strong> ${event.price}</p>
-                  <p><strong>Capacity:</strong> {event.capacity} participants</p>
                 </div>
               </div>
               {event.description && (
@@ -324,21 +323,6 @@ const ParentEventView = () => {
                     <p className="mb-0">Volunteers Helping</p>
                   </div>
                 </div>
-                <div className="col-md-4">
-                  <div className="border rounded p-3">
-                    <h4 className={totalParticipants >= event.capacity ? 'text-danger' : 'text-warning'}>
-                      {Math.max(0, event.capacity - totalParticipants)}
-                    </h4>
-                    <p className="mb-0">Spots Remaining</p>
-                  </div>
-                </div>
-              </div>
-              {totalParticipants >= event.capacity && (
-                <div className="alert alert-info mt-3" role="alert">
-                  <i className="fas fa-info-circle me-2"></i>
-                  This event is fully booked!
-                </div>
-              )}
             </div>
           </div>
 
@@ -367,7 +351,7 @@ const ParentEventView = () => {
                     <li>Arrive 15 minutes before start time</li>
                     <li>Check in with event coordinator</li>
                     <li>Pick up promptly at end time</li>
-                    <li>Bring ID for child pick-up</li>
+                    <li>Bring whatever baseball gear your child has</li>
                   </ul>
                 </div>
               </div>
@@ -379,61 +363,6 @@ const ParentEventView = () => {
           </div>
         </div>
 
-        {/* Chat Column */}
-        <div className="col-lg-4">
-          <div className="card">
-            <div className="card-header">
-              <h3 className="mb-0">
-                <i className="fas fa-comments me-2"></i>
-                Event Discussion
-              </h3>
-            </div>
-            <div className="card-body p-0">
-              <EventChat
-                eventId={eventId}
-                currentUser={user}
-                userRole="parent"
-                eventName={event.name}
-              />
-            </div>
-          </div>
-
-          {/* Quick Actions Card */}
-          <div className="card mt-4">
-            <div className="card-header">
-              <h3 className="mb-0">
-                <i className="fas fa-cog me-2"></i>
-                Quick Actions
-              </h3>
-            </div>
-            <div className="card-body">
-              <div className="d-grid gap-2">
-                <Link
-                  to={`/events/${eventId}`}
-                  className="btn btn-outline-primary btn-sm"
-                  target="_blank"
-                >
-                  <i className="fas fa-info-circle me-2"></i>
-                  View Full Event Details
-                </Link>
-                <Link
-                  to="/dashboard?tab=children"
-                  className="btn btn-outline-secondary btn-sm"
-                >
-                  <i className="fas fa-list me-2"></i>
-                  View All My Registrations
-                </Link>
-                <Link
-                  to="/profile"
-                  className="btn btn-outline-info btn-sm"
-                >
-                  <i className="fas fa-user me-2"></i>
-                  Update My Profile
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
