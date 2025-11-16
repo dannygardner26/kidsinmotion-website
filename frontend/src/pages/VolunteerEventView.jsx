@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/api';
-import EventChat from '../components/EventChat';
 import firestoreParticipantService from '../services/firestoreParticipantService';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -196,7 +195,7 @@ const VolunteerEventView = () => {
 
       <div className="row">
         {/* Event Information Column */}
-        <div className="col-lg-8">
+        <div className="col-12">
           {/* Event Information Card */}
           <div className="card mb-4">
             <div className="card-header">
@@ -311,24 +310,6 @@ const VolunteerEventView = () => {
         </div>
 
         {/* Chat Column */}
-        <div className="col-lg-4">
-          <div className="card">
-            <div className="card-header">
-              <h3 className="mb-0">
-                <i className="fas fa-comments me-2"></i>
-                Event Discussion
-              </h3>
-            </div>
-            <div className="card-body p-0">
-              <EventChat
-                eventId={eventId}
-                currentUser={user}
-                userRole="volunteer"
-                eventName={event.name}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Additional Information */}

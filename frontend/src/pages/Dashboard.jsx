@@ -1219,13 +1219,6 @@ const Dashboard = () => {
                         <i className="fas fa-hands-helping mr-2"></i>
                         Your Volunteer Activities
                       </li>
-                      <li
-                        className={`nav-tab ${activeTab === 'checkin' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('checkin')}
-                      >
-                        <i className="fas fa-clipboard-check mr-2"></i>
-                        Check-In
-                      </li>
                     </>
                   )}
                 </ul>
@@ -1442,15 +1435,6 @@ const Dashboard = () => {
                                     <i className="fas fa-tachometer-alt"></i>
                                   </Link>
 
-                                  {!isPast && (isVolunteer() || isAdmin()) && (
-                                    <button
-                                      onClick={() => handleVolunteerCheckIn(volunteer)}
-                                      className="action-btn checkin-btn"
-                                      title="Check-in Participants"
-                                    >
-                                      <i className="fas fa-clipboard-check"></i>
-                                    </button>
-                                  )}
                                   
                                   {!isPast && volunteer.status !== 'CANCELED' && (
                                     <button
@@ -1600,102 +1584,6 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                {/* Connections Tab - Available to all users */}
-                {activeTab === 'checkin' && isVolunteer() && (
-                  <div className="tab-content">
-                    <h2>Check-In Search</h2>
-                    <p className="text-muted mb-3">Search for parents and track event attendance</p>
-
-                    <div className="search-section mb-4">
-                      <div className="form-group">
-                        <label htmlFor="parent-search">Search Parents</label>
-                        <div className="search-input-wrapper">
-                          <input
-                            id="parent-search"
-                            type="text"
-                            className="form-control"
-                            placeholder="Search by parent name, username, email, or child name..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                          />
-                          <button
-                            type="button"
-                            className="btn btn-primary search-btn"
-                            onClick={handleSearch}
-                            disabled={searchLoading || !searchQuery.trim()}
-                          >
-                            {searchLoading ? (
-                              <>
-                                <i className="fas fa-spinner fa-spin mr-2"></i>
-                                Searching...
-                              </>
-                            ) : (
-                              <>
-                                <i className="fas fa-search mr-2"></i>
-                                Search
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {searchResults.length > 0 && (
-                      <div className="search-results">
-                        <h3>Search Results ({searchResults.length} parents found)</h3>
-                        <div className="parents-list">
-                          {searchResults.map((parent) => (
-                            <div key={parent.parentUserId} className="parent-group">
-                              <div className="parent-header">
-                                <h4>{parent.parentUserFullName} (@{parent.parentUserUsername})</h4>
-                                <small className="text-muted">{parent.parentUserEmail}</small>
-                              </div>
-                              <div className="children-list">
-                                {parent.children.map((child) => (
-                                  <div key={child.participantId} className="child-item">
-                                    <div className="child-info">
-                                      <strong>{child.childName}</strong>
-                                      <span className="age-badge">Age {child.childAge}</span>
-                                      <span className="event-info">
-                                        Event: {child.eventName}
-                                      </span>
-                                      <span className={`status-badge ${child.present ? 'present' : 'absent'}`}>
-                                        {child.present ? 'Present' : 'Absent'}
-                                      </span>
-                                    </div>
-                                    <div className="attendance-actions">
-                                      <button
-                                        type="button"
-                                        className={`btn btn-sm ${child.present ? 'btn-success' : 'btn-outline-success'}`}
-                                        onClick={() => handleAttendanceToggle(child.participantId, child.present ? 'ATTENDED' : 'NOT_ATTENDED')}
-                                      >
-                                        Mark Present
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className={`btn btn-sm ${!child.present ? 'btn-danger' : 'btn-outline-danger'}`}
-                                        onClick={() => handleAttendanceToggle(child.participantId, child.present ? 'ATTENDED' : 'NOT_ATTENDED')}
-                                      >
-                                        Mark Absent
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {searchQuery && searchResults.length === 0 && !searchLoading && (
-                      <div className="no-results">
-                        <i className="fas fa-search text-muted"></i>
-                        <p>No parents found matching your search.</p>
-                      </div>
-                    )}
-                  </div>
-                )}
 
 
         </div>
@@ -2229,12 +2117,13 @@ const Dashboard = () => {
         
         .event-actions {
           display: flex;
-          flex-direction: column;
+          flex-direction: row;
           justify-content: center;
+          align-items: center;
           gap: 0.5rem;
           padding: 0.75rem;
           background-color: #f8f8f8;
-          min-width: 80px;
+          min-width: 120px;
         }
         
         .action-btn {

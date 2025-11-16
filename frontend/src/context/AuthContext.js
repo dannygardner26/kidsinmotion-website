@@ -16,9 +16,9 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return false;
   }
 
-  // Check for incomplete user types (like 'user' instead of 'PARENT'/'VOLUNTEER')
+  // Check for incomplete user types (like 'USER'/'user' instead of 'PARENT'/'VOLUNTEER')
   // This catches re-registered users who were deleted from admin panel
-  if (profile?.userType === 'user' || !profile?.userType) {
+  if (profile?.userType === 'user' || profile?.userType === 'USER' || !profile?.userType) {
     if (process.env.NODE_ENV !== 'production') {
       console.log('User has incomplete userType - needs profile completion:', profile?.userType);
     }
@@ -239,14 +239,17 @@ export const AuthProvider = ({ children }) => {
         setNeedsProfileCompletion(needsCompletion);
 
         // Redirect to profile completion for users who need it
-        if (needsCompletion && profile.username) {
+        if (needsCompletion) {
           // Only redirect if not already on profile completion page
           const currentPath = window.location.pathname;
-          const accountPath = `/account/${profile.username}`;
+
+          // Use profile username if available, otherwise use the user's email prefix
+          const username = profile.username || user.email?.split('@')[0] || user.uid;
+          const accountPath = `/account/${username}`;
 
           if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true')) {
             if (process.env.NODE_ENV !== 'production') {
-              console.log('Redirecting to profile completion:', accountPath);
+              console.log('Redirecting to profile completion:', accountPath, 'for user with userType:', profile?.userType);
             }
             setTimeout(() => {
               window.location.href = `${accountPath}?complete=true`;

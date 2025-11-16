@@ -351,7 +351,7 @@ const ParentEventView = () => {
                     <li>Arrive 15 minutes before start time</li>
                     <li>Check in with event coordinator</li>
                     <li>Pick up promptly at end time</li>
-                    <li>Bring whatever baseball gear your child has</li>
+                    <li><strong>Equipment:</strong> Bring whatever equipment you have. Contact us at <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a> or <a href="tel:+14848856284">(484) 885-6284</a> if you need something.</li>
                   </ul>
                 </div>
               </div>
