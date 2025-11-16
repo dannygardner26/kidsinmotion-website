@@ -217,7 +217,7 @@ const EventDetail = () => {
                   <i className="fas fa-map-marker-alt"></i>
                   <span>{event.location || 'TBD'}</span>
                 </div>
-                {event.price && event.price > 0 && (
+                {event.price > 0 && (
                   <div className="meta-item">
                     <i className="fas fa-dollar-sign"></i>
                     <span>${event.price}</span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import AccountTypeSelector from '../components/AccountTypeSelector';
 
 const AccountDetails = () => {
   const { username } = useParams();
@@ -91,7 +92,8 @@ const AccountDetails = () => {
         setNeedsPasswordSetup(false);
 
         // If user needs profile completion, automatically enable edit mode
-        const needsCompletion = !userData.firstName || !userData.lastName;
+        const needsCompletion = !userData.firstName || !userData.lastName ||
+                               userData.userType === 'USER' || userData.userType === 'user' || !userData.userType;
         if (needsCompletion && isSelfEdit) {
           setIsEditMode(true);
         }
@@ -197,6 +199,11 @@ const AccountDetails = () => {
     if (!isAdminEditingOther && !formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.username.trim()) newErrors.username = 'Username is required';
 
+    // UserType validation for self-editing users who need to complete profile
+    if (isSelfEdit && (formData.userType === 'USER' || formData.userType === 'user' || !formData.userType)) {
+      newErrors.userType = 'Please select whether you are a Parent or Volunteer';
+    }
+
     // Password validation for OAuth users
     if (needsPasswordSetup && !formData.password.trim()) {
       newErrors.password = 'Password is required for account setup';
@@ -262,6 +269,7 @@ const AccountDetails = () => {
         lastName: formData.lastName,
         username: formData.username,
         phoneNumber: formData.phoneNumber,
+        userType: formData.userType,
         emergencyContactName: formData.emergencyContactName,
         emergencyContactPhone: formData.emergencyContactPhone,
         emergencyContactRelationship: formData.emergencyContactRelationship
@@ -737,6 +745,33 @@ const AccountDetails = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Account Type Selection for incomplete profiles */}
+                  {isSelfEdit && (formData.userType === 'USER' || formData.userType === 'user' || !formData.userType) && (
+                    <>
+                      <div className="section-header">
+                        <h4>Complete Your Profile</h4>
+                        <small className="text-muted">Please select your account type to continue</small>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-md-12">
+                          <AccountTypeSelector
+                            onSelect={(type) => {
+                              setFormData(prev => ({ ...prev, userType: type }));
+                              setErrors(prev => ({ ...prev, userType: null }));
+                            }}
+                            selectedType={formData.userType === 'USER' || formData.userType === 'user' ? null : formData.userType}
+                          />
+                          {errors.userType && (
+                            <div className="alert alert-danger mt-2">
+                              {errors.userType}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Admin-only fields */}
                   {isAdmin && !isSelfEdit && (
