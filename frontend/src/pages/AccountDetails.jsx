@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import firestoreUserService from '../services/firestoreUserService';
 import AccountTypeSelector from '../components/AccountTypeSelector';
 
 const AccountDetails = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userProfile: currentUserProfile, authReady, loading: authLoading } = useAuth();
+  const { userProfile: currentUserProfile, authReady, loading: authLoading, user: currentUser } = useAuth();
 
   const [profileData, setProfileData] = useState(null);
   const [formData, setFormData] = useState({
@@ -280,8 +281,27 @@ const AccountDetails = () => {
         updateData.email = formData.email;
       }
 
-      // Update basic profile fields
-      await apiService.updateUserProfileByUsername(username, updateData);
+      // Handle Firebase users vs backend users differently
+      if (isSelfEdit && currentUser && currentUserProfile) {
+        // Firebase user - update profile in Firestore and context
+        const updatedProfile = {
+          ...currentUserProfile,
+          ...updateData,
+          uid: currentUser.uid
+        };
+
+        // Update in Firestore for admin dashboard visibility
+        await firestoreUserService.updateUser(currentUser.uid, updatedProfile);
+
+        // Update local profile data
+        setProfileData(updatedProfile);
+
+        // The AuthContext will be updated via its real-time listeners
+        console.log('Firebase profile updated successfully');
+      } else {
+        // Backend user - use API
+        await apiService.updateUserProfileByUsername(username, updateData);
+      }
 
       // Admin-only operations using specific endpoints
       if (isAdmin && !isSelfEdit) {
@@ -316,8 +336,10 @@ const AccountDetails = () => {
       setOriginalUsername(formData.username);
       setIsEditMode(false);
 
-      // Refresh profile data to reflect admin changes
-      await fetchProfileData();
+      // Refresh profile data for admin changes or backend users
+      if (!isSelfEdit || !currentUser || !currentUserProfile) {
+        await fetchProfileData();
+      }
 
       // If username changed, redirect to new URL
       if (formData.username !== username) {

@@ -16,6 +16,14 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return false;
   }
 
+  // Test accounts are exempt from profile completion requirements
+  if (profile?.username === 'parent' || profile?.username === 'volunteer') {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Test account - no profile completion needed:', profile.username);
+    }
+    return false;
+  }
+
   // Check for incomplete user types (like 'USER'/'user' instead of 'PARENT'/'VOLUNTEER')
   // This catches re-registered users who were deleted from admin panel
   if (profile?.userType === 'user' || profile?.userType === 'USER' || !profile?.userType) {
@@ -23,22 +31,6 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
       console.log('User has incomplete userType - needs profile completion:', profile?.userType);
     }
     return true;
-  }
-
-  // New users need onboarding to select account type
-  if (profile?.needsOnboarding === true) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('New user needs onboarding (account type selection)');
-    }
-    return true;
-  }
-
-  // Users who completed regular registration or are test accounts
-  if (profile?.needsOnboarding === false) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('User has needsOnboarding=false - no profile completion needed');
-    }
-    return false;
   }
 
   const hasRequiredFields = profile?.username && profile?.firstName && profile?.lastName;
@@ -58,17 +50,18 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return true;
   }
 
-  // If user has all required fields and contact info, only prompt if needsOnboarding is explicitly true
+  // All non-admin, non-test users must have complete profiles
+  // If we reach this point, user has all required fields and contact info
   if (process.env.NODE_ENV !== 'production') {
-    console.log('Profile completion check:', {
+    console.log('Profile completion check - all requirements met:', {
       hasRequiredFields,
       hasContact,
-      needsOnboarding: profile?.needsOnboarding,
-      needsCompletion: profile?.needsOnboarding === true
+      userType: profile?.userType,
+      needsCompletion: false
     });
   }
 
-  return profile?.needsOnboarding === true;
+  return false;
 };
 
 export const useAuth = () => {
