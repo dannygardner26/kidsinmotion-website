@@ -7,10 +7,15 @@ service cloud.firestore {
       allow write: if request.auth != null && hasAdminRole();
     }
 
-    // Participants collection - readable by all authenticated users, writable by admins
+    // Participants collection - readable by all authenticated users
     match /participants/{document=**} {
       allow read: if request.auth != null;
+      // Admins can write everything
       allow write: if request.auth != null && hasAdminRole();
+      // Volunteers can update attendance status only
+      allow update: if request.auth != null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendanceStatus', 'attendanceUpdatedAt', 'updatedAt']) &&
+        request.resource.data.attendanceStatus in ['PRESENT', 'ABSENT'];
     }
 
     // Volunteers collection - readable by all authenticated users, writable by admins

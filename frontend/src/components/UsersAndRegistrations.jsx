@@ -587,14 +587,6 @@ const UsersAndRegistrations = () => {
                             <i className="fas fa-trash"></i>
                           </button>
 
-                          <button
-                            onClick={() => handleAdminAction(user, 'changeType')}
-                            className="btn btn-sm btn-warning"
-                            disabled={actionLoading[user.id]}
-                            title="Change account type"
-                          >
-                            <i className="fas fa-user-cog"></i>
-                          </button>
                         </div>
                       </td>
                     </tr>

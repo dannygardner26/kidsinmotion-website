@@ -4,7 +4,7 @@ import { apiService } from '../services/api';
 const BASE_USER_CATEGORIES = [
   { id: 'all', label: 'All Users', description: 'Everyone in the system' },
   { id: 'parents', label: 'Parents', description: 'Users who have registered children' },
-  { id: 'volunteers', label: 'Volunteers', description: 'Users with volunteer applications' },
+  { id: 'volunteers', label: 'Volunteers', description: 'All users with volunteer account type' },
   { id: 'coaches', label: 'Coaches', description: 'Volunteers on coaching teams' },
   { id: 'event-coordinators', label: 'Event Coordinators', description: 'Event coordination team members' },
   { id: 'social-media', label: 'Social Media Team', description: 'Social media team members' },

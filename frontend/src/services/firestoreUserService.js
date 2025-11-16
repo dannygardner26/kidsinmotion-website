@@ -130,6 +130,30 @@ class FirestoreUserService {
     }
   }
 
+  // Method to clear all user registrations when changing account type
+  async clearUserRegistrations(firebaseUid) {
+    try {
+      console.log('Clearing all registrations for user:', firebaseUid);
+
+      // Note: Since we're using Firebase-only mode, we'll update the user document
+      // to clear registrations and children. In a full backend implementation,
+      // this would also delete from eventRegistrations collection.
+
+      const userRef = doc(db, 'users', firebaseUid);
+      await updateDoc(userRef, {
+        children: [], // Clear children array
+        eventRegistrations: [], // Clear any cached registrations
+        updatedAt: new Date().toISOString()
+      });
+
+      console.log('User registrations cleared successfully');
+      return true;
+    } catch (error) {
+      console.error('Error clearing user registrations:', error);
+      throw error;
+    }
+  }
+
   // Method to ensure user exists in Firestore (for migration/sync purposes)
   async ensureUserExists(firebaseUser, userProfile) {
     try {

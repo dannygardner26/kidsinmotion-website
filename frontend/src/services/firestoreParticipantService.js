@@ -12,6 +12,7 @@ class FirestoreParticipantService {
         eventId: registrationData.eventId,
         parentFirebaseUid: registrationData.parentFirebaseUid,
         parentEmail: registrationData.parentEmail || '',
+        parentPhone: registrationData.parentPhone || '',
         childFirstName: registrationData.childFirstName,
         childLastName: registrationData.childLastName,
         childAge: registrationData.childAge ? parseInt(registrationData.childAge) : null,
@@ -21,6 +22,7 @@ class FirestoreParticipantService {
         specialInstructions: registrationData.specialInstructions || '',
         registrationDate: new Date().toISOString(),
         status: 'REGISTERED',
+        attendanceStatus: 'ABSENT', // Default attendance status
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -122,6 +124,25 @@ class FirestoreParticipantService {
       return true;
     } catch (error) {
       console.error('Error updating participant in Firestore:', error);
+      throw error;
+    }
+  }
+
+  async updateAttendanceStatus(participantId, attendanceStatus) {
+    try {
+      console.log('Updating attendance status in Firestore:', participantId, attendanceStatus);
+
+      const participantRef = doc(db, 'participants', participantId);
+      await updateDoc(participantRef, {
+        attendanceStatus: attendanceStatus,
+        attendanceUpdatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      console.log('Attendance status updated successfully');
+      return true;
+    } catch (error) {
+      console.error('Error updating attendance status in Firestore:', error);
       throw error;
     }
   }

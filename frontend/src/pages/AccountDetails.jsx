@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import firestoreUserService from '../services/firestoreUserService';
 import AccountTypeSelector from '../components/AccountTypeSelector';
+import { sendPasswordResetEmail, updateEmail, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 
 const AccountDetails = () => {
   const { username } = useParams();
@@ -36,6 +38,10 @@ const AccountDetails = () => {
   const [usernameCooldown, setUsernameCooldown] = useState(null);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
+  const [pendingAccountType, setPendingAccountType] = useState('');
+  const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
 
   // View/Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -295,21 +301,39 @@ const AccountDetails = () => {
       }
 
       // Handle Firebase users vs backend users differently
-      if (isSelfEdit && currentUser && currentUserProfile) {
+      if (isSelfEdit && currentUser) {
         // Firebase user - update profile in Firestore and context
+        // Create profile object from current data or use existing profile
+        const baseProfile = currentUserProfile || {
+          uid: currentUser.uid,
+          firebaseUid: currentUser.uid,
+          email: currentUser.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          username: formData.username,
+          userType: formData.userType || 'USER',
+          createdAt: new Date().toISOString()
+        };
+
         const updatedProfile = {
-          ...currentUserProfile,
+          ...baseProfile,
           ...updateData,
-          uid: currentUser.uid
+          uid: currentUser.uid,
+          firebaseUid: currentUser.uid,
+          updatedAt: new Date().toISOString()
         };
 
         // Update in Firestore for admin dashboard visibility
         await firestoreUserService.updateUser(currentUser.uid, updatedProfile);
 
-        // Update local profile data
+        // Update local profile data and context
         setProfileData(updatedProfile);
 
-        // The AuthContext will be updated via its real-time listeners
+        // Update the user profile in auth context if available
+        if (typeof updateUserProfile === 'function') {
+          updateUserProfile(updatedProfile);
+        }
+
         console.log('Firebase profile updated successfully');
       } else {
         // Backend user - use API
@@ -349,8 +373,9 @@ const AccountDetails = () => {
       setOriginalUsername(formData.username);
       setIsEditMode(false);
 
-      // Refresh profile data for admin changes or backend users
-      if (!isSelfEdit || !currentUser || !currentUserProfile) {
+      // Refresh profile data only for admin changes or actual backend users
+      // Skip refresh for Firebase users editing themselves
+      if (!isSelfEdit && isAdmin) {
         await fetchProfileData();
       }
 
@@ -413,6 +438,99 @@ const AccountDetails = () => {
     return null;
   };
 
+  const handleAccountTypeChange = (newType) => {
+    if (newType !== formData.userType && isSelfEdit) {
+      setPendingAccountType(newType);
+      setShowAccountTypeModal(true);
+    } else {
+      setFormData(prev => ({ ...prev, userType: newType }));
+    }
+  };
+
+  const confirmAccountTypeChange = async () => {
+    try {
+      setIsSaving(true);
+
+      // Clear all registrations and children for this user
+      if (currentUser && currentUserProfile) {
+        await firestoreUserService.clearUserRegistrations(currentUser.uid);
+
+        // Update the user type
+        const updatedProfile = {
+          ...currentUserProfile,
+          userType: pendingAccountType,
+          children: [], // Clear children array
+        };
+
+        await firestoreUserService.updateUser(currentUser.uid, updatedProfile);
+
+        setFormData(prev => ({ ...prev, userType: pendingAccountType }));
+        setProfileData(updatedProfile);
+        setSuccessMessage(`Account type changed to ${pendingAccountType}. All previous registrations have been cleared.`);
+      }
+
+      setShowAccountTypeModal(false);
+      setPendingAccountType('');
+    } catch (error) {
+      console.error('Error changing account type:', error);
+      setErrors({ general: 'Failed to change account type. Please try again.' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    try {
+      if (currentUser && currentUser.email) {
+        await sendPasswordResetEmail(auth, currentUser.email);
+        setSuccessMessage('Password reset email sent! Check your inbox.');
+      } else {
+        setErrors({ general: 'Unable to send password reset email. No email address found.' });
+      }
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      setErrors({ general: 'Failed to send password reset email. Please try again.' });
+    }
+  };
+
+  const handleEmailChange = async () => {
+    try {
+      setIsSaving(true);
+
+      if (!newEmail || !newEmail.includes('@')) {
+        setErrors({ email: 'Please enter a valid email address.' });
+        return;
+      }
+
+      if (currentUser) {
+        // Update email in Firebase Auth
+        await updateEmail(currentUser, newEmail);
+
+        // Update email in Firestore
+        await firestoreUserService.updateUser(currentUser.uid, { email: newEmail });
+
+        // Update local state
+        setFormData(prev => ({ ...prev, email: newEmail }));
+        if (profileData) {
+          setProfileData({ ...profileData, email: newEmail });
+        }
+
+        setSuccessMessage('Email address updated successfully!');
+        setShowEmailChangeModal(false);
+        setNewEmail('');
+      }
+    } catch (error) {
+      console.error('Error updating email:', error);
+      if (error.code === 'auth/requires-recent-login') {
+        setErrors({ general: 'Please sign out and sign back in before changing your email address.' });
+      } else {
+        setErrors({ general: 'Failed to update email address. Please try again.' });
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Show loading while auth is not ready or profile is loading
   if (!authReady || authLoading || isLoading) {
     return (
@@ -440,60 +558,85 @@ const AccountDetails = () => {
   }
 
   return (
-    <div className="container mt-4">
-      {/* Breadcrumb */}
-      <nav aria-label="breadcrumb">
-        <ol className="breadcrumb">
-          <li className="breadcrumb-item">
-            <Link to="/dashboard">Dashboard</Link>
-          </li>
-          <li className="breadcrumb-item active" aria-current="page">
-            Account Details
-          </li>
-        </ol>
-      </nav>
+    <div style={{
+      display: 'block',
+      visibility: 'visible',
+      opacity: 1,
+      minHeight: '100vh',
+      backgroundColor: '#f8f9fa',
+      padding: '20px 0',
+      color: '#333'
+    }}>
+      <div className="container">
+          {/* Breadcrumb */}
+          <nav aria-label="breadcrumb">
+            <ol className="breadcrumb">
+              <li className="breadcrumb-item">
+                <Link to="/dashboard">Dashboard</Link>
+              </li>
+              <li className="breadcrumb-item active" aria-current="page">
+                Account Details
+              </li>
+            </ol>
+          </nav>
 
-      <div className="row justify-content-center">
-        <div className="col-md-8">
-          <div className="card">
-            <div className="card-header">
-              <div className="d-flex justify-content-between align-items-center">
-                <div>
-                  <h2 className="mb-0">
-                    {isEditMode
-                      ? (isSelfEdit ? 'Edit Account Details' : `Edit ${profileData.firstName} ${profileData.lastName}'s Account`)
-                      : (isSelfEdit ? 'Account Details' : `${profileData.firstName} ${profileData.lastName}'s Account`)
-                    }
-                  </h2>
-                  <p className="text-muted mb-0">
-                    {isEditMode
-                      ? (isAdmin && !isSelfEdit ? 'Admin editing mode - additional fields available' : 'Update your account information')
-                      : 'View and manage your account information'
-                    }
-                  </p>
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-8 col-lg-6">
+              <div style={{
+                backgroundColor: 'white',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                color: '#333'
+              }}>
+                <div style={{
+                  backgroundColor: '#2f506a',
+                  color: 'white',
+                  padding: '15px 20px',
+                  borderRadius: '8px 8px 0 0'
+                }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h2 className="mb-0" style={{color: 'white', fontSize: '1.5rem', fontWeight: 'bold'}}>
+                        {isEditMode
+                          ? (isSelfEdit ? 'Edit Account Details' : `Edit ${profileData.firstName} ${profileData.lastName}'s Account`)
+                          : (isSelfEdit ? 'Account Details' : `${profileData.firstName} ${profileData.lastName}'s Account`)
+                        }
+                      </h2>
+                      <p className="mb-0" style={{opacity: 0.8}}>
+                        {isEditMode
+                          ? (isAdmin && !isSelfEdit ? 'Admin editing mode - additional fields available' : 'Update your account information')
+                          : 'View and manage your account information'
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      {!isEditMode ? (
+                        <button
+                          onClick={() => setIsEditMode(true)}
+                          className="btn btn-primary btn-sm"
+                        >
+                          <i className="fas fa-edit mr-1"></i>
+                          Edit Account
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleCancel}
+                          className="btn btn-sm"
+                          style={{backgroundColor: 'white', color: '#2f506a', border: '1px solid #ddd'}}
+                        >
+                          <i className="fas fa-times mr-1"></i>
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  {!isEditMode ? (
-                    <button
-                      onClick={() => setIsEditMode(true)}
-                      className="btn btn-primary btn-sm"
-                    >
-                      <i className="fas fa-edit mr-1"></i>
-                      Edit Account
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleCancel}
-                      className="btn btn-outline-secondary btn-sm"
-                    >
-                      <i className="fas fa-times mr-1"></i>
-                      Cancel
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="card-body">
+                <div style={{
+                  padding: '20px',
+                  color: '#333',
+                  backgroundColor: 'white'
+                }}>
               {successMessage && (
                 <div className="alert alert-success">
                   <i className="fas fa-check-circle mr-2"></i>
@@ -788,7 +931,7 @@ const AccountDetails = () => {
                           <button
                             type="button"
                             className="btn btn-outline-secondary btn-sm mb-2"
-                            onClick={() => alert('Password reset functionality coming soon')}
+                            onClick={handlePasswordReset}
                           >
                             <i className="fas fa-key mr-1"></i>
                             Reset Password
@@ -796,7 +939,7 @@ const AccountDetails = () => {
                           <button
                             type="button"
                             className="btn btn-outline-secondary btn-sm mb-2"
-                            onClick={() => alert('Email change functionality coming soon')}
+                            onClick={() => setShowEmailChangeModal(true)}
                           >
                             <i className="fas fa-envelope mr-1"></i>
                             Change Email
@@ -805,6 +948,44 @@ const AccountDetails = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Account Type Switching for existing users */}
+                  {isSelfEdit && formData.userType && formData.userType !== 'USER' && formData.userType !== 'user' && (
+                    <>
+                      <div className="section-header">
+                        <h4>Account Type</h4>
+                        <small className="text-muted">Change your account type (this will clear all registrations)</small>
+                      </div>
+
+                      <div className="row">
+                        <div className="col-md-12">
+                          <div className="form-group">
+                            <label>Current Account Type: <strong>{formData.userType}</strong></label>
+                            <div className="mt-2">
+                              <button
+                                type="button"
+                                className="btn btn-outline-primary me-2"
+                                onClick={() => handleAccountTypeChange('PARENT')}
+                                disabled={formData.userType === 'PARENT'}
+                              >
+                                <i className="fas fa-users me-2"></i>
+                                Switch to Parent
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-success"
+                                onClick={() => handleAccountTypeChange('VOLUNTEER')}
+                                disabled={formData.userType === 'VOLUNTEER'}
+                              >
+                                <i className="fas fa-hand-holding-heart me-2"></i>
+                                Switch to Volunteer
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Account Type Selection for incomplete profiles */}
                   {isSelfEdit && (formData.userType === 'USER' || formData.userType === 'user' || !formData.userType) && (
@@ -984,219 +1165,145 @@ const AccountDetails = () => {
                     <button
                       type="button"
                       onClick={handleCancel}
-                      className="btn btn-outline-secondary ml-2"
+                      className="btn ml-2"
+                      style={{backgroundColor: 'white', color: '#2f506a', border: '1px solid #ddd'}}
                     >
                       Cancel
                     </button>
                   </div>
                 </form>
               )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <style jsx>{`
-        .container {
-          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-          min-height: 100vh;
-          padding-top: 2rem;
-          padding-bottom: 2rem;
-        }
+      {/* Account Type Change Confirmation Modal */}
+      {showAccountTypeModal && (
+        <div className="modal fade show" style={{display: 'block', backgroundColor: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="fas fa-exclamation-triangle text-warning me-2"></i>
+                  Change Account Type
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setShowAccountTypeModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-warning">
+                  <strong>Warning:</strong> Changing your account type will permanently delete:
+                </div>
+                <ul className="list-unstyled">
+                  <li><i className="fas fa-times text-danger me-2"></i>All event registrations (volunteering commitments or child enrollments)</li>
+                  <li><i className="fas fa-times text-danger me-2"></i>All children's profiles associated with your account</li>
+                  <li><i className="fas fa-times text-danger me-2"></i>Your attendance history</li>
+                </ul>
+                <p className="text-muted mb-0">
+                  Are you sure you want to change from <strong>{formData.userType}</strong> to <strong>{pendingAccountType}</strong>?
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn"
+                  style={{backgroundColor: 'white', color: '#2f506a', border: '1px solid #ddd'}}
+                  onClick={() => setShowAccountTypeModal(false)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmAccountTypeChange}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin me-2"></i>
+                      Changing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-check me-2"></i>
+                      Yes, Change Account Type
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-        .card {
-          background: white;
-          border: none;
-          border-radius: 16px;
-          box-shadow: 0 8px 32px rgba(47, 80, 106, 0.12);
-          overflow: hidden;
-        }
-
-        .card-header {
-          background: linear-gradient(135deg, var(--primary) 0%, #3a5674 100%);
-          border: none;
-          color: white;
-          padding: 2rem;
-        }
-
-        .card-header h2 {
-          color: white;
-          margin: 0;
-          font-weight: 600;
-        }
-
-        .card-body {
-          padding: 2.5rem;
-        }
-
-        .btn {
-          border-radius: 8px;
-          font-weight: 500;
-          padding: 0.6rem 1.5rem;
-          transition: all 0.3s ease;
-        }
-
-        .btn-primary {
-          background: linear-gradient(135deg, var(--primary), #3a5674);
-          border: none;
-          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.3);
-        }
-
-        .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(47, 80, 106, 0.4);
-        }
-
-        .form-control {
-          border: 2px solid #e9ecef;
-          border-radius: 10px;
-          padding: 0.8rem 1rem;
-          font-size: 0.95rem;
-          transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-          border-color: var(--primary);
-          box-shadow: 0 0 0 4px rgba(47, 80, 106, 0.1);
-          transform: translateY(-1px);
-        }
-        .info-card {
-          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-          border: 2px solid #e9ecef;
-          border-radius: 12px;
-          padding: 1.5rem;
-          margin-bottom: 1.5rem;
-          min-height: 80px;
-          transition: all 0.3s ease;
-        }
-
-        .info-card:hover {
-          border-color: var(--primary);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 15px rgba(47, 80, 106, 0.1);
-        }
-
-        .info-label {
-          font-weight: 600;
-          color: var(--primary);
-          font-size: 0.9rem;
-          margin-bottom: 0.5rem;
-          display: block;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .info-value {
-          color: #2c3e50;
-          font-size: 1.1rem;
-          font-weight: 500;
-          word-break: break-word;
-        }
-
-        .section-header {
-          border-bottom: 3px solid var(--primary);
-          margin-bottom: 2rem;
-          padding-bottom: 1rem;
-          position: relative;
-        }
-
-        .section-header::after {
-          content: '';
-          position: absolute;
-          bottom: -3px;
-          left: 0;
-          width: 60px;
-          height: 3px;
-          background: var(--secondary);
-          border-radius: 2px;
-        }
-
-        .section-header h4 {
-          color: var(--primary);
-          margin-bottom: 0.5rem;
-          font-size: 1.4rem;
-          font-weight: 600;
-        }
-
-        .admin-section {
-          border-bottom-color: #dc3545;
-        }
-
-        .admin-section h4 {
-          color: #dc3545;
-        }
-
-        .form-actions {
-          border-top: 2px solid #e9ecef;
-          padding-top: 2rem;
-          margin-top: 3rem;
-          text-align: center;
-        }
-
-        .account-actions {
-          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-          border: 2px solid #e9ecef;
-          border-radius: 12px;
-          padding: 1.5rem;
-          text-align: center;
-        }
-
-        .action-buttons {
-          display: flex;
-          flex-direction: column;
-          gap: 0.75rem;
-        }
-
-        .badge {
-          font-size: 0.75rem;
-          padding: 0.4rem 0.8rem;
-          border-radius: 20px;
-          font-weight: 600;
-        }
-
-        .badge-success {
-          background: linear-gradient(135deg, #28a745, #20c997);
-          color: white;
-        }
-
-        .badge-warning {
-          background: linear-gradient(135deg, #ffc107, #ff8f00);
-          color: white;
-        }
-
-        .alert {
-          border: none;
-          border-radius: 12px;
-          padding: 1.25rem;
-          font-weight: 500;
-        }
-
-        .alert-success {
-          background: linear-gradient(135deg, #d4edda, #c3e6cb);
-          color: #155724;
-        }
-
-        .alert-danger {
-          background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-          color: #721c24;
-        }
-
-        @media (max-width: 768px) {
-          .container {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-          }
-
-          .card-header,
-          .card-body {
-            padding: 1.5rem;
-          }
-
-          .action-buttons {
-            flex-direction: column;
-          }
-        }
-      `}</style>
+      {/* Email Change Modal */}
+      {showEmailChangeModal && (
+        <div className="modal fade show" style={{display: 'block', backgroundColor: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="fas fa-envelope text-primary me-2"></i>
+                  Change Email Address
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setShowEmailChangeModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-info">
+                  <i className="fas fa-info-circle me-2"></i>
+                  You'll need to verify your new email address after changing it.
+                </div>
+                <div className="form-group">
+                  <label htmlFor="newEmail">New Email Address</label>
+                  <input
+                    type="email"
+                    className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+                    id="newEmail"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="Enter your new email address"
+                  />
+                  {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+                </div>
+                <p className="text-muted small mb-0">
+                  Current email: <strong>{currentUser?.email}</strong>
+                </p>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn"
+                  style={{backgroundColor: 'white', color: '#2f506a', border: '1px solid #ddd'}}
+                  onClick={() => setShowEmailChangeModal(false)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleEmailChange}
+                  disabled={isSaving || !newEmail}
+                >
+                  {isSaving ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin me-2"></i>
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-save me-2"></i>
+                      Update Email
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

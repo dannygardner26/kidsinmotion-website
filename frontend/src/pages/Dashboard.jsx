@@ -1396,25 +1396,29 @@ const Dashboard = () => {
                         </div>
                         <div className="events-grid">
                         {volunteerEvents.map(volunteer => {
-                          const isPast = new Date(volunteer.event?.endDate) < new Date();
+                          // Handle different date field names
+                          const eventDate = volunteer.event?.startDate || volunteer.event?.date || volunteer.eventDate;
+                          const endDate = volunteer.event?.endDate || volunteer.event?.date || volunteer.eventDate;
+                          const isPast = endDate ? new Date(endDate) < new Date() : false;
+
                           return (
                             <div className="event-card-container" key={volunteer.id}>
                               <div className={`event-card volunteer-card ${isPast ? 'past-event' : ''}`}>
                                 <div className="event-date">
                                   <div className="date-month">
-                                    {formatMonth(volunteer.event?.startDate)}
+                                    {formatMonth(eventDate)}
                                   </div>
                                   <div className="date-day">
-                                    {formatDay(volunteer.event?.startDate)}
+                                    {formatDay(eventDate)}
                                   </div>
                                 </div>
                                 <div className="event-details">
-                                  <h4 className="event-title">{volunteer.event?.title || 'Unknown Event'}</h4>
+                                  <h4 className="event-title">{volunteer.event?.title || volunteer.event?.name || volunteer.eventName || 'Unknown Event'}</h4>
                                   <div className="volunteer-role">
                                     Volunteer Role: {volunteer.role || 'General Volunteer'}
                                   </div>
                                   <div className="event-location">
-                                    <i className="fas fa-map-marker-alt mr-1"></i> {volunteer.event?.location}
+                                    <i className="fas fa-map-marker-alt mr-1"></i> {volunteer.event?.location || volunteer.eventLocation || 'Location TBD'}
                                   </div>
                                   <div className="event-status">
                                     {isPast ? (

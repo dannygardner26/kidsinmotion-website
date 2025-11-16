@@ -16,8 +16,15 @@ const VolunteerEventView = () => {
   const [volunteerSignup, setVolunteerSignup] = useState(null);
   const [participantCount, setParticipantCount] = useState(0);
   const [volunteerCount, setVolunteerCount] = useState(0);
+  const [participants, setParticipants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Check-in functionality state
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredParticipants, setFilteredParticipants] = useState([]);
+  const [isCheckingIn, setIsCheckingIn] = useState(false);
 
   useEffect(() => {
     fetchEventData();
@@ -47,9 +54,11 @@ const VolunteerEventView = () => {
       // Fetch participant and volunteer counts from Firestore directly
       try {
         const participants = await firestoreParticipantService.getParticipantsByEvent(eventId);
+        setParticipants(participants);
         setParticipantCount(participants.length);
       } catch (error) {
-        console.warn('Could not fetch participant count from Firestore:', error);
+        console.warn('Could not fetch participants from Firestore:', error);
+        setParticipants([]);
         setParticipantCount(0);
       }
 
@@ -111,6 +120,72 @@ const VolunteerEventView = () => {
         return '#6c757d';
     }
   };
+
+  // Search participants by name, email, or phone
+  const handleSearchParticipants = () => {
+    if (!searchTerm.trim()) {
+      setFilteredParticipants(participants);
+    } else {
+      const filtered = participants.filter(participant => {
+        // Handle both old format (firstName/lastName) and new format (childFirstName/childLastName)
+        const firstName = participant.firstName || participant.childFirstName || '';
+        const lastName = participant.lastName || participant.childLastName || '';
+        const fullName = `${firstName} ${lastName}`.toLowerCase();
+        const email = (participant.parentEmail || '').toLowerCase();
+        const phone = (participant.parentPhone || '').toLowerCase();
+        const search = searchTerm.toLowerCase();
+
+        return fullName.includes(search) || email.includes(search) || phone.includes(search);
+      });
+      setFilteredParticipants(filtered);
+    }
+  };
+
+  // Handle participant check-in/check-out
+  const handleCheckIn = async (participantId, currentStatus) => {
+    setIsCheckingIn(true);
+    try {
+      const newStatus = currentStatus === 'PRESENT' ? 'ABSENT' : 'PRESENT';
+      await firestoreParticipantService.updateAttendanceStatus(participantId, newStatus);
+
+      // Update local state
+      const updatedParticipants = participants.map(p =>
+        p.id === participantId ? { ...p, attendanceStatus: newStatus } : p
+      );
+      setParticipants(updatedParticipants);
+
+      // Update filtered list if search is active
+      if (filteredParticipants.length > 0) {
+        const updatedFiltered = filteredParticipants.map(p =>
+          p.id === participantId ? { ...p, attendanceStatus: newStatus } : p
+        );
+        setFilteredParticipants(updatedFiltered);
+      }
+
+    } catch (error) {
+      console.error('Error updating attendance:', error);
+      alert('Failed to update attendance. Please try again.');
+    } finally {
+      setIsCheckingIn(false);
+    }
+  };
+
+  // Initialize search when modal opens
+  useEffect(() => {
+    if (showCheckInModal) {
+      handleSearchParticipants();
+    }
+  }, [showCheckInModal, participants]);
+
+  // Update search results when search term changes
+  useEffect(() => {
+    if (showCheckInModal) {
+      handleSearchParticipants();
+    }
+  }, [searchTerm]);
+
+  // Calculate checked-in count
+  const checkedInCount = participants.filter(p => p.attendanceStatus === 'PRESENT').length;
 
   if (isLoading) {
     return (
@@ -345,15 +420,18 @@ const VolunteerEventView = () => {
                 </div>
                 <div className="col-md-6">
                   <div className="stat-card text-center p-3 border rounded">
-                    <h4 className="text-success mb-1">0</h4>
+                    <h4 className="text-success mb-1">{checkedInCount}</h4>
                     <p className="mb-0">Checked In</p>
                   </div>
                 </div>
               </div>
               <div className="mt-3">
-                <button className="btn btn-primary" disabled>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => setShowCheckInModal(true)}
+                >
                   <i className="fas fa-search me-2"></i>
-                  Search Participants (Coming Soon)
+                  Check In Participants
                 </button>
               </div>
             </div>
@@ -401,6 +479,145 @@ const VolunteerEventView = () => {
           </div>
         </div>
       </div>
+
+      {/* Check-in Modal */}
+      {showCheckInModal && (
+        <div className="modal fade show" style={{display: 'block', backgroundColor: 'rgba(0,0,0,0.5)'}} tabIndex="-1">
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="fas fa-clipboard-check me-2"></i>
+                  Participant Check-in
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setShowCheckInModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <div className="row mb-3">
+                  <div className="col-md-8">
+                    <div className="input-group">
+                      <span className="input-group-text">
+                        <i className="fas fa-search"></i>
+                      </span>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by participant name, parent email, or phone number..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="text-muted">
+                      <small>{filteredParticipants.length} of {participantCount} participants</small>
+                    </div>
+                  </div>
+                </div>
+
+                {filteredParticipants.length === 0 ? (
+                  <div className="text-center py-4">
+                    <i className="fas fa-search fa-2x text-muted mb-3"></i>
+                    <p className="text-muted">
+                      {participants.length === 0 ? 'No participants registered for this event yet.' : 'No participants found matching your search.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="table-responsive">
+                    <table className="table table-striped">
+                      <thead>
+                        <tr>
+                          <th>Participant</th>
+                          <th>Parent Info</th>
+                          <th>Age</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredParticipants.map((participant) => {
+                          // Handle both old and new field name formats
+                          const firstName = participant.firstName || participant.childFirstName || '';
+                          const lastName = participant.lastName || participant.childLastName || '';
+                          const age = participant.age || participant.childAge || '';
+                          const allergies = participant.allergies || participant.medicalInfo || '';
+
+                          return (
+                          <tr key={participant.id}>
+                            <td>
+                              <strong>{firstName} {lastName}</strong>
+                              {allergies && (
+                                <div className="text-danger small">
+                                  <i className="fas fa-exclamation-triangle me-1"></i>
+                                  Medical/Allergies: {allergies}
+                                </div>
+                              )}
+                            </td>
+                            <td>
+                              <div>{participant.parentEmail}</div>
+                              {participant.parentPhone && (
+                                <div className="text-muted small">{participant.parentPhone}</div>
+                              )}
+                            </td>
+                            <td>{age}</td>
+                            <td>
+                              <span
+                                className={`badge ${
+                                  participant.attendanceStatus === 'PRESENT'
+                                    ? 'bg-success'
+                                    : participant.attendanceStatus === 'ABSENT'
+                                    ? 'bg-danger'
+                                    : 'bg-secondary'
+                                }`}
+                              >
+                                {participant.attendanceStatus || 'Not Set'}
+                              </span>
+                            </td>
+                            <td>
+                              <button
+                                className={`btn btn-sm ${
+                                  participant.attendanceStatus === 'PRESENT'
+                                    ? 'btn-outline-danger'
+                                    : 'btn-outline-success'
+                                }`}
+                                onClick={() => handleCheckIn(participant.id, participant.attendanceStatus)}
+                                disabled={isCheckingIn}
+                              >
+                                {isCheckingIn ? (
+                                  <i className="fas fa-spinner fa-spin me-1"></i>
+                                ) : (
+                                  <i className={`fas ${
+                                    participant.attendanceStatus === 'PRESENT'
+                                      ? 'fa-times'
+                                      : 'fa-check'
+                                  } me-1`}></i>
+                                )}
+                                {participant.attendanceStatus === 'PRESENT' ? 'Mark Absent' : 'Check In'}
+                              </button>
+                            </td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <div className="me-auto">
+                  <small className="text-muted">
+                    <i className="fas fa-info-circle me-1"></i>
+                    {checkedInCount} of {participantCount} participants checked in
+                  </small>
+                </div>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowCheckInModal(false)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
