@@ -76,17 +76,27 @@ const AccountDetails = () => {
     }
 
     fetchProfileData();
-  }, [username, canEdit, navigate, authReady, authLoading]);
+  }, [username, canEdit, navigate, authReady, authLoading, currentUserProfile, currentUser]);
 
   const fetchProfileData = async () => {
     try {
       setIsLoading(true);
 
-      // For Firebase-only users, use current user profile from context
-      if (isSelfEdit && currentUserProfile) {
-        const userData = {
+      // For Firebase-only users, use current user profile from context or create minimal profile
+      if (isSelfEdit && (currentUserProfile || currentUser)) {
+        const userData = currentUserProfile ? {
           ...currentUserProfile,
           username: currentUserProfile.username || currentUserProfile.email?.split('@')[0] || ''
+        } : {
+          // Create minimal profile for new Firebase users
+          uid: currentUser.uid,
+          email: currentUser.email,
+          firstName: currentUser.displayName?.split(' ')[0] || '',
+          lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+          username: currentUser.email?.split('@')[0] || '',
+          userType: 'USER',
+          roles: ['ROLE_USER'],
+          emailVerified: currentUser.emailVerified || false
         };
 
         setProfileData(userData);
@@ -143,7 +153,7 @@ const AccountDetails = () => {
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
-      setErrors({ general: 'Failed to load profile data' });
+      setErrors({ general: 'Failed to load profile data: ' + error.message });
       // Don't navigate away, let user try again
     } finally {
       setIsLoading(false);
@@ -407,9 +417,11 @@ const AccountDetails = () => {
   if (!authReady || authLoading || isLoading) {
     return (
       <div className="container mt-4">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading account details...</p>
+        <div className="text-center">
+          <div className="spinner-border" role="status">
+            <span className="sr-only">Loading...</span>
+          </div>
+          <p className="mt-2">Loading account details...</p>
         </div>
       </div>
     );
@@ -429,6 +441,18 @@ const AccountDetails = () => {
 
   return (
     <div className="container mt-4">
+      {/* Breadcrumb */}
+      <nav aria-label="breadcrumb">
+        <ol className="breadcrumb">
+          <li className="breadcrumb-item">
+            <Link to="/dashboard">Dashboard</Link>
+          </li>
+          <li className="breadcrumb-item active" aria-current="page">
+            Account Details
+          </li>
+        </ol>
+      </nav>
+
       <div className="row justify-content-center">
         <div className="col-md-8">
           <div className="card">
