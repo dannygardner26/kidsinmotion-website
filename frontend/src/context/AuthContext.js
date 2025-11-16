@@ -16,6 +16,15 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return false;
   }
 
+  // Check for incomplete user types (like 'user' instead of 'PARENT'/'VOLUNTEER')
+  // This catches re-registered users who were deleted from admin panel
+  if (profile?.userType === 'user' || !profile?.userType) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('User has incomplete userType - needs profile completion:', profile?.userType);
+    }
+    return true;
+  }
+
   // New users need onboarding to select account type
   if (profile?.needsOnboarding === true) {
     if (process.env.NODE_ENV !== 'production') {
@@ -230,7 +239,7 @@ export const AuthProvider = ({ children }) => {
         setNeedsProfileCompletion(needsCompletion);
 
         // Redirect to profile completion for users who need it
-        if (needsCompletion && profile.username && !isGoogleOAuth) {
+        if (needsCompletion && profile.username) {
           // Only redirect if not already on profile completion page
           const currentPath = window.location.pathname;
           const accountPath = `/account/${profile.username}`;

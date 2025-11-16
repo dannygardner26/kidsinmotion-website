@@ -9,7 +9,7 @@ import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const EventDetail = () => {
   const { id } = useParams();
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,6 +46,65 @@ const EventDetail = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleShareEvent = async () => {
+    if (!event) return;
+
+    const shareData = {
+      title: `${event.name} - Kids in Motion`,
+      text: `Check out this event: ${event.name}`,
+      url: window.location.href
+    };
+
+    // Use Web Share API if available
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        // User cancelled sharing or error occurred
+        if (error.name !== 'AbortError') {
+          console.error('Error sharing:', error);
+          fallbackShare(shareData);
+        }
+      }
+    } else {
+      // Fallback to copying URL to clipboard
+      fallbackShare(shareData);
+    }
+  };
+
+  const fallbackShare = (shareData) => {
+    // Copy URL to clipboard
+    navigator.clipboard.writeText(shareData.url).then(() => {
+      // Show temporary notification
+      const notification = document.createElement('div');
+      notification.innerHTML = `
+        <i class="fas fa-check-circle" style="color: green; margin-right: 8px;"></i>
+        Event link copied to clipboard!
+      `;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        color: #2f506a;
+        padding: 12px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        font-weight: 500;
+      `;
+      document.body.appendChild(notification);
+
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        document.body.removeChild(notification);
+      }, 3000);
+    }).catch(() => {
+      // If clipboard API fails, show the URL in an alert
+      alert(`Copy this link to share the event:\n${shareData.url}`);
+    });
   };
 
   
@@ -110,7 +169,7 @@ const EventDetail = () => {
               <span>Back to Events</span>
             </Link>
             <div className="nav-actions">
-              <button className="share-btn">
+              <button className="share-btn" onClick={handleShareEvent}>
                 <i className="fas fa-share-alt"></i>
                 Share Event
               </button>
@@ -205,6 +264,10 @@ const EventDetail = () => {
                     <i className="fas fa-smile"></i>
                     <span>Positive attitude!</span>
                   </div>
+                  <div className="equipment-notice">
+                    <i className="fas fa-info-circle"></i>
+                    <span><strong>Equipment:</strong> Players need to bring their own equipment. Contact us at <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a> or <a href="tel:+14848856284">(484) 885-6284</a> if you have questions.</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -251,13 +314,23 @@ const EventDetail = () => {
 
                     {currentUser ? (
                       <div className="action-buttons">
-                        <Link
-                          to={`/events/${event.id}/register`}
-                          className="btn-primary register-pulse"
-                        >
-                          <i className="fas fa-plus-circle"></i>
-                          Register Your Child
-                        </Link>
+                        {userProfile?.userType === 'VOLUNTEER' ? (
+                          <Link
+                            to={`/events/${event.id}/volunteer`}
+                            className="btn-primary register-pulse"
+                          >
+                            <i className="fas fa-hands-helping"></i>
+                            Sign Up to Volunteer
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/events/${event.id}/register`}
+                            className="btn-primary register-pulse"
+                          >
+                            <i className="fas fa-plus-circle"></i>
+                            Register Your Child
+                          </Link>
+                        )}
                         <Link
                           to={`/events/${event.id}/parent-view`}
                           className="btn-outline"
@@ -367,8 +440,10 @@ const EventDetail = () => {
       {/* Custom CSS for no-scroll layout */}
       <style>{`
         .event-detail-container {
-          min-height: 100vh;
+          min-height: calc(100vh - 200px);
           background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          margin-bottom: 6rem;
+          padding-bottom: 2rem;
         }
 
         .event-nav-bar {
@@ -425,15 +500,14 @@ const EventDetail = () => {
           grid-template-columns: 2fr 1fr;
           gap: 2rem;
           padding: 2rem 0;
-          max-height: calc(100vh - 120px);
-          overflow: hidden;
+          min-height: 70vh;
+          position: relative;
         }
 
         .event-info-column {
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
-          overflow-y: auto;
           padding-right: 1rem;
         }
 
@@ -584,6 +658,40 @@ const EventDetail = () => {
           font-size: 1.1rem;
           width: 20px;
           text-align: center;
+        }
+
+        .equipment-notice {
+          margin-top: 1rem;
+          padding: 1rem;
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          border-radius: 8px;
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+        }
+
+        .equipment-notice i {
+          color: #856404;
+          font-size: 1.1rem;
+          width: 20px;
+          text-align: center;
+          margin-top: 0.1rem;
+        }
+
+        .equipment-notice span {
+          color: #856404;
+          font-size: 0.9rem;
+          line-height: 1.5;
+        }
+
+        .equipment-notice a {
+          color: #6c5d03;
+          text-decoration: underline;
+        }
+
+        .equipment-notice a:hover {
+          color: #5a4f02;
         }
 
         .account-banner {
@@ -849,12 +957,10 @@ const EventDetail = () => {
         @media (max-width: 1024px) {
           .event-layout {
             grid-template-columns: 1fr;
-            max-height: none;
-            overflow: visible;
+            min-height: auto;
           }
 
           .event-info-column {
-            overflow-y: visible;
             padding-right: 0;
           }
 

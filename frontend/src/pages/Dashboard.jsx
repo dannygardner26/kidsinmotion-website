@@ -1252,7 +1252,7 @@ const Dashboard = () => {
                           }, {});
 
                           return Object.values(eventGroups).map(eventGroup => {
-                            const isPast = new Date(eventGroup.event?.endDate) < new Date();
+                            const isPast = new Date(eventGroup.event?.date + 'T23:59:59') < new Date();
                             const childrenCount = eventGroup.children.length;
 
                             return (
@@ -1260,14 +1260,14 @@ const Dashboard = () => {
                                 <div className={`event-card enhanced-card ${isPast ? 'past-event' : ''}`}>
                                   <div className="event-date">
                                     <div className="date-month">
-                                      {formatMonth(eventGroup.event?.startDate)}
+                                      {formatMonth(eventGroup.event?.date)}
                                     </div>
                                     <div className="date-day">
-                                      {formatDay(eventGroup.event?.startDate)}
+                                      {formatDay(eventGroup.event?.date)}
                                     </div>
                                   </div>
                                   <div className="event-details">
-                                    <h4 className="event-title">{eventGroup.event?.title || 'Unknown Event'}</h4>
+                                    <h4 className="event-title">{eventGroup.event?.name || 'Unknown Event'}</h4>
 
                                     <div className="children-section">
                                       <div className="children-header">
@@ -1277,7 +1277,7 @@ const Dashboard = () => {
                                       <div className="children-list">
                                         {eventGroup.children.map((child, index) => (
                                           <div key={child.id} className="child-item">
-                                            <span className="child-name">{child.participantFirstName || child.childFirstName} {child.participantLastName || child.childLastName}</span>
+                                            <span className="child-name">{child.participantFirstName || child.childFirstName || child.childName?.split(' ')[0] || 'Unknown'} {child.participantLastName || child.childLastName || child.childName?.split(' ')[1] || ''}</span>
                                             {(child.participantAge || child.childAge) && <span className="child-age">Age {child.participantAge || child.childAge}</span>}
                                           </div>
                                         ))}
