@@ -361,6 +361,24 @@ const ParentEventView = () => {
               </div>
             </div>
           </div>
+
+          {/* Event Announcements Card */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="mb-0">
+                <i className="fas fa-bullhorn me-2"></i>
+                Event Announcements
+              </h3>
+            </div>
+            <div className="card-body">
+              <div id="parent-announcements">
+                <div className="text-muted text-center py-3">
+                  <i className="fas fa-bullhorn fa-2x mb-2"></i>
+                  <p>No announcements yet. Check back for important updates about this event.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

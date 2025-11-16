@@ -126,7 +126,7 @@ const EventOverview = () => {
         volunteerError: volunteerError,
         revenue: participantsData.length * (eventData.price || 0),
         capacity: eventData.capacity,
-        registrationRate: eventData.capacity ? (participantsData.length / eventData.capacity * 100).toFixed(1) : 100,
+        registrationRate: eventData.capacity ? (participantsData.length / eventData.capacity * 100).toFixed(1) : 'N/A',
         attendedCount: attendedCount,
         attendanceRate: participantsData.length > 0 ? ((attendedCount / participantsData.length) * 100).toFixed(1) : 0,
         ageGroups: calculateAgeGroups(participantsData),
@@ -683,7 +683,7 @@ const EventOverview = () => {
               <i className="fas fa-chart-pie"></i>
             </div>
             <div className="stat-content">
-              <div className="stat-number">{statistics.registrationRate}%</div>
+              <div className="stat-number">{statistics.registrationRate === 'N/A' ? 'N/A' : `${statistics.registrationRate}%`}</div>
               <div className="stat-label">Capacity</div>
               <div className="stat-sublabel">
                 {event.capacity ? `${statistics.totalParticipants}/${event.capacity} spots` : 'Unlimited'}
@@ -822,7 +822,17 @@ const EventOverview = () => {
                         <div className="parent-info">
                           <div className="parent-name">
                             <i className="fas fa-user mr-2"></i>
-                            <strong>Parent:</strong> {parentName}
+                            <strong>Parent:</strong> {participant.parentUser?.username ? (
+                              <Link
+                                to={`/account/${participant.parentUser.username}`}
+                                className="parent-link"
+                                title="View parent profile"
+                              >
+                                {parentName}
+                              </Link>
+                            ) : (
+                              parentName
+                            )}
                           </div>
                           <div className="contact-info">
                             {participant.parentUser?.email && (
@@ -1393,14 +1403,27 @@ const EventOverview = () => {
         }
 
         .participant-card.absent {
-          border-left: 4px solid #dc3545;
-          background: rgba(220, 53, 69, 0.05);
+          border-left: 4px solid #6c757d;
+          background: rgba(108, 117, 125, 0.05);
         }
 
         .participant-info h5, .volunteer-info h5 {
           margin-bottom: 0.5rem;
           color: var(--primary);
           font-weight: 600;
+        }
+
+        .parent-link {
+          color: var(--primary);
+          text-decoration: none;
+          border-bottom: 1px dotted var(--primary);
+          transition: all 0.2s ease;
+        }
+
+        .parent-link:hover {
+          color: var(--secondary);
+          border-bottom-color: var(--secondary);
+          text-decoration: none;
         }
 
         .participant-header {

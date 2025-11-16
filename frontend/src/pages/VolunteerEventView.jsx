@@ -299,12 +299,63 @@ const VolunteerEventView = () => {
                   </div>
                 </div>
               </div>
-              {participantCount >= event.capacity && (
+              {event.capacity && participantCount >= event.capacity && (
                 <div className="alert alert-info mt-3" role="alert">
                   <i className="fas fa-info-circle me-2"></i>
                   This event is fully booked!
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Event Announcements */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="mb-0">
+                <i className="fas fa-bullhorn me-2"></i>
+                Event Announcements
+              </h3>
+            </div>
+            <div className="card-body">
+              <div id="volunteer-announcements">
+                <div className="text-muted text-center py-3">
+                  <i className="fas fa-bullhorn fa-2x mb-2"></i>
+                  <p>No announcements yet. Check back for updates from event coordinators.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Participant Check-in */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <h3 className="mb-0">
+                <i className="fas fa-clipboard-check me-2"></i>
+                Participant Check-in
+              </h3>
+            </div>
+            <div className="card-body">
+              <p className="text-muted mb-3">As a volunteer, you can help check in participants when they arrive.</p>
+              <div className="row">
+                <div className="col-md-6">
+                  <div className="stat-card text-center p-3 border rounded">
+                    <h4 className="text-primary mb-1">{participantCount}</h4>
+                    <p className="mb-0">Total Registered</p>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="stat-card text-center p-3 border rounded">
+                    <h4 className="text-success mb-1">0</h4>
+                    <p className="mb-0">Checked In</p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3">
+                <button className="btn btn-primary" disabled>
+                  <i className="fas fa-search me-2"></i>
+                  Search Participants (Coming Soon)
+                </button>
+              </div>
             </div>
           </div>
         </div>
