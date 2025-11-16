@@ -115,12 +115,33 @@ const EventDetail = () => {
   };
   
   // Format duration
-  const formatDuration = (startDate, endDate) => {
-    if (!startDate || !endDate) return 'TBD';
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffHours = Math.round((end - start) / (1000 * 60 * 60));
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
+  const formatDuration = (date, startTime, endTime) => {
+    if (!date || !startTime || !endTime) return 'TBD';
+
+    try {
+      // Parse start and end times for the given date
+      const startDateTime = new Date(`${date}T${startTime}:00`);
+      const endDateTime = new Date(`${date}T${endTime}:00`);
+
+      const diffMs = endDateTime - startDateTime;
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      if (diffHours < 1) {
+        const diffMinutes = Math.round(diffMs / (1000 * 60));
+        return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''}`;
+      } else {
+        const hours = Math.floor(diffHours);
+        const minutes = Math.round((diffHours - hours) * 60);
+        if (minutes === 0) {
+          return `${hours} hour${hours !== 1 ? 's' : ''}`;
+        } else {
+          return `${hours}h ${minutes}m`;
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating duration:', error);
+      return 'TBD';
+    }
   };
   
   if (isLoading) {
@@ -266,7 +287,7 @@ const EventDetail = () => {
                   </div>
                   <div className="equipment-notice">
                     <i className="fas fa-info-circle"></i>
-                    <span><strong>Equipment:</strong> Players need to bring their own equipment. Contact us at <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a> or <a href="tel:+14848856284">(484) 885-6284</a> if you have questions.</span>
+                    <span><strong>Equipment:</strong> Bring whatever equipment you have. Contact us at <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a> or <a href="tel:+14848856284">(484) 885-6284</a> if you need something.</span>
                   </div>
                 </div>
               </div>
@@ -384,10 +405,10 @@ const EventDetail = () => {
                   ) : (
                     <Link
                       to={`/login?redirect=/events/${event.id}/volunteer`}
-                      className="btn-secondary"
+                      className="btn-secondary volunteer-login-btn"
                     >
                       <i className="fas fa-sign-in-alt"></i>
-                      Login to Volunteer
+                      <span>Login to Volunteer</span>
                     </Link>
                   )}
                 </div>
@@ -410,7 +431,7 @@ const EventDetail = () => {
                     </div>
                     <div className="info-text">
                       <span className="info-label">Duration</span>
-                      <span className="info-value">2-3 hours</span>
+                      <span className="info-value">{formatDuration(event.date, event.startTime, event.endTime)}</span>
                     </div>
                   </div>
                   <div className="quick-info-item">
@@ -692,6 +713,10 @@ const EventDetail = () => {
 
         .equipment-notice a:hover {
           color: #5a4f02;
+        }
+
+        .volunteer-login-btn i {
+          margin-right: 0.75rem;
         }
 
         .account-banner {

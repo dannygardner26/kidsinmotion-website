@@ -473,7 +473,26 @@ const Dashboard = () => {
         // For parents: fetch child registrations
         try {
           const registrationsData = await apiService.getMyRegistrations();
-          setRegisteredEvents(registrationsData);
+
+          // Enrich registrations with full event details if missing
+          const enrichedRegistrations = await Promise.all(
+            registrationsData.map(async (registration) => {
+              if (!registration.event || !registration.event.name) {
+                try {
+                  const eventId = registration.event?.id || registration.eventId;
+                  if (eventId) {
+                    const fullEventData = await apiService.getEvent(eventId);
+                    return { ...registration, event: fullEventData };
+                  }
+                } catch (eventError) {
+                  console.warn('Could not fetch event details for', registration.eventId, eventError);
+                }
+              }
+              return registration;
+            })
+          );
+
+          setRegisteredEvents(enrichedRegistrations);
         } catch (error) {
           console.log('No registrations found:', error.message);
           setRegisteredEvents([]);

@@ -455,7 +455,11 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
               }
               return <p><strong>Age Range:</strong> All Ages</p>;
             })()}
-            <p><strong>Price:</strong> ${event.price || '0'}</p>
+            {event.price && event.price > 0 ? (
+              <p><strong>Price:</strong> ${event.price}</p>
+            ) : (
+              <p><strong>Price:</strong> FREE</p>
+            )}
             {event.capacity && (
               <p><strong>Capacity:</strong> {event.capacity} participants</p>
             )}
