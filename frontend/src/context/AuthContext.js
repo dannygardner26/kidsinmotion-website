@@ -9,17 +9,18 @@ const AuthContext = createContext();
 // Utility function to compute if profile completion is needed
 const computeNeedsProfileCompletion = (profile, user = null) => {
   // Admin accounts are exempt from profile completion requirements
-  if (profile?.userType === 'ADMIN') {
+  if (profile?.userType === 'ADMIN' || user?.email === 'kidsinmotion0@gmail.com' || user?.email === 'danny@dannygardner.com') {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('Admin account - no profile completion needed:', profile.userType);
+      console.log('Admin account - no profile completion needed:', profile?.userType, user?.email);
     }
     return false;
   }
 
   // Test accounts are exempt from profile completion requirements
-  if (profile?.username === 'parent' || profile?.username === 'volunteer') {
+  if (profile?.username === 'parent' || profile?.username === 'volunteer' ||
+      user?.email === 'parent@test.com' || user?.email === 'volunteer@test.com') {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('Test account - no profile completion needed:', profile.username);
+      console.log('Test account - no profile completion needed:', profile?.username, user?.email);
     }
     return false;
   }
@@ -228,7 +229,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         // Check if profile completion is needed
-        const needsCompletion = computeNeedsProfileCompletion(profile);
+        const needsCompletion = computeNeedsProfileCompletion(profile, user);
         setNeedsProfileCompletion(needsCompletion);
 
         // Redirect to profile completion for users who need it
@@ -763,7 +764,7 @@ export const AuthProvider = ({ children }) => {
       setUserProfile(profile);
 
       // Check if profile completion is needed
-      setNeedsProfileCompletion(computeNeedsProfileCompletion(profile));
+      setNeedsProfileCompletion(computeNeedsProfileCompletion(profile, currentUser));
 
       // Update cache
       localStorage.setItem(`userProfile_${currentUser.uid}`, JSON.stringify(profile));

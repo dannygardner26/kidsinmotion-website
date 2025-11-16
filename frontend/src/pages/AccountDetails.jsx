@@ -44,11 +44,14 @@ const AccountDetails = () => {
   // Check if current user can edit this profile (only after auth is ready)
   const canEdit = authReady && currentUserProfile && (
     currentUserProfile.username === username ||
-    currentUserProfile.userType === 'ADMIN'
+    currentUserProfile.userType === 'ADMIN' ||
+    // Allow access if user is trying to access their own account via email prefix
+    (currentUser && currentUser.email && username === currentUser.email.split('@')[0])
   );
 
   const isAdmin = currentUserProfile?.userType === 'ADMIN';
-  const isSelfEdit = currentUserProfile?.username === username;
+  const isSelfEdit = currentUserProfile?.username === username ||
+                    (currentUser && currentUser.email && username === currentUser.email.split('@')[0]);
 
   // Check URL parameters for initial edit mode
   useEffect(() => {
@@ -339,6 +342,17 @@ const AccountDetails = () => {
       // Refresh profile data for admin changes or backend users
       if (!isSelfEdit || !currentUser || !currentUserProfile) {
         await fetchProfileData();
+      }
+
+      // For Firebase users who just completed profile setup, redirect to dashboard
+      const searchParams = new URLSearchParams(location.search);
+      const isProfileCompletion = searchParams.get('complete') === 'true';
+
+      if (isProfileCompletion && isSelfEdit) {
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+        return;
       }
 
       // If username changed, redirect to new URL
