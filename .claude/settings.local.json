@@ -149,7 +149,8 @@
       "Bash(gcloud storage buckets describe:*)",
       "Bash(gcloud storage buckets update:*)",
       "Bash(nul)",
-      "Bash(firebase hosting:sites:list:*)"
+      "Bash(firebase hosting:sites:list:*)",
+      "Bash(gcloud run services replace:*)"
     ],
     "deny": []
   }
