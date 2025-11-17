@@ -29,6 +29,7 @@ const VolunteerEventView = lazy(() => import('./pages/VolunteerEventView'));
 const ParentEventView = lazy(() => import('./pages/ParentEventView'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
 const AccountDetails = lazy(() => import('./pages/AccountDetails'));
+const AuthAction = lazy(() => import('./pages/AuthAction'));
 
 // CSS
 import './css/app.css';
@@ -116,6 +117,9 @@ const AppWithOnboarding = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
+
+                {/* Firebase Auth Action Handler */}
+                <Route path="/auth/action" element={<AuthAction />} />
 
                 {/* Routes only accessible when logged OUT */}
                 <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
