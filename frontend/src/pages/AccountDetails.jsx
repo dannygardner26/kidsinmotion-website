@@ -187,8 +187,47 @@ const AccountDetails = () => {
           setUsernameCooldown({ active: false });
         }
       } else {
-        // For non-self edits, we don't have access to other users' data in Firebase-only mode
-        throw new Error('Profile not found or access denied');
+        // For non-self edits (admin viewing other users), fetch the user's profile
+        const isCurrentUserAdmin = currentUserProfile?.userType === 'ADMIN' ||
+                                 currentUserProfile?.roles?.includes('ROLE_ADMIN') ||
+                                 currentUser?.email === 'kidsinmotion0@gmail.com' ||
+                                 currentUser?.email === 'danny@dannygardner.com';
+
+        if (!isCurrentUserAdmin) {
+          throw new Error('Profile not found or access denied');
+        }
+
+        console.log('Admin fetching other user profile for username:', username);
+
+        // First try fetching by username from Firestore
+        try {
+          const userData = await firestoreUserService.fetchUserByUsername(username);
+          if (userData) {
+            console.log('Loaded user profile for admin view:', userData);
+            setFormData({
+              firstName: userData.firstName || '',
+              lastName: userData.lastName || '',
+              username: userData.username || '',
+              email: userData.email || '',
+              phoneNumber: userData.phoneNumber || '',
+              userType: userData.userType || 'USER',
+              isBanned: userData.isBanned || false,
+              isEmailVerified: userData.isEmailVerified || false,
+              phoneVerified: userData.phoneVerified || false,
+              emergencyContactName: userData.emergencyContactName || '',
+              emergencyContactPhone: userData.emergencyContactPhone || '',
+              emergencyContactRelationship: userData.emergencyContactRelationship || '',
+              password: ''
+            });
+            setProfileData(userData);
+            setOriginalUsername(userData.username);
+          } else {
+            throw new Error('User not found');
+          }
+        } catch (fetchError) {
+          console.error('Failed to fetch user profile for admin view:', fetchError);
+          throw new Error('Profile not found or access denied');
+        }
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);

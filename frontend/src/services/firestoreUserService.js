@@ -115,6 +115,44 @@ class FirestoreUserService {
     }
   }
 
+  async fetchUserByUsername(username) {
+    try {
+      console.log('Fetching user by username from Firestore:', username);
+
+      if (!username) {
+        console.warn('Missing username for fetchUserByUsername');
+        return null;
+      }
+
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef);
+      const querySnapshot = await getDocs(q);
+
+      let foundUser = null;
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        if (userData.username === username) {
+          foundUser = {
+            id: doc.id,
+            firebaseUid: doc.id, // The document ID is the Firebase UID
+            ...userData
+          };
+        }
+      });
+
+      if (foundUser) {
+        console.log('Fetched user by username from Firestore:', foundUser);
+      } else {
+        console.log('No user found with username:', username);
+      }
+
+      return foundUser;
+    } catch (error) {
+      console.error('Error fetching user by username from Firestore:', error);
+      return null;
+    }
+  }
+
   async deleteUser(firebaseUid) {
     try {
       console.log('Deleting user from Firestore:', firebaseUid);
