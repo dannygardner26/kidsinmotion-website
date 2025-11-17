@@ -8,12 +8,6 @@ public enum RecipientCategory {
     ALL_USERS("all"),
     PARENTS("parents"),
     VOLUNTEERS("volunteers"),
-    APPROVED_VOLUNTEERS("approved"),
-    PENDING_APPLICATIONS("pending"),
-    COACHES("coaches"),
-    EVENT_COORDINATORS("event-coordinators"),
-    SOCIAL_MEDIA_TEAM("social-media"),
-    FUNDRAISING_TEAM("fundraising"),
     DIRECT_EMAILS("direct"),
     EVENT_PARENTS("event-parents"),
     EVENT_VOLUNTEERS("event-volunteers");

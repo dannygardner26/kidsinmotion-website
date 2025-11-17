@@ -25,12 +25,6 @@ import java.util.stream.Collectors;
 @Service
 public class MessagingRecipientService {
 
-    private static final Map<RecipientCategory, String> TEAM_CATEGORY_SLUGS = Map.of(
-            RecipientCategory.COACHES, "coach",
-            RecipientCategory.EVENT_COORDINATORS, "event-coordination",
-            RecipientCategory.SOCIAL_MEDIA_TEAM, "social-media",
-            RecipientCategory.FUNDRAISING_TEAM, "fundraising"
-    );
 
     @Autowired
     private UserFirestoreRepository userRepository;
@@ -66,100 +60,20 @@ public class MessagingRecipientService {
                 }
                 case PARENTS -> {
                     try {
-                        // Collect unique parent user IDs first to avoid duplicate lookups
-                        Set<String> uniqueParentIds = participantRepository.findAll().stream()
-                            .map(participant -> participant.getParentUserId())
-                            .filter(StringUtils::hasText)
-                            .collect(Collectors.toSet());
-
-                        // Batch lookup users by ID
-                        for (String parentUserId : uniqueParentIds) {
-                            try {
-                                userRepository.findByFirebaseUid(parentUserId)
-                                    .ifPresent(user -> upsertUserRecipient(user, category, recipients));
-                            } catch (Exception e) {
-                                // Skip this user if lookup fails
-                            }
-                        }
+                        // Find users with PARENT userType
+                        userRepository.findByUserType("PARENT").forEach(user ->
+                            upsertUserRecipient(user, category, recipients));
                     } catch (Exception e) {
-                        throw new RuntimeException("Failed to fetch parent users from participants", e);
+                        throw new RuntimeException("Failed to fetch parent users by userType", e);
                     }
                 }
                 case VOLUNTEERS -> {
                     try {
-                        // Collect unique volunteer user IDs first to avoid duplicate lookups
-                        Set<String> uniqueVolunteerIds = volunteerRepository.findAll().stream()
-                            .map(volunteer -> volunteer.getUserId())
-                            .filter(StringUtils::hasText)
-                            .collect(Collectors.toSet());
-
-                        // Batch lookup users by ID
-                        for (String userId : uniqueVolunteerIds) {
-                            try {
-                                userRepository.findByFirebaseUid(userId)
-                                    .ifPresent(user -> upsertUserRecipient(user, category, recipients));
-                            } catch (Exception e) {
-                                // Skip this user if lookup fails
-                            }
-                        }
+                        // Find users with VOLUNTEER userType
+                        userRepository.findByUserType("VOLUNTEER").forEach(user ->
+                            upsertUserRecipient(user, category, recipients));
                     } catch (Exception e) {
-                        throw new RuntimeException("Failed to fetch volunteer users", e);
-                    }
-                }
-                case APPROVED_VOLUNTEERS -> {
-                    try {
-                        // Collect unique confirmed volunteer user IDs first to avoid duplicate lookups
-                        Set<String> uniqueVolunteerIds = volunteerRepository.findByStatus("CONFIRMED").stream()
-                            .map(volunteer -> volunteer.getUserId())
-                            .filter(StringUtils::hasText)
-                            .collect(Collectors.toSet());
-
-                        // Batch lookup users by ID
-                        for (String userId : uniqueVolunteerIds) {
-                            try {
-                                userRepository.findByFirebaseUid(userId)
-                                    .ifPresent(user -> upsertUserRecipient(user, category, recipients));
-                            } catch (Exception e) {
-                                // Skip this user if lookup fails
-                            }
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to fetch approved volunteer users", e);
-                    }
-                }
-                case PENDING_APPLICATIONS -> {
-                    try {
-                        // Collect unique pending volunteer user IDs first to avoid duplicate lookups
-                        Set<String> uniqueVolunteerIds = volunteerRepository.findByStatus("PENDING").stream()
-                            .map(volunteer -> volunteer.getUserId())
-                            .filter(StringUtils::hasText)
-                            .collect(Collectors.toSet());
-
-                        // Batch lookup users by ID
-                        for (String userId : uniqueVolunteerIds) {
-                            try {
-                                userRepository.findByFirebaseUid(userId)
-                                    .ifPresent(user -> upsertUserRecipient(user, category, recipients));
-                            } catch (Exception e) {
-                                // Skip this user if lookup fails
-                            }
-                        }
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to fetch pending volunteer applications", e);
-                    }
-                }
-                case COACHES, EVENT_COORDINATORS, SOCIAL_MEDIA_TEAM, FUNDRAISING_TEAM -> {
-                    String targetSlug = TEAM_CATEGORY_SLUGS.get(category);
-                    if (targetSlug != null) {
-                        // Find users with the corresponding team role
-                        try {
-                            userRepository.findAll().stream()
-                                    .filter(user -> user.getTeams() != null && user.getTeams().stream()
-                                            .anyMatch(teamName -> slugify(teamName).equals(targetSlug)))
-                                    .forEach(user -> upsertUserRecipient(user, category, recipients));
-                        } catch (Exception e) {
-                            throw new RuntimeException("Failed to fetch users for team category", e);
-                        }
+                        throw new RuntimeException("Failed to fetch volunteer users by userType", e);
                     }
                 }
                 case EVENT_PARENTS -> {

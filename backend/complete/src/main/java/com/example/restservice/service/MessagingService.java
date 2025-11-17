@@ -75,8 +75,8 @@ public class MessagingService {
         Map<RecipientCategory, Integer> allCategoryCounts = new HashMap<>();
         List<String> allDirectEmailsWithoutAccounts = new ArrayList<>();
 
-        // Process general categories
-        if (!generalCategories.isEmpty()) {
+        // Process general categories and direct emails
+        if (!generalCategories.isEmpty() || (request.getDirectEmails() != null && !request.getDirectEmails().isEmpty())) {
             MessagingRecipientService.RecipientResolutionResult generalResult =
                     recipientService.resolveRecipients(generalCategories, request.getDirectEmails(), null, null);
             allRecipients.addAll(generalResult.getRecipients());
@@ -102,16 +102,21 @@ public class MessagingService {
                     allRecipients, allDirectEmailsWithoutAccounts, allCategoryCounts);
 
         List<MessagingRecipient> recipients = resolutionResult.getRecipients();
-        if (recipients.isEmpty()) {
+        List<String> directEmailsWithoutAccounts = resolutionResult.getDirectEmailsWithoutAccounts();
+
+        // Check if we have any recipients (either registered users or direct emails)
+        if (recipients.isEmpty() && directEmailsWithoutAccounts.isEmpty()) {
             throw new IllegalArgumentException("No recipients resolved for the provided criteria");
         }
 
         BroadcastResult result = new BroadcastResult();
-        logger.info("Broadcasting admin message '{}' to {} recipients via channels {}", request.getSubject(), recipients.size(), channels);
+        int totalRecipientCount = recipients.size() + directEmailsWithoutAccounts.size();
+        logger.info("Broadcasting admin message '{}' to {} recipients ({} registered users + {} direct emails) via channels {}",
+                request.getSubject(), totalRecipientCount, recipients.size(), directEmailsWithoutAccounts.size(), channels);
         result.setRequestedChannels(channels);
-        result.setDirectEmailsWithoutAccounts(resolutionResult.getDirectEmailsWithoutAccounts());
+        result.setDirectEmailsWithoutAccounts(directEmailsWithoutAccounts);
         result.setCategoryCounts(transformCategoryCounts(resolutionResult.getCategoryCounts()));
-        result.setTotalRecipients(recipients.size());
+        result.setTotalRecipients(totalRecipientCount);
 
         if (sendEmail && !emailDeliveryService.isEnabled()) {
             result.addGlobalWarning("Email delivery is disabled. No emails were sent.");
@@ -124,6 +129,7 @@ public class MessagingService {
         String emailBody = buildEmailBody(request, initiatedBy);
         String smsBody = buildSmsBody(request);
 
+        // Process registered user recipients
         for (MessagingRecipient recipient : recipients) {
             if (sendInbox) {
                 handleInboxDelivery(recipient, inboxTemplate, result);
@@ -133,6 +139,13 @@ public class MessagingService {
             }
             if (sendSms) {
                 handleSmsDelivery(recipient, smsBody, result);
+            }
+        }
+
+        // Process direct emails without accounts (email only - no inbox or SMS)
+        if (sendEmail && !directEmailsWithoutAccounts.isEmpty()) {
+            for (String email : directEmailsWithoutAccounts) {
+                handleDirectEmailDelivery(email, request.getSubject(), emailBody, result);
             }
         }
 
@@ -230,6 +243,29 @@ public class MessagingService {
             result.addFailure(new BroadcastResult.DeliveryFailure("sms",
                     "SMS provider reported a failure - check credentials",
                     recipientSnapshot(recipient)));
+        }
+    }
+
+    private void handleDirectEmailDelivery(String email,
+                                          String subject,
+                                          String body,
+                                          BroadcastResult result) {
+        if (!emailDeliveryService.isEnabled()) {
+            result.incrementEmailSkipped();
+            result.addFailure(new BroadcastResult.DeliveryFailure("email",
+                    "Email delivery disabled",
+                    Map.of("email", email, "displayName", email)));
+            return;
+        }
+
+        boolean delivered = emailDeliveryService.sendEmail(email, subject, body);
+        if (delivered) {
+            result.incrementEmailSent();
+        } else {
+            result.incrementEmailSkipped();
+            result.addFailure(new BroadcastResult.DeliveryFailure("email",
+                    "Email provider reported a failure - check server logs",
+                    Map.of("email", email, "displayName", email)));
         }
     }
 
