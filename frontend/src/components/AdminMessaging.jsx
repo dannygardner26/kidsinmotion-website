@@ -3,11 +3,8 @@ import { apiService } from '../services/api';
 
 const BASE_USER_CATEGORIES = [
   { id: 'all', label: 'All Users', description: 'Everyone in the system' },
-  { id: 'parents', label: 'Parents', description: 'Users who have registered children' },
-  { id: 'volunteers', label: 'Volunteers', description: 'All users with volunteer account type' },
-  { id: 'coaches', label: 'Coaches', description: 'Volunteers on coaching teams' },
-  { id: 'event-coordinators', label: 'Event Coordinators', description: 'Event coordination team members' },
-  { id: 'social-media', label: 'Social Media Team', description: 'Social media team members' },
+  { id: 'parents', label: 'Parents', description: 'Users with PARENT account type' },
+  { id: 'volunteers', label: 'Volunteers', description: 'Users with VOLUNTEER account type' },
 ];
 
 const CHANNEL_OPTIONS = [
@@ -18,10 +15,9 @@ const CHANNEL_OPTIONS = [
 ];
 
 const AdminMessaging = () => {
-  const [mode, setMode] = useState('categories');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [emailList, setEmailList] = useState('');
+  const [contactList, setContactList] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [channels, setChannels] = useState(['inbox']);
   const [sending, setSending] = useState(false);
@@ -81,16 +77,36 @@ const AdminMessaging = () => {
     return categories;
   }, [events, loadingEvents]);
 
-  const parsedEmails = useMemo(() => {
-    if (!emailList.trim()) {
-      return [];
+  const parsedContacts = useMemo(() => {
+    if (!contactList.trim()) {
+      return { emails: [], phoneNumbers: [] };
     }
-    const parts = emailList
+    const parts = contactList
       .split(/[,;\n\s]+/)
-      .map(entry => entry.trim().toLowerCase())
+      .map(entry => entry.trim())
       .filter(entry => entry.length > 0);
-    return Array.from(new Set(parts));
-  }, [emailList]);
+
+    const emails = [];
+    const phoneNumbers = [];
+
+    parts.forEach(part => {
+      // Email pattern: contains @ and .
+      if (part.includes('@') && part.includes('.')) {
+        emails.push(part.toLowerCase());
+      }
+      // Phone pattern: contains digits and potentially +, -, (, ), spaces
+      else if (/^[+]?[(]?[\d\s\-()]+$/.test(part) && /\d/.test(part)) {
+        // Clean phone number: remove spaces, dashes, parentheses
+        const cleaned = part.replace(/[\s\-()]/g, '');
+        phoneNumbers.push(cleaned);
+      }
+    });
+
+    return {
+      emails: Array.from(new Set(emails)),
+      phoneNumbers: Array.from(new Set(phoneNumbers))
+    };
+  }, [contactList]);
 
   const fetchRecipients = async (categoryId) => {
     if (categoryRecipients[categoryId] || loadingRecipients[categoryId]) {
@@ -194,8 +210,9 @@ const AdminMessaging = () => {
     subject: subject.trim(),
     message: message.trim(),
     deliveryChannels: channels,
-    directEmails: mode === 'emails' ? parsedEmails : [],
-    categories: mode === 'categories' ? selectedCategories : [],
+    directEmails: parsedContacts.emails, // Always include direct emails if they exist
+    directPhoneNumbers: parsedContacts.phoneNumbers, // Always include direct phone numbers if they exist
+    categories: selectedCategories, // Always include selected categories
     selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
   });
 
@@ -209,11 +226,9 @@ const AdminMessaging = () => {
     if (payload.deliveryChannels.length === 0) {
       return 'Select at least one delivery channel.';
     }
-    if (mode === 'emails' && payload.directEmails.length === 0) {
-      return 'Enter one or more email addresses.';
-    }
-    if (mode === 'categories' && payload.categories.length === 0) {
-      return 'Select at least one user category.';
+    // Require at least one recipient source (categories, direct emails, or phone numbers)
+    if (payload.categories.length === 0 && payload.directEmails.length === 0 && payload.directPhoneNumbers.length === 0) {
+      return 'Select at least one user category or enter direct contact information.';
     }
     return null;
   };
@@ -246,7 +261,7 @@ const AdminMessaging = () => {
   const resetForm = () => {
     setSubject('');
     setMessage('');
-    setEmailList('');
+    setContactList('');
     setSelectedCategories([]);
     setChannels(['inbox']);
     setSuccess('');
@@ -260,47 +275,14 @@ const AdminMessaging = () => {
         <div className="panel-header">
           <div>
             <h2>Organization Messaging</h2>
-            <p>Deliver announcements to targeted user groups via inbox, email, or SMS.</p>
-          </div>
-          <div className="mode-toggle">
-            <button
-              type="button"
-              className={`mode-button ${mode === 'categories' ? 'active' : ''}`}
-              onClick={() => setMode('categories')}
-            >
-              <i className="fas fa-users mr-2"></i>
-              User Categories
-            </button>
-            <button
-              type="button"
-              className={`mode-button ${mode === 'emails' ? 'active' : ''}`}
-              onClick={() => setMode('emails')}
-            >
-              <i className="fas fa-at mr-2"></i>
-              Direct Emails
-            </button>
+            <p>Send announcements to user categories and specific email addresses via inbox, email, or SMS.</p>
           </div>
         </div>
 
-        {mode === 'emails' && (
-          <section className="panel-section">
-            <h4>Direct Email Addresses</h4>
-            <p className="section-hint">Enter email addresses separated by commas, semicolons, or line breaks.</p>
-            <textarea
-              className="form-control"
-              rows={4}
-              value={emailList}
-              onChange={(event) => setEmailList(event.target.value)}
-              placeholder="user1@example.com\nuser2@example.com"
-            />
-            <div className="section-meta">{parsedEmails.length} email{parsedEmails.length === 1 ? '' : 's'} detected</div>
-          </section>
-        )}
-
-        {mode === 'categories' && (
-          <section className="panel-section">
-            <h4>User Categories</h4>
-            <p className="section-hint">Select one or more audiences to include in this message.</p>
+        {/* User Categories Section */}
+        <section className="panel-section">
+          <h4>User Categories</h4>
+          <p className="section-hint">Select one or more audiences to include in this message.</p>
 
             {loadingEvents && (
               <div className="loading-categories">
@@ -377,17 +359,32 @@ const AdminMessaging = () => {
                 </>
               )}
             </div>
-            <div className="section-meta">
-              {selectedCategories.length} categor{selectedCategories.length === 1 ? 'y' : 'ies'} selected
-              {!loadingEvents && events.length > 0 && (
-                <span> • {events.length} event{events.length === 1 ? '' : 's'} loaded</span>
-              )}
-            </div>
-          </section>
-        )}
+          <div className="section-meta">
+            {selectedCategories.length} categor{selectedCategories.length === 1 ? 'y' : 'ies'} selected
+            {!loadingEvents && events.length > 0 && (
+              <span> • {events.length} event{events.length === 1 ? '' : 's'} loaded</span>
+            )}
+          </div>
+        </section>
+
+        {/* Direct Contact Information Section */}
+        <section className="panel-section">
+          <h4>Additional Contact Information</h4>
+          <p className="section-hint">Add specific email addresses and phone numbers (comma-separated) to include recipients not in the categories above.</p>
+          <textarea
+            className="form-control"
+            rows={4}
+            value={contactList}
+            onChange={(event) => setContactList(event.target.value)}
+            placeholder="user1@example.com, +1234567890, user2@example.com, (555) 123-4567"
+          />
+          <div className="section-meta">
+            {parsedContacts.emails.length} email{parsedContacts.emails.length === 1 ? '' : 's'} and {parsedContacts.phoneNumbers.length} phone number{parsedContacts.phoneNumbers.length === 1 ? '' : 's'} detected
+          </div>
+        </section>
 
         {/* Recipient Preview Section */}
-        {mode === 'categories' && selectedCategories.length > 0 && (
+        {selectedCategories.length > 0 && (
           <section className="panel-section">
             <h4>Recipient Preview</h4>
             <p className="section-hint">Review and optionally select specific recipients from your chosen categories.</p>
@@ -438,30 +435,56 @@ const AdminMessaging = () => {
                   </div>
 
                   {!isLoading && recipients.length > 0 && (
-                    <div className="recipient-list">
-                      {recipients.map(recipient => {
-                        const recipientId = recipient.firebaseUid || recipient.email;
-                        const isSelected = selectedRecipients.includes(recipientId);
+                    <div className="recipient-table-container">
+                      <table className="recipient-table">
+                        <thead>
+                          <tr>
+                            <th className="checkbox-column">
+                              <input
+                                type="checkbox"
+                                checked={recipients.every(r => selectedRecipients.includes(r.firebaseUid || r.email))}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    selectAllRecipients(categoryId);
+                                  } else {
+                                    deselectAllRecipients(categoryId);
+                                  }
+                                }}
+                              />
+                            </th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recipients.map(recipient => {
+                            const recipientId = recipient.firebaseUid || recipient.email;
+                            const isSelected = selectedRecipients.includes(recipientId);
 
-                        return (
-                          <label key={recipientId} className={`recipient-item ${isSelected ? 'selected' : ''}`}>
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleRecipient(recipientId)}
-                            />
-                            <div className="recipient-info">
-                              <div className="recipient-name">
-                                {recipient.displayName || 'Unknown User'}
-                              </div>
-                              <div className="recipient-contact">
-                                {recipient.email && <span className="email">{recipient.email}</span>}
-                                {recipient.phoneNumber && <span className="phone">{recipient.phoneNumber}</span>}
-                              </div>
-                            </div>
-                          </label>
-                        );
-                      })}
+                            return (
+                              <tr key={recipientId} className={isSelected ? 'selected' : ''}>
+                                <td className="checkbox-column">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => toggleRecipient(recipientId)}
+                                  />
+                                </td>
+                                <td className="name-column">
+                                  {recipient.displayName || 'Unknown User'}
+                                </td>
+                                <td className="email-column">
+                                  {recipient.email || '—'}
+                                </td>
+                                <td className="phone-column">
+                                  {recipient.phoneNumber || '—'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   )}
 
@@ -664,29 +687,6 @@ const AdminMessaging = () => {
           color: #6b7280;
         }
 
-        .mode-toggle {
-          display: flex;
-          gap: 0.75rem;
-        }
-
-        .mode-button {
-          border: 1px solid #d1d5db;
-          background-color: #f9fafb;
-          padding: 0.75rem 1.5rem;
-          border-radius: 999px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          display: flex;
-          align-items: center;
-        }
-
-        .mode-button.active {
-          background-color: var(--primary);
-          color: #fff;
-          border-color: var(--primary);
-          box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
-        }
 
         .panel-section {
           margin-bottom: 2rem;
@@ -949,10 +949,6 @@ const AdminMessaging = () => {
             align-items: flex-start;
           }
 
-          .mode-toggle {
-            width: 100%;
-            flex-direction: column;
-          }
 
           .panel-actions {
             flex-direction: column;
@@ -961,6 +957,112 @@ const AdminMessaging = () => {
           .panel-actions .btn {
             justify-content: center;
           }
+        }
+
+        .recipient-actions {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          justify-content: space-between;
+          flex-wrap: wrap;
+        }
+
+        .recipient-count {
+          color: #6b7280;
+          font-size: 0.9rem;
+        }
+
+        .btn-link {
+          background: none;
+          border: none;
+          color: #4f46e5;
+          cursor: pointer;
+          font-size: 0.85rem;
+          font-weight: 600;
+          padding: 0.25rem 0.5rem;
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+
+        .btn-link:hover {
+          color: #3730a3;
+          text-decoration: underline;
+        }
+
+        .btn-link:focus {
+          outline: 2px solid #4f46e5;
+          outline-offset: 2px;
+        }
+
+        .recipient-table-container {
+          margin-top: 1rem;
+          border-radius: 8px;
+          overflow: hidden;
+          border: 1px solid #e5e7eb;
+        }
+
+        .recipient-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 0.9rem;
+        }
+
+        .recipient-table thead {
+          background-color: #f8fafc;
+        }
+
+        .recipient-table th {
+          padding: 0.75rem 1rem;
+          text-align: left;
+          font-weight: 600;
+          color: #374151;
+          border-bottom: 2px solid #e5e7eb;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .recipient-table td {
+          padding: 0.75rem 1rem;
+          border-bottom: 1px solid #f3f4f6;
+          vertical-align: middle;
+        }
+
+        .recipient-table tr:hover {
+          background-color: #f9fafb;
+        }
+
+        .recipient-table tr.selected {
+          background-color: #eff6ff;
+        }
+
+        .recipient-table tr.selected:hover {
+          background-color: #dbeafe;
+        }
+
+        .checkbox-column {
+          width: 40px;
+          text-align: center;
+        }
+
+        .name-column {
+          font-weight: 600;
+          color: #1f2937;
+        }
+
+        .email-column {
+          color: #6b7280;
+          font-family: monospace;
+        }
+
+        .phone-column {
+          color: #6b7280;
+          font-family: monospace;
+        }
+
+        .recipient-table tbody tr:last-child td {
+          border-bottom: none;
+        }
         }
       `}</style>
     </div>

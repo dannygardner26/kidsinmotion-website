@@ -12,6 +12,8 @@ public class MessagingRecipient {
     private String displayName;
     private boolean includedByDirectEmail;
     private boolean directEmailOnly;
+    private boolean includedByDirectPhone;
+    private boolean directPhoneOnly;
     private final Set<RecipientCategory> categories = new LinkedHashSet<>();
 
     public Long getUserId() {
@@ -68,6 +70,22 @@ public class MessagingRecipient {
 
     public void setDirectEmailOnly(boolean directEmailOnly) {
         this.directEmailOnly = directEmailOnly;
+    }
+
+    public boolean isIncludedByDirectPhone() {
+        return includedByDirectPhone;
+    }
+
+    public void setIncludedByDirectPhone(boolean includedByDirectPhone) {
+        this.includedByDirectPhone = includedByDirectPhone;
+    }
+
+    public boolean isDirectPhoneOnly() {
+        return directPhoneOnly;
+    }
+
+    public void setDirectPhoneOnly(boolean directPhoneOnly) {
+        this.directPhoneOnly = directPhoneOnly;
     }
 
     public Set<RecipientCategory> getCategories() {

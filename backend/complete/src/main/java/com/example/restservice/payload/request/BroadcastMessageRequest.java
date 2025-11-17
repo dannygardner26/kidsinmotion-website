@@ -19,6 +19,8 @@ public class BroadcastMessageRequest {
 
     private List<String> directEmails = new ArrayList<>();
 
+    private List<String> directPhoneNumbers = new ArrayList<>();
+
     private List<String> categories = new ArrayList<>();
 
     private List<String> selectedRecipients = new ArrayList<>();
@@ -53,6 +55,14 @@ public class BroadcastMessageRequest {
 
     public void setDirectEmails(List<String> directEmails) {
         this.directEmails = directEmails != null ? directEmails : new ArrayList<>();
+    }
+
+    public List<String> getDirectPhoneNumbers() {
+        return directPhoneNumbers;
+    }
+
+    public void setDirectPhoneNumbers(List<String> directPhoneNumbers) {
+        this.directPhoneNumbers = directPhoneNumbers != null ? directPhoneNumbers : new ArrayList<>();
     }
 
     public List<String> getCategories() {

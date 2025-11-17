@@ -19,6 +19,7 @@ public class BroadcastMessageResponse {
     private int smsSkipped;
     private Set<String> requestedChannels;
     private List<String> directEmailsWithoutAccounts = new ArrayList<>();
+    private List<String> directPhoneNumbersWithoutAccounts = new ArrayList<>();
     private Map<String, Integer> categoryCounts;
     private List<String> warnings = new ArrayList<>();
     private List<DeliveryIssue> failures = new ArrayList<>();
@@ -34,6 +35,7 @@ public class BroadcastMessageResponse {
         response.smsSkipped = result.getSmsSkipped();
         response.requestedChannels = result.getRequestedChannels();
         response.directEmailsWithoutAccounts = result.getDirectEmailsWithoutAccounts();
+        response.directPhoneNumbersWithoutAccounts = result.getDirectPhoneNumbersWithoutAccounts();
         response.categoryCounts = result.getCategoryCounts();
         response.warnings = result.getGlobalWarnings();
         response.failures = result.getFailures().stream()
@@ -76,6 +78,10 @@ public class BroadcastMessageResponse {
 
     public List<String> getDirectEmailsWithoutAccounts() {
         return directEmailsWithoutAccounts;
+    }
+
+    public List<String> getDirectPhoneNumbersWithoutAccounts() {
+        return directPhoneNumbersWithoutAccounts;
     }
 
     public Map<String, Integer> getCategoryCounts() {

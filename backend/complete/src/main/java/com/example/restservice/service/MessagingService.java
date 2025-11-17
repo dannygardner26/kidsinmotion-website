@@ -74,14 +74,16 @@ public class MessagingService {
         List<MessagingRecipient> allRecipients = new ArrayList<>();
         Map<RecipientCategory, Integer> allCategoryCounts = new HashMap<>();
         List<String> allDirectEmailsWithoutAccounts = new ArrayList<>();
+        List<String> allDirectPhoneNumbersWithoutAccounts = new ArrayList<>();
 
-        // Process general categories and direct emails
-        if (!generalCategories.isEmpty() || (request.getDirectEmails() != null && !request.getDirectEmails().isEmpty())) {
+        // Process general categories and direct emails/phones
+        if (!generalCategories.isEmpty() || (request.getDirectEmails() != null && !request.getDirectEmails().isEmpty()) || (request.getDirectPhoneNumbers() != null && !request.getDirectPhoneNumbers().isEmpty())) {
             MessagingRecipientService.RecipientResolutionResult generalResult =
-                    recipientService.resolveRecipients(generalCategories, request.getDirectEmails(), null, null);
+                    recipientService.resolveRecipients(generalCategories, request.getDirectEmails(), request.getDirectPhoneNumbers(), null, null);
             allRecipients.addAll(generalResult.getRecipients());
             allCategoryCounts.putAll(generalResult.getCategoryCounts());
             allDirectEmailsWithoutAccounts.addAll(generalResult.getDirectEmailsWithoutAccounts());
+            allDirectPhoneNumbersWithoutAccounts.addAll(generalResult.getDirectPhoneNumbersWithoutAccounts());
         }
 
         // Process event-specific categories
@@ -90,7 +92,7 @@ public class MessagingService {
             Set<RecipientCategory> eventCategories = eventEntry.getValue();
 
             MessagingRecipientService.RecipientResolutionResult eventResult =
-                    recipientService.resolveRecipients(eventCategories, Collections.emptyList(), eventId, request.getSelectedRecipients());
+                    recipientService.resolveRecipients(eventCategories, Collections.emptyList(), Collections.emptyList(), eventId, request.getSelectedRecipients());
             allRecipients.addAll(eventResult.getRecipients());
             eventResult.getCategoryCounts().forEach((category, count) ->
                 allCategoryCounts.merge(category, count, Integer::sum));
@@ -99,22 +101,24 @@ public class MessagingService {
         // Create combined result
         MessagingRecipientService.RecipientResolutionResult resolutionResult =
                 new MessagingRecipientService.RecipientResolutionResult(
-                    allRecipients, allDirectEmailsWithoutAccounts, allCategoryCounts);
+                    allRecipients, allDirectEmailsWithoutAccounts, allDirectPhoneNumbersWithoutAccounts, allCategoryCounts);
 
         List<MessagingRecipient> recipients = resolutionResult.getRecipients();
         List<String> directEmailsWithoutAccounts = resolutionResult.getDirectEmailsWithoutAccounts();
+        List<String> directPhoneNumbersWithoutAccounts = resolutionResult.getDirectPhoneNumbersWithoutAccounts();
 
-        // Check if we have any recipients (either registered users or direct emails)
-        if (recipients.isEmpty() && directEmailsWithoutAccounts.isEmpty()) {
+        // Check if we have any recipients (either registered users, direct emails, or direct phone numbers)
+        if (recipients.isEmpty() && directEmailsWithoutAccounts.isEmpty() && directPhoneNumbersWithoutAccounts.isEmpty()) {
             throw new IllegalArgumentException("No recipients resolved for the provided criteria");
         }
 
         BroadcastResult result = new BroadcastResult();
-        int totalRecipientCount = recipients.size() + directEmailsWithoutAccounts.size();
-        logger.info("Broadcasting admin message '{}' to {} recipients ({} registered users + {} direct emails) via channels {}",
-                request.getSubject(), totalRecipientCount, recipients.size(), directEmailsWithoutAccounts.size(), channels);
+        int totalRecipientCount = recipients.size() + directEmailsWithoutAccounts.size() + directPhoneNumbersWithoutAccounts.size();
+        logger.info("Broadcasting admin message '{}' to {} recipients ({} registered users + {} direct emails + {} direct phones) via channels {}",
+                request.getSubject(), totalRecipientCount, recipients.size(), directEmailsWithoutAccounts.size(), directPhoneNumbersWithoutAccounts.size(), channels);
         result.setRequestedChannels(channels);
         result.setDirectEmailsWithoutAccounts(directEmailsWithoutAccounts);
+        result.setDirectPhoneNumbersWithoutAccounts(directPhoneNumbersWithoutAccounts);
         result.setCategoryCounts(transformCategoryCounts(resolutionResult.getCategoryCounts()));
         result.setTotalRecipients(totalRecipientCount);
 
@@ -146,6 +150,13 @@ public class MessagingService {
         if (sendEmail && !directEmailsWithoutAccounts.isEmpty()) {
             for (String email : directEmailsWithoutAccounts) {
                 handleDirectEmailDelivery(email, request.getSubject(), emailBody, result);
+            }
+        }
+
+        // Process direct phone numbers without accounts (SMS only - no inbox or email)
+        if (sendSms && !directPhoneNumbersWithoutAccounts.isEmpty()) {
+            for (String phoneNumber : directPhoneNumbersWithoutAccounts) {
+                handleDirectSmsDelivery(phoneNumber, smsBody, result);
             }
         }
 
@@ -269,6 +280,28 @@ public class MessagingService {
         }
     }
 
+    private void handleDirectSmsDelivery(String phoneNumber,
+                                       String body,
+                                       BroadcastResult result) {
+        if (!smsDeliveryService.isEnabled()) {
+            result.incrementSmsSkipped();
+            result.addFailure(new BroadcastResult.DeliveryFailure("sms",
+                    "SMS delivery disabled",
+                    Map.of("phoneNumber", phoneNumber, "displayName", phoneNumber)));
+            return;
+        }
+
+        boolean delivered = smsDeliveryService.sendSms(phoneNumber, body);
+        if (delivered) {
+            result.incrementSmsSent();
+        } else {
+            result.incrementSmsSkipped();
+            result.addFailure(new BroadcastResult.DeliveryFailure("sms",
+                    "SMS provider reported a failure - check server logs",
+                    Map.of("phoneNumber", phoneNumber, "displayName", phoneNumber)));
+        }
+    }
+
     private Map<String, Integer> transformCategoryCounts(Map<RecipientCategory, Integer> counts) {
         Map<String, Integer> response = new HashMap<>();
         counts.forEach((category, count) -> response.put(category.getId(), count));
@@ -346,6 +379,7 @@ public class MessagingService {
         private int smsSkipped;
         private Set<String> requestedChannels = new HashSet<>();
         private List<String> directEmailsWithoutAccounts = new ArrayList<>();
+        private List<String> directPhoneNumbersWithoutAccounts = new ArrayList<>();
         private Map<String, Integer> categoryCounts = new HashMap<>();
         private final List<DeliveryFailure> failures = new ArrayList<>();
         private final List<String> globalWarnings = new ArrayList<>();
@@ -420,6 +454,14 @@ public class MessagingService {
 
         public void setDirectEmailsWithoutAccounts(List<String> directEmailsWithoutAccounts) {
             this.directEmailsWithoutAccounts = directEmailsWithoutAccounts;
+        }
+
+        public List<String> getDirectPhoneNumbersWithoutAccounts() {
+            return directPhoneNumbersWithoutAccounts;
+        }
+
+        public void setDirectPhoneNumbersWithoutAccounts(List<String> directPhoneNumbersWithoutAccounts) {
+            this.directPhoneNumbersWithoutAccounts = directPhoneNumbersWithoutAccounts;
         }
 
         public Map<String, Integer> getCategoryCounts() {

@@ -37,14 +37,18 @@ public class MessagingRecipientService {
 
 
     public RecipientResolutionResult resolveRecipients(Set<RecipientCategory> categories, Collection<String> directEmails) {
-        return resolveRecipients(categories, directEmails, null);
+        return resolveRecipients(categories, directEmails, null, null, null);
     }
 
     public RecipientResolutionResult resolveRecipients(Set<RecipientCategory> categories, Collection<String> directEmails, String eventId) {
-        return resolveRecipients(categories, directEmails, eventId, null);
+        return resolveRecipients(categories, directEmails, null, eventId, null);
     }
 
     public RecipientResolutionResult resolveRecipients(Set<RecipientCategory> categories, Collection<String> directEmails, String eventId, Collection<String> selectedRecipientIds) {
+        return resolveRecipients(categories, directEmails, null, eventId, selectedRecipientIds);
+    }
+
+    public RecipientResolutionResult resolveRecipients(Set<RecipientCategory> categories, Collection<String> directEmails, Collection<String> directPhoneNumbers, String eventId, Collection<String> selectedRecipientIds) {
         Map<String, MessagingRecipient> recipients = new LinkedHashMap<>();
 
         // Team-based categories will use User.teams directly
@@ -162,6 +166,40 @@ public class MessagingRecipientService {
                     });
         }
 
+        List<String> directPhoneNumbersWithoutAccounts = new ArrayList<>();
+        if (directPhoneNumbers != null) {
+            directPhoneNumbers.stream()
+                    .map(phone -> phone != null ? phone.trim() : "")
+                    .filter(StringUtils::hasText)
+                    .forEach(phone -> {
+                        String key = buildPhoneKey(phone);
+                        MessagingRecipient existing = recipients.get(key);
+                        if (existing != null) {
+                            existing.setIncludedByDirectPhone(true);
+                            existing.addCategory(RecipientCategory.DIRECT_PHONES);
+                        } else {
+                            try {
+                                userRepository.findByPhoneNumber(phone)
+                                    .ifPresentOrElse(user -> {
+                                        MessagingRecipient recipient = upsertUserRecipient(user, RecipientCategory.DIRECT_PHONES, recipients);
+                                        recipient.setIncludedByDirectPhone(true);
+                                    }, () -> {
+                                        MessagingRecipient recipient = new MessagingRecipient();
+                                        recipient.setPhoneNumber(phone);
+                                        recipient.setDisplayName(phone);
+                                        recipient.setDirectPhoneOnly(true);
+                                        recipient.setIncludedByDirectPhone(true);
+                                        recipient.addCategory(RecipientCategory.DIRECT_PHONES);
+                                        recipients.put(key, recipient);
+                                        directPhoneNumbersWithoutAccounts.add(phone);
+                                    });
+                            } catch (Exception e) {
+                                throw new RuntimeException("Failed to find user by phone number", e);
+                            }
+                        }
+                    });
+        }
+
         // Apply selectedRecipients filtering if provided
         if (selectedRecipientIds != null && !selectedRecipientIds.isEmpty()) {
             Set<String> selectedSet = new HashSet<>(selectedRecipientIds);
@@ -180,7 +218,7 @@ public class MessagingRecipientService {
                     categoryCounts.merge(category, 1, Integer::sum));
         });
 
-        return new RecipientResolutionResult(new ArrayList<>(recipients.values()), directEmailsWithoutAccounts, categoryCounts);
+        return new RecipientResolutionResult(new ArrayList<>(recipients.values()), directEmailsWithoutAccounts, directPhoneNumbersWithoutAccounts, categoryCounts);
     }
 
     private MessagingRecipient upsertUserRecipient(UserFirestore user, RecipientCategory category, Map<String, MessagingRecipient> recipients) {
@@ -226,6 +264,10 @@ public class MessagingRecipientService {
         return "email:" + email.trim().toLowerCase(Locale.ROOT);
     }
 
+    private String buildPhoneKey(String phone) {
+        return "phone:" + sanitizePhone(phone);
+    }
+
     private String sanitizeEmail(String email) {
         return StringUtils.hasText(email) ? email.trim() : null;
     }
@@ -264,13 +306,16 @@ public class MessagingRecipientService {
     public static class RecipientResolutionResult {
         private final List<MessagingRecipient> recipients;
         private final List<String> directEmailsWithoutAccounts;
+        private final List<String> directPhoneNumbersWithoutAccounts;
         private final Map<RecipientCategory, Integer> categoryCounts;
 
         public RecipientResolutionResult(List<MessagingRecipient> recipients,
                                          List<String> directEmailsWithoutAccounts,
+                                         List<String> directPhoneNumbersWithoutAccounts,
                                          Map<RecipientCategory, Integer> categoryCounts) {
             this.recipients = recipients;
             this.directEmailsWithoutAccounts = directEmailsWithoutAccounts;
+            this.directPhoneNumbersWithoutAccounts = directPhoneNumbersWithoutAccounts;
             this.categoryCounts = categoryCounts;
         }
 
@@ -280,6 +325,10 @@ public class MessagingRecipientService {
 
         public List<String> getDirectEmailsWithoutAccounts() {
             return directEmailsWithoutAccounts;
+        }
+
+        public List<String> getDirectPhoneNumbersWithoutAccounts() {
+            return directPhoneNumbersWithoutAccounts;
         }
 
         public Map<RecipientCategory, Integer> getCategoryCounts() {

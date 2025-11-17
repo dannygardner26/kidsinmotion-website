@@ -9,6 +9,7 @@ public enum RecipientCategory {
     PARENTS("parents"),
     VOLUNTEERS("volunteers"),
     DIRECT_EMAILS("direct"),
+    DIRECT_PHONES("direct-phones"),
     EVENT_PARENTS("event-parents"),
     EVENT_VOLUNTEERS("event-volunteers");
 
