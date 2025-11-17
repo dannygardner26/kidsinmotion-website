@@ -25,30 +25,40 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return false;
   }
 
-  // Check for incomplete user types (like 'USER'/'user' instead of 'PARENT'/'VOLUNTEER')
-  // This catches re-registered users who were deleted from admin panel
-  if (profile?.userType === 'user' || profile?.userType === 'USER' || !profile?.userType) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('User has incomplete userType - needs profile completion:', profile?.userType);
-    }
-    return true;
-  }
-
   const hasRequiredFields = profile?.username && profile?.firstName && profile?.lastName;
   const hasContact = profile?.email || profile?.phoneNumber;
+  const validUserTypes = ['PARENT', 'VOLUNTEER', 'ADMIN'];
+  const hasValidUserType = profile?.userType && validUserTypes.includes(profile.userType.toUpperCase());
 
-  if (!hasRequiredFields) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Missing required fields:', { username: !!profile?.username, firstName: !!profile?.firstName, lastName: !!profile?.lastName });
+  // For OAuth users (registrationSource: 'oauth'), require profile completion if missing anything
+  if (profile?.registrationSource === 'oauth') {
+    if (!hasRequiredFields || !hasContact || !hasValidUserType) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('OAuth user needs profile completion:', {
+          hasRequiredFields,
+          hasContact,
+          hasValidUserType,
+          userType: profile?.userType
+        });
+      }
+      return true;
     }
-    return true;
-  }
+  } else {
+    // For regular registration users, they should have already provided everything during registration
+    // Only require completion if truly missing critical fields (firstName, lastName, username, email)
+    if (!hasRequiredFields || !hasContact) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Regular registration user missing critical fields:', {
+          hasRequiredFields,
+          hasContact,
+          registrationSource: profile?.registrationSource
+        });
+      }
+      return true;
+    }
 
-  if (!hasContact) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Missing contact info:', { email: !!profile?.email, phoneNumber: !!profile?.phoneNumber });
-    }
-    return true;
+    // Regular registration users should have already selected PARENT/VOLUNTEER during signup
+    // No additional profile completion needed for account type
   }
 
   // All non-admin, non-test users must have complete profiles
@@ -58,6 +68,11 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
       hasRequiredFields,
       hasContact,
       userType: profile?.userType,
+      username: profile?.username,
+      firstName: profile?.firstName,
+      lastName: profile?.lastName,
+      email: profile?.email,
+      phoneNumber: profile?.phoneNumber,
       needsCompletion: false
     });
   }
@@ -168,7 +183,7 @@ export const AuthProvider = ({ children }) => {
 
           // Use cached profile immediately for instant UI rendering
           setUserProfile(parsed);
-          setAuthReady(true);
+          // Don't set authReady here - wait for the actual auth state
           if (process.env.NODE_ENV !== 'production') {
             console.log("Using cached user profile:", parsed);
           }
@@ -188,9 +203,9 @@ export const AuthProvider = ({ children }) => {
           console.log("No cached profile, creating Firebase-only profile...");
         }
 
-        // Create minimal profile from Firebase user data only
-        const profile = {
-          uid: user.uid,
+        // Create default profile for new users only
+        const defaultProfile = {
+          firebaseUid: user.uid,
           email: user.email,
           firstName: user.displayName?.split(' ')[0] || '',
           lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
@@ -207,29 +222,33 @@ export const AuthProvider = ({ children }) => {
 
         // Automatically grant admin privileges to specific emails
         if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
-          profile.userType = 'ADMIN';
-          profile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
-          profile.needsOnboarding = false; // Admins skip onboarding
+          defaultProfile.userType = 'ADMIN';
+          defaultProfile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
+          defaultProfile.needsOnboarding = false; // Admins skip onboarding
           if (process.env.NODE_ENV !== 'production') {
             console.log("Automatically granted admin privileges to:", user.email);
           }
         }
 
-        setUserProfile(profile);
-
-        // Store user in Firestore for admin dashboard visibility
+        // Store user in Firestore and get back the actual profile (existing or new)
+        let actualProfile;
         try {
-          await firestoreUserService.ensureUserExists(user, profile);
+          actualProfile = await firestoreUserService.ensureUserExists(user, defaultProfile);
           if (process.env.NODE_ENV !== 'production') {
-            console.log("User stored/updated in Firestore for admin dashboard");
+            console.log("User profile from Firestore:", actualProfile);
+            console.log("Is existing user?", actualProfile.createdAt !== defaultProfile.createdAt);
           }
         } catch (error) {
           console.error("Error storing user in Firestore:", error);
-          // Don't block the login process if Firestore fails
+          // Fall back to default profile if Firestore fails
+          actualProfile = defaultProfile;
         }
 
+        // Use the actual profile from Firestore (which preserves existing data)
+        setUserProfile(actualProfile);
+
         // Check if profile completion is needed
-        const needsCompletion = computeNeedsProfileCompletion(profile, user);
+        const needsCompletion = computeNeedsProfileCompletion(actualProfile, user);
         setNeedsProfileCompletion(needsCompletion);
 
         // Redirect to profile completion for users who need it
@@ -238,13 +257,23 @@ export const AuthProvider = ({ children }) => {
           const currentPath = window.location.pathname;
 
           // Use profile username if available, otherwise use the user's email prefix
-          const username = profile.username || user.email?.split('@')[0] || user.uid;
+          const username = actualProfile.username || user.email?.split('@')[0] || user.uid;
           const accountPath = `/account/${username}`;
 
           if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true')) {
             if (process.env.NODE_ENV !== 'production') {
-              console.log('Redirecting to profile completion:', accountPath, 'for user with userType:', profile?.userType);
+              console.log('Redirecting to profile completion:', accountPath, 'for user with userType:', actualProfile?.userType);
             }
+
+            // Show user-friendly message about profile completion
+            const isOAuth = actualProfile?.registrationSource === 'oauth';
+            const message = isOAuth
+              ? 'Welcome! We need a few more details to complete your account setup...'
+              : 'Completing your profile setup...';
+
+            // You could show a toast notification here if you have a notification system
+            console.log(message);
+
             setTimeout(() => {
               window.location.href = `${accountPath}?complete=true`;
             }, 1000); // Small delay to allow UI to load
@@ -285,10 +314,8 @@ export const AuthProvider = ({ children }) => {
           console.error("Retry count:", retryCount);
         }
 
-        // Don't prevent login if backend sync fails - allow app to load with cached data or without profile
-        if (!authReady) {
-          setAuthReady(true); // Still allow app to load
-        }
+        // Don't prevent login if backend sync fails - but wait for auth state to be properly set
+        // Don't set authReady here - let the auth state change handler do it
       }
     } else {
       setUserProfile(null);
@@ -355,11 +382,28 @@ export const AuthProvider = ({ children }) => {
         }
 
         clearTimeout(loadingTimeout);
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.log("Setting currentUser to:", user ? { uid: user.uid, email: user.email } : null);
+        }
+
         setCurrentUser(user);
 
         if (user) {
           // Track the last known UID for targeted cache cleanup on logout
           lastUidRef.current = user.uid;
+
+          // Ensure user object is fully populated before proceeding
+          if (!user.uid || !user.email) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.warn('Firebase user object incomplete, waiting for full initialization:', {
+                hasUid: !!user.uid,
+                hasEmail: !!user.email
+              });
+            }
+            // Skip this auth state change and wait for a complete user object
+            return;
+          }
 
           // Check if this is a restored session vs a fresh login
           const isRestoredSession = !isGoogleOAuthLogin;
@@ -424,15 +468,24 @@ export const AuthProvider = ({ children }) => {
               // Update verification status
               setIsEmailVerified(user.emailVerified);
 
-              setAuthReady(true);
-              setLoading(false);
+              // Only set authReady after currentUser is properly set and user is valid
+              // Add a small delay to ensure currentUser state has updated in React
+              setTimeout(() => {
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log("Auth setup complete with valid user:", { uid: user.uid, email: user.email });
+                }
+                setAuthReady(true);
+                setLoading(false);
+              }, 100);
             } catch (syncError) {
               if (process.env.NODE_ENV !== 'production') {
                 console.error("Backend sync failed:", syncError);
               }
-              // Still set auth ready to allow app to load
-              setAuthReady(true);
-              setLoading(false);
+              // Still set auth ready to allow app to load, but ensure currentUser is set
+              setTimeout(() => {
+                setAuthReady(true);
+                setLoading(false);
+              }, 100);
             }
 
             // Verify that Firebase auth keys exist in localStorage after successful login

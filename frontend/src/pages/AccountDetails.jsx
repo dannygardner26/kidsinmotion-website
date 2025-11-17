@@ -11,7 +11,8 @@ const AccountDetails = () => {
   const { username } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { userProfile: currentUserProfile, authReady, loading: authLoading, user: currentUser } = useAuth();
+  const { userProfile: currentUserProfile, authReady, loading: authLoading, currentUser, updateProfile } = useAuth();
+  const [authRetryCount, setAuthRetryCount] = useState(0);
 
   const [profileData, setProfileData] = useState(null);
   const [formData, setFormData] = useState({
@@ -88,22 +89,54 @@ const AccountDetails = () => {
     try {
       setIsLoading(true);
 
-      // For Firebase-only users, use current user profile from context or create minimal profile
-      if (isSelfEdit && (currentUserProfile || currentUser)) {
-        const userData = currentUserProfile ? {
-          ...currentUserProfile,
-          username: currentUserProfile.username || currentUserProfile.email?.split('@')[0] || ''
-        } : {
-          // Create minimal profile for new Firebase users
-          uid: currentUser.uid,
-          email: currentUser.email,
-          firstName: currentUser.displayName?.split(' ')[0] || '',
-          lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
-          username: currentUser.email?.split('@')[0] || '',
-          userType: 'USER',
-          roles: ['ROLE_USER'],
-          emailVerified: currentUser.emailVerified || false
-        };
+      // For Firebase-only users, fetch fresh data from Firestore to ensure we have the latest
+      if (isSelfEdit && currentUser) {
+        let userData;
+
+        try {
+          // Try to get fresh data from Firestore first
+          const freshUserData = await firestoreUserService.getUser(currentUser.uid);
+
+          if (freshUserData) {
+            // Use fresh Firestore data
+            userData = {
+              ...freshUserData,
+              username: freshUserData.username || freshUserData.email?.split('@')[0] || ''
+            };
+            console.log('Loaded fresh profile data from Firestore:', userData);
+          } else {
+            // Fallback to AuthContext profile or create minimal profile
+            userData = currentUserProfile ? {
+              ...currentUserProfile,
+              username: currentUserProfile.username || currentUserProfile.email?.split('@')[0] || ''
+            } : {
+              // Create minimal profile for new Firebase users
+              uid: currentUser.uid,
+              email: currentUser.email,
+              firstName: currentUser.displayName?.split(' ')[0] || '',
+              lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+              username: currentUser.email?.split('@')[0] || '',
+              userType: 'USER',
+              roles: ['ROLE_USER'],
+              emailVerified: currentUser.emailVerified || false
+            };
+
+            console.log('Using fallback profile data:', userData);
+          }
+        } catch (error) {
+          console.error('Error loading fresh profile data:', error);
+          // Fallback to AuthContext profile
+          userData = currentUserProfile || {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            firstName: currentUser.displayName?.split(' ')[0] || '',
+            lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
+            username: currentUser.email?.split('@')[0] || '',
+            userType: 'USER',
+            roles: ['ROLE_USER'],
+            emailVerified: currentUser.emailVerified || false
+          };
+        }
 
         setProfileData(userData);
         setOriginalUsername(userData.username);
@@ -196,10 +229,24 @@ const AccountDetails = () => {
   const checkUsernameAvailability = async (username) => {
     setUsernameCheckLoading(true);
     try {
-      // For Firebase-only users, skip backend username checks
-      // Assume username is available if it's different from original
-      const available = username !== originalUsername;
+      // If it's the same as original username, it's available (no change)
+      if (username === originalUsername) {
+        setUsernameAvailable(true);
+        return;
+      }
+
+      // Check against all users in Firestore to ensure uniqueness
+      const allUsers = await firestoreUserService.getAllUsers();
+      const existingUser = allUsers.find(user =>
+        user.username === username && user.firebaseUid !== currentUser?.uid
+      );
+
+      const available = !existingUser;
       setUsernameAvailable(available);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Username "${username}" availability check:`, available ? 'Available' : 'Taken');
+      }
     } catch (error) {
       console.error('Error checking username availability:', error);
       setUsernameAvailable(null);
@@ -266,15 +313,46 @@ const AccountDetails = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const scrollToError = (fieldName) => {
+    const errorElement = document.querySelector(`[data-field="${fieldName}"]`) ||
+                        document.querySelector(`[name="${fieldName}"]`) ||
+                        document.querySelector(`#${fieldName}`);
+    if (errorElement) {
+      errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      errorElement.focus();
+      // Add temporary red outline
+      errorElement.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.3)';
+      errorElement.style.borderColor = '#dc3545';
+      setTimeout(() => {
+        errorElement.style.boxShadow = '';
+        errorElement.style.borderColor = '';
+      }, 3000);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check username availability before submitting
+    if (formData.username !== originalUsername && usernameAvailable === false) {
+      const errorMsg = 'This username is already taken. Please choose a different one.';
+      setErrors({ username: errorMsg });
+      scrollToError('username');
+      return;
+    }
+
     if (!validateForm()) {
+      // Find first error field and scroll to it
+      const firstErrorField = Object.keys(errors)[0];
+      if (firstErrorField) {
+        scrollToError(firstErrorField);
+      }
       return;
     }
 
     setIsSaving(true);
     setSuccessMessage('');
+    setAuthRetryCount(0); // Reset retry count on new submission
 
     try {
       // Set password for OAuth users first if needed
@@ -301,41 +379,141 @@ const AccountDetails = () => {
       }
 
       // Handle Firebase users vs backend users differently
-      if (isSelfEdit && currentUser) {
-        // Firebase user - update profile in Firestore and context
-        // Create profile object from current data or use existing profile
-        const baseProfile = currentUserProfile || {
-          uid: currentUser.uid,
-          firebaseUid: currentUser.uid,
-          email: currentUser.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          username: formData.username,
-          userType: formData.userType || 'USER',
-          createdAt: new Date().toISOString()
-        };
+      // For Firebase users editing themselves, ALWAYS use Firebase path
+      // This handles both profile completion (?complete=true) and regular editing (?edit=true)
+      const searchParams = new URLSearchParams(location.search);
+      const completeParam = searchParams.get('complete');
+      const editParam = searchParams.get('edit');
+      const isProfileCompletion = completeParam === 'true';
+      const isProfileEdit = editParam === 'true';
 
-        const updatedProfile = {
-          ...baseProfile,
-          ...updateData,
-          uid: currentUser.uid,
-          firebaseUid: currentUser.uid,
-          updatedAt: new Date().toISOString()
-        };
+      // If user is not loaded yet, prevent save action
+      if (!authReady || authLoading) {
+        setErrors({ general: 'Authentication is still loading. Please wait and try again.' });
+        return;
+      }
 
-        // Update in Firestore for admin dashboard visibility
-        await firestoreUserService.updateUser(currentUser.uid, updatedProfile);
+      // If currentUser is still undefined after auth is ready, this indicates a timing issue
+      if (!currentUser) {
+        console.error('currentUser is undefined even though auth is ready. Auth state:', {
+          authReady,
+          authLoading,
+          currentUserProfile: !!currentUserProfile,
+          retryCount: authRetryCount
+        });
 
-        // Update local profile data and context
-        setProfileData(updatedProfile);
-
-        // Update the user profile in auth context if available
-        if (typeof updateUserProfile === 'function') {
-          updateUserProfile(updatedProfile);
+        // Retry up to 3 times with increasing delays
+        if (authRetryCount < 3) {
+          setErrors({ general: `Authentication is initializing. Retrying in ${1 + authRetryCount} second(s)...` });
+          setTimeout(() => {
+            setAuthRetryCount(prev => prev + 1);
+            setErrors({}); // Clear error to trigger retry
+            handleSubmit(e); // Retry form submission
+          }, (1 + authRetryCount) * 1000);
+        } else {
+          setErrors({ general: 'Authentication error. Please refresh the page and try again.' });
         }
+        return;
+      }
 
-        console.log('Firebase profile updated successfully');
+      const isFirebaseUser = currentUser && currentUser.uid;
+
+      // Special handling for username changes during profile completion/editing
+      const isUsernameChange = formData.username !== username;
+      const isFirebaseUserWithUsernameChange = isFirebaseUser && isUsernameChange && (isProfileCompletion || isProfileEdit);
+
+      // Use Firebase path if:
+      // 1. Firebase user editing themselves, OR
+      // 2. Firebase user in completion/edit mode, OR
+      // 3. Firebase user changing username during completion/edit
+      const shouldUseFirebasePath = isFirebaseUser && (
+        isSelfEdit ||
+        isProfileCompletion ||
+        isProfileEdit ||
+        isFirebaseUserWithUsernameChange
+      );
+
+      // Log every step
+      console.log('URL and params:', {
+        fullURL: window.location.href,
+        search: location.search,
+        completeParam: completeParam,
+        editParam: editParam,
+        isProfileCompletion: isProfileCompletion,
+        isProfileEdit: isProfileEdit
+      });
+      console.log('User checks:', {
+        currentUser: currentUser,
+        currentUserUID: currentUser?.uid,
+        currentUserProfileUsername: currentUserProfile?.username,
+        urlUsername: username,
+        isFirebaseUser: isFirebaseUser
+      });
+
+      console.log('Save conditions:', {
+        isSelfEdit: isSelfEdit,
+        currentUser: !!currentUser,
+        currentUserUid: currentUser?.uid,
+        currentUserProfile: !!currentUserProfile,
+        username: username,
+        formDataUsername: formData.username,
+        isUsernameChange: isUsernameChange,
+        isProfileCompletion: isProfileCompletion,
+        isProfileEdit: isProfileEdit,
+        isFirebaseUser: isFirebaseUser,
+        isFirebaseUserWithUsernameChange: isFirebaseUserWithUsernameChange,
+        shouldUseFirebase: shouldUseFirebasePath,
+        actualPath: shouldUseFirebasePath ? 'FIREBASE' : 'BACKEND',
+        urlParams: location.search
+      });
+      console.log('Detailed breakdown:', {
+        'isFirebaseUser': isFirebaseUser,
+        'isSelfEdit': isSelfEdit,
+        'isProfileCompletion': isProfileCompletion,
+        'isProfileEdit': isProfileEdit,
+        'isUsernameChange': isUsernameChange,
+        'isFirebaseUserWithUsernameChange': isFirebaseUserWithUsernameChange,
+        'Final shouldUseFirebase': shouldUseFirebasePath
+      });
+
+      if (shouldUseFirebasePath) {
+        console.log('Taking Firebase path for profile update');
+        try {
+          // Firebase user - update profile in Firestore and context
+          // Create profile object from current data or use existing profile
+          const baseProfile = currentUserProfile || {
+            uid: currentUser.uid,
+            firebaseUid: currentUser.uid,
+            email: currentUser.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            username: formData.username,
+            userType: formData.userType || 'USER',
+            createdAt: new Date().toISOString()
+          };
+
+          const updatedProfile = {
+            ...baseProfile,
+            ...updateData,
+            uid: currentUser.uid,
+            firebaseUid: currentUser.uid,
+            email: formData.email, // Include email changes for Firebase users
+            updatedAt: new Date().toISOString()
+          };
+
+          // Use AuthContext updateProfile which handles both Firestore and localStorage
+          const finalUpdatedProfile = await updateProfile(updatedProfile);
+
+          // Update local profile data
+          setProfileData(finalUpdatedProfile);
+
+          console.log('Firebase profile updated successfully');
+        } catch (error) {
+          console.error('Firebase update failed, falling back to backend:', error);
+          throw error; // Re-throw to prevent fallback to backend
+        }
       } else {
+        console.log('Taking backend path for profile update');
         // Backend user - use API
         await apiService.updateUserProfileByUsername(username, updateData);
       }
@@ -380,10 +558,10 @@ const AccountDetails = () => {
       }
 
       // For Firebase users who just completed profile setup, redirect to dashboard
-      const searchParams = new URLSearchParams(location.search);
-      const isProfileCompletion = searchParams.get('complete') === 'true';
+      // Use the searchParams already declared above
+      const isProfileCompletionRedirect = searchParams.get('complete') === 'true';
 
-      if (isProfileCompletion && isSelfEdit) {
+      if (isProfileCompletionRedirect && isSelfEdit) {
         setTimeout(() => {
           navigate('/dashboard');
         }, 1500);
@@ -883,10 +1061,10 @@ const AccountDetails = () => {
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          disabled={!isAdmin || isSelfEdit}
+                          disabled={!isAdmin && !isEditMode}
                         />
                         {errors.email && <div className="invalid-feedback">{errors.email}</div>}
-                        {(!isAdmin || isSelfEdit) && (
+                        {(!isAdmin && !isEditMode) && (
                           <small className="form-text text-muted">
                             Email address cannot be changed here.
                           </small>
@@ -959,27 +1137,34 @@ const AccountDetails = () => {
 
                       <div className="row">
                         <div className="col-md-12">
-                          <div className="form-group">
-                            <label>Current Account Type: <strong>{formData.userType}</strong></label>
-                            <div className="mt-2">
-                              <button
-                                type="button"
-                                className="btn btn-outline-primary me-2"
-                                onClick={() => handleAccountTypeChange('PARENT')}
-                                disabled={formData.userType === 'PARENT'}
-                              >
-                                <i className="fas fa-users me-2"></i>
-                                Switch to Parent
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-outline-success"
-                                onClick={() => handleAccountTypeChange('VOLUNTEER')}
-                                disabled={formData.userType === 'VOLUNTEER'}
-                              >
-                                <i className="fas fa-hand-holding-heart me-2"></i>
-                                Switch to Volunteer
-                              </button>
+                          <div className="account-type-section">
+                            <div className="current-type-display">
+                              <i className="fas fa-user-check text-success me-2"></i>
+                              <span>Current Account Type: <strong className="text-dark">{formData.userType}</strong></span>
+                            </div>
+                            <div className="account-type-buttons mt-3">
+                              <div className="d-grid gap-2 d-md-flex">
+                                <button
+                                  type="button"
+                                  className={`btn ${formData.userType === 'PARENT' ? 'btn-success' : 'btn-outline-success'} flex-md-fill me-md-2`}
+                                  onClick={() => handleAccountTypeChange('PARENT')}
+                                  disabled={formData.userType === 'PARENT'}
+                                >
+                                  <i className="fas fa-users me-2"></i>
+                                  Parent/Guardian
+                                  {formData.userType === 'PARENT' && <i className="fas fa-check ms-2"></i>}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`btn ${formData.userType === 'VOLUNTEER' ? 'btn-success' : 'btn-outline-success'} flex-md-fill`}
+                                  onClick={() => handleAccountTypeChange('VOLUNTEER')}
+                                  disabled={formData.userType === 'VOLUNTEER'}
+                                >
+                                  <i className="fas fa-hands-helping me-2"></i>
+                                  Volunteer
+                                  {formData.userType === 'VOLUNTEER' && <i className="fas fa-check ms-2"></i>}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -991,8 +1176,13 @@ const AccountDetails = () => {
                   {isSelfEdit && (formData.userType === 'USER' || formData.userType === 'user' || !formData.userType) && (
                     <>
                       <div className="section-header">
-                        <h4>Complete Your Profile</h4>
-                        <small className="text-muted">Please select your account type to continue</small>
+                        <h4>Complete Your Account Setup</h4>
+                        <div className="alert alert-info">
+                          <i className="fas fa-info-circle me-2"></i>
+                          <strong>Almost there!</strong> We need a bit more information to complete your account setup.
+                          Please select whether you're joining as a parent/guardian or as a volunteer to help us
+                          provide you with the most relevant information and opportunities.
+                        </div>
                       </div>
 
                       <div className="row">
@@ -1149,6 +1339,11 @@ const AccountDetails = () => {
                       type="submit"
                       className="btn btn-primary"
                       disabled={isSaving || (formData.username !== originalUsername && usernameAvailable === false)}
+                      title={
+                        formData.username !== originalUsername && usernameAvailable === false
+                          ? 'Please choose an available username before saving'
+                          : ''
+                      }
                     >
                       {isSaving ? (
                         <>
@@ -1162,6 +1357,12 @@ const AccountDetails = () => {
                         </>
                       )}
                     </button>
+                    {formData.username !== originalUsername && usernameAvailable === false && (
+                      <div className="text-danger small mt-2">
+                        <i className="fas fa-exclamation-triangle mr-1"></i>
+                        Username "{formData.username}" is already taken. Please choose a different username.
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={handleCancel}
@@ -1237,6 +1438,43 @@ const AccountDetails = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .account-type-section {
+          background: #f8f9fa;
+          border-radius: 8px;
+          padding: 1.5rem;
+          border: 1px solid #e9ecef;
+        }
+
+        .current-type-display {
+          font-size: 1rem;
+          margin-bottom: 0;
+        }
+
+        .account-type-buttons .btn {
+          font-weight: 500;
+          border-radius: 6px;
+          transition: all 0.3s ease;
+          min-height: 50px;
+        }
+
+        .account-type-buttons .btn:not(:disabled):hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .account-type-buttons .btn:disabled {
+          cursor: not-allowed;
+          opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+          .account-type-buttons .d-md-flex {
+            gap: 0.5rem !important;
+          }
+        }
+      `}</style>
 
       {/* Email Change Modal */}
       {showEmailChangeModal && (
