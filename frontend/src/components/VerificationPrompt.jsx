@@ -422,22 +422,6 @@ const VerificationPrompt = ({
           Check Status
         </button>
 
-        {onClose && (
-          <button
-            onClick={onClose}
-            style={{
-              backgroundColor: 'transparent',
-              color: '#856404',
-              border: '1px solid #856404',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            Continue Without Verifying
-          </button>
-        )}
       </div>
 
       <div style={{

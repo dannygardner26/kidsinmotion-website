@@ -46,14 +46,16 @@ const Register = () => {
     if (!firstName.trim()) errors.firstName = 'First name is required';
     if (!lastName.trim()) errors.lastName = 'Last name is required';
 
-    // Either email or phone is required
-    if (!email.trim() && !phoneNumber.trim()) {
-      errors.email = 'Either email or phone number is required';
-      errors.phoneNumber = 'Either email or phone number is required';
-    } else {
-      if (email.trim() && !/\S+@\S+\.\S+/.test(email)) {
-        errors.email = 'Email is invalid';
-      }
+    // Email is required
+    if (!email.trim()) {
+      errors.email = 'Email address is required';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = 'Email address is invalid';
+    }
+
+    // Phone is optional, but validate format if provided
+    if (phoneNumber.trim() && !/^[\+]?[(]?[\d\s\-\(\)]+$/.test(phoneNumber.trim())) {
+      errors.phoneNumber = 'Phone number format is invalid';
     }
 
     // Validate passwords
@@ -320,7 +322,7 @@ const Register = () => {
 
                   {/* Use theme form-group */}
                   <div className="form-group">
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="email">Email Address*</label>
                     <input
                       type="email"
                       id="email"
@@ -329,6 +331,7 @@ const Register = () => {
                       className={`form-control ${formErrors.email ? 'border-red-500' : ''}`}
                       value={formData.email}
                       onChange={handleChange}
+                      required
                     />
                     {formErrors.email && (
                       <p className="text-red-500 text-xs italic mt-1">{formErrors.email}</p>
@@ -337,16 +340,16 @@ const Register = () => {
 
                   {/* Use theme form-group */}
                   <div className="form-group">
-                    <label htmlFor="phoneNumber">Phone Number</label>
+                    <label htmlFor="phoneNumber">Phone Number (Optional)</label>
                     <input
                       type="tel"
                       id="phoneNumber"
                       name="phoneNumber"
+                      placeholder="(555) 123-4567"
                       // Use theme form-control
                       className={`form-control ${formErrors.phoneNumber ? 'border-red-500' : ''}`}
                       value={formData.phoneNumber}
                       onChange={handleChange}
-                      placeholder="XXX-XXX-XXXX"
                     />
                     {formErrors.phoneNumber && (
                       <p className="text-red-500 text-xs italic mt-1">{formErrors.phoneNumber}</p>
