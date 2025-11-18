@@ -137,11 +137,26 @@ const Register = () => {
 
         console.log("Backend profile created successfully.");
 
-        // 4. Send email verification
+        // 4. Send email verification using our custom SendGrid system
         try {
-          const { sendEmailVerification } = await import('firebase/auth');
-          await sendEmailVerification(user);
-          console.log("Email verification sent successfully.");
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/users/send-verification-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            },
+            body: JSON.stringify({
+              email: user.email,
+              name: `${formData.firstName} ${formData.lastName}`
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to send verification email');
+          }
+
+          console.log("Custom email verification sent successfully via SendGrid");
 
           // Add success notification
           addNotification({
