@@ -349,16 +349,9 @@ const EventDetail = () => {
                             className="btn-primary register-pulse"
                           >
                             <i className="fas fa-plus-circle"></i>
-                            Register Your Child
+                            Sign Up Your Child
                           </Link>
                         )}
-                        <Link
-                          to={`/events/${event.id}/parent-view`}
-                          className="btn-outline"
-                        >
-                          <i className="fas fa-dashboard"></i>
-                          Event Dashboard
-                        </Link>
                       </div>
                     ) : (
                       <div className="action-buttons">
@@ -395,21 +388,27 @@ const EventDetail = () => {
                 <div className="card-content">
                   <p className="volunteer-text">Help make this event amazing!</p>
                   {currentUser ? (
-                    <Link
-                      to={`/events/${event.id}/volunteer`}
-                      className="btn-secondary"
-                    >
-                      <i className="fas fa-heart"></i>
-                      Sign Up to Volunteer
-                    </Link>
+                    <div style={{ textAlign: 'center' }}>
+                      <Link
+                        to={`/events/${event.id}/volunteer`}
+                        className="btn-secondary"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                      >
+                        <i className="fas fa-heart"></i>
+                        Sign Up to Volunteer
+                      </Link>
+                    </div>
                   ) : (
-                    <Link
-                      to={`/login?redirect=/events/${event.id}/volunteer`}
-                      className="btn-secondary volunteer-login-btn"
-                    >
-                      <i className="fas fa-sign-in-alt"></i>
-                      <span>Login to Volunteer</span>
-                    </Link>
+                    <div style={{ textAlign: 'center' }}>
+                      <Link
+                        to={`/login?redirect=/events/${event.id}/volunteer`}
+                        className="btn-secondary volunteer-login-btn"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                      >
+                        <i className="fas fa-sign-in-alt"></i>
+                        <span>Login to Volunteer</span>
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>
