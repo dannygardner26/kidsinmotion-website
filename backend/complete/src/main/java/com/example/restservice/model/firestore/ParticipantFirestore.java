@@ -3,6 +3,7 @@ package com.example.restservice.model.firestore;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * Firestore-compatible Participant model
@@ -34,6 +35,10 @@ public class ParticipantFirestore {
     private String eventDate;
     private String ageGroup;
     private String grade;
+
+    // Transient field for API responses (not stored in Firestore)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private transient Map<String, Object> parentUser;
 
     public ParticipantFirestore() {
         this.createdTimestamp = System.currentTimeMillis();
@@ -192,4 +197,7 @@ public class ParticipantFirestore {
 
     public String getGrade() { return grade; }
     public void setGrade(String grade) { this.grade = grade; }
+
+    public Map<String, Object> getParentUser() { return parentUser; }
+    public void setParentUser(Map<String, Object> parentUser) { this.parentUser = parentUser; }
 }

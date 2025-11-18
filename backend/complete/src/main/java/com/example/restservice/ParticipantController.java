@@ -87,6 +87,45 @@ public class ParticipantController {
     public ResponseEntity<?> getParticipantsForEvent(@PathVariable String eventId) {
         try {
             List<ParticipantFirestore> participants = participantRepository.findByEventId(eventId);
+
+            // Enrich participant data with parent user information
+            for (ParticipantFirestore participant : participants) {
+                try {
+                    Optional<UserFirestore> parentUserOpt = userRepository.findByFirebaseUid(participant.getParentUserId());
+                    if (parentUserOpt.isPresent()) {
+                        UserFirestore parentUser = parentUserOpt.get();
+
+                        // Create a map to include parent user details
+                        Map<String, Object> parentUserDetails = new HashMap<>();
+                        parentUserDetails.put("firstName", parentUser.getFirstName());
+                        parentUserDetails.put("lastName", parentUser.getLastName());
+                        parentUserDetails.put("email", parentUser.getEmail());
+                        parentUserDetails.put("phoneNumber", parentUser.getPhoneNumber());
+                        parentUserDetails.put("username", parentUser.getUsername());
+
+                        // Update denormalized fields on participant if they're empty
+                        if (participant.getParentUserFirstName() == null || participant.getParentUserFirstName().isEmpty()) {
+                            participant.setParentUserFirstName(parentUser.getFirstName());
+                        }
+                        if (participant.getParentUserLastName() == null || participant.getParentUserLastName().isEmpty()) {
+                            participant.setParentUserLastName(parentUser.getLastName());
+                        }
+                        if (participant.getParentUserEmail() == null || participant.getParentUserEmail().isEmpty()) {
+                            participant.setParentUserEmail(parentUser.getEmail());
+                        }
+                        if (participant.getParentUserPhoneNumber() == null || participant.getParentUserPhoneNumber().isEmpty()) {
+                            participant.setParentUserPhoneNumber(parentUser.getPhoneNumber());
+                        }
+
+                        // Set the parent user details using reflection or a custom field
+                        participant.setParentUser(parentUserDetails);
+                    }
+                } catch (Exception userError) {
+                    // Log the error but don't fail the entire request
+                    System.err.println("Error enriching participant " + participant.getId() + " with parent user data: " + userError.getMessage());
+                }
+            }
+
             return ResponseEntity.ok(participants);
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.status(500)
