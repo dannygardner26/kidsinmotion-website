@@ -16,6 +16,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
     emergencyContactPhone: '',
     needsFood: false,
     additionalNotes: '',
+    agreesToCommunications: false,
     confirmDropoffPickup: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -154,6 +155,12 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
 
     if (selectedChildren.length === 0) {
       setError('Please select at least one child to register for this event.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.agreesToCommunications) {
+      setError('Please agree to receive communications from Kids in Motion to continue with registration.');
       setIsSubmitting(false);
       return;
     }
@@ -623,6 +630,24 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                     <small className="d-block text-muted mt-1">
                       We typically provide free pizza, popsicles, or other snacks during events.
                       Check this box if your children would like to participate in the food program.
+                    </small>
+                  </label>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <div className="checkbox-option">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      name="agreesToCommunications"
+                      checked={formData.agreesToCommunications}
+                      onChange={handleInputChange}
+                    />
+                    <span className="custom-checkbox"></span>
+                    <strong>I agree to receive communications from Kids in Motion via email and/or phone *</strong>
+                    <small className="d-block text-muted mt-1">
+                      By checking this box, you consent to receive event updates, important announcements, and other communications from Kids in Motion to your registered email address and phone number.
                     </small>
                   </label>
                 </div>

@@ -216,6 +216,15 @@ public class MessagingService {
             return;
         }
 
+        // Check if user has opted out of email communications
+        if (recipient.isEmailOptedOut()) {
+            result.incrementEmailSkipped();
+            result.addFailure(new BroadcastResult.DeliveryFailure("email",
+                    "User has opted out of email communications",
+                    recipientSnapshot(recipient)));
+            return;
+        }
+
         boolean delivered = emailDeliveryService.sendEmail(recipient.getEmail(), subject, body);
         if (delivered) {
             result.incrementEmailSent();

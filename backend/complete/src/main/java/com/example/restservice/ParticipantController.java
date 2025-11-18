@@ -213,6 +213,16 @@ public class ParticipantController {
                 participant.setParentUserPhoneNumber(user.getPhoneNumber());
                 participant.setParentUserUsername(user.getUsername());
                 participant.setParentUserFullName(user.getFullName());
+
+                // Update user's email communication preference based on registration consent
+                if (request.getAgreesToCommunications() != null) {
+                    // If user explicitly agrees, set opted out to false
+                    // If user doesn't agree, set opted out to true
+                    boolean optOut = !request.getAgreesToCommunications();
+                    user.setEmailOptedOut(optOut);
+                    user.setUpdatedTimestamp(System.currentTimeMillis());
+                    userRepository.save(user); // Save the updated user preference
+                }
             }
 
             participant.setEventName(event.getName());
@@ -413,6 +423,7 @@ public class ParticipantController {
         private String emergencyContactPhone;
         private String medicalInfo;
         private String specialRequests;
+        private Boolean agreesToCommunications; // User consent for receiving communications
 
         // Getters and setters
         public String getEventId() { return eventId; }
@@ -441,6 +452,9 @@ public class ParticipantController {
 
         public String getSpecialRequests() { return specialRequests; }
         public void setSpecialRequests(String specialRequests) { this.specialRequests = specialRequests; }
+
+        public Boolean getAgreesToCommunications() { return agreesToCommunications; }
+        public void setAgreesToCommunications(Boolean agreesToCommunications) { this.agreesToCommunications = agreesToCommunications; }
 
         @Override
         public String toString() {

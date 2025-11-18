@@ -41,6 +41,7 @@ public class UserFirestore {
     private String bannedReason; // admin message explaining ban reason
     private Boolean emailVerified;
     private Boolean isEmailVerified; // Alternative naming
+    private Boolean emailOptedOut; // User has opted out of email communications
     private Boolean phoneVerified;
     private Boolean needsOnboarding; // Flag for users needing to complete onboarding flow
     private Long createdTimestamp;
@@ -168,6 +169,7 @@ public class UserFirestore {
                                      (map.get("isEmailVerified") != null ? (Boolean) map.get("isEmailVerified") : false);
         user.setEmailVerified(emailVerifiedValue);
         user.setIsEmailVerified(emailVerifiedValue); // Keep in sync for backward compatibility
+        user.setEmailOptedOut(map.get("emailOptedOut") != null ? (Boolean) map.get("emailOptedOut") : false);
         user.setPhoneVerified(map.get("phoneVerified") != null ? (Boolean) map.get("phoneVerified") : false);
         user.setNeedsOnboarding(map.get("needsOnboarding") != null ? (Boolean) map.get("needsOnboarding") : false);
 
@@ -242,6 +244,9 @@ public class UserFirestore {
 
     public Boolean getEmailVerified() { return emailVerified; }
     public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public Boolean getEmailOptedOut() { return emailOptedOut; }
+    public void setEmailOptedOut(Boolean emailOptedOut) { this.emailOptedOut = emailOptedOut; }
 
     public Boolean getPhoneVerified() { return phoneVerified; }
     public void setPhoneVerified(Boolean phoneVerified) { this.phoneVerified = phoneVerified; }

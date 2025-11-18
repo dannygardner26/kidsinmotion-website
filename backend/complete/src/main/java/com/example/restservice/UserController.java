@@ -1471,4 +1471,60 @@ public class UserController {
             return ResponseEntity.internalServerError().body(Map.of("error", "Error deleting user: " + e.getMessage()));
         }
     }
+
+    /**
+     * Unsubscribe user from email communications
+     * This endpoint can be called when a user clicks the unsubscribe link in emails
+     */
+    @PostMapping("/users/unsubscribe")
+    public ResponseEntity<?> unsubscribeFromEmails(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (!StringUtils.hasText(email)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email address is required"));
+            }
+
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByEmail(email);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.notFound().body(Map.of("error", "User not found with email: " + email));
+            }
+
+            UserFirestore user = userOpt.get();
+            user.setEmailOptedOut(true);
+            user.setUpdatedTimestamp(System.currentTimeMillis());
+            userFirestoreRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Successfully unsubscribed from email communications"));
+
+        } catch (Exception e) {
+            System.err.println("Error unsubscribing user: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error processing unsubscribe request"));
+        }
+    }
+
+    /**
+     * Re-subscribe user to email communications
+     */
+    @PostMapping("/users/subscribe")
+    public ResponseEntity<?> subscribeToEmails(Authentication authentication) {
+        try {
+            String firebaseUid = authentication.getName();
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
+
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            user.setEmailOptedOut(false);
+            user.setUpdatedTimestamp(System.currentTimeMillis());
+            userFirestoreRepository.save(user);
+
+            return ResponseEntity.ok(Map.of("message", "Successfully subscribed to email communications"));
+
+        } catch (Exception e) {
+            System.err.println("Error subscribing user: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error processing subscribe request"));
+        }
+    }
 }

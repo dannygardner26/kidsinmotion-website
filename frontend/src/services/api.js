@@ -133,6 +133,9 @@ class ApiService {
       };
 
       const tokenPreview = token ? `${token.slice(0, 8)}...` : 'none';
+      // Temporarily enable debug logs for authentication troubleshooting
+      console.log(`[api] ${options.method || 'GET'} ${endpoint} token: ${tokenPreview}`);
+      console.log('[api] headers', config.headers);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[api] ${options.method || 'GET'} ${endpoint} token: ${tokenPreview}`);
         console.log('[api] headers', config.headers);

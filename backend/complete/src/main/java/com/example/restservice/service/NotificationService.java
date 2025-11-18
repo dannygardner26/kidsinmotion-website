@@ -365,4 +365,90 @@ public class NotificationService {
                   .replace("\n", "\\n")
                   .replace("\r", "");
     }
+
+    /**
+     * Sends a custom email verification message using the beautiful Kids in Motion template
+     * This replaces Firebase's default verification emails with our branded design
+     */
+    public boolean sendEmailVerification(String userEmail, String userName, String verificationUrl) {
+        try {
+            if (!emailDeliveryService.isEnabled()) {
+                logger.info("Email service is disabled, skipping email verification for {}", userEmail);
+                return false;
+            }
+
+            String subject = "Verify Your Email Address - Kids in Motion";
+            String emailBody = buildEmailVerificationBody(userName, verificationUrl);
+
+            boolean emailSent = emailDeliveryService.sendEmail(userEmail, subject, emailBody);
+            logger.info("Email verification sent to {}: {}", userEmail, emailSent);
+
+            return emailSent;
+        } catch (Exception e) {
+            logger.error("Failed to send email verification to {}: {}", userEmail, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Builds the email verification message body
+     */
+    private String buildEmailVerificationBody(String userName, String verificationUrl) {
+        StringBuilder body = new StringBuilder();
+
+        body.append("Welcome to Kids in Motion").append(userName != null ? ", " + userName : "").append("!\n\n");
+        body.append("Thank you for joining our community. To complete your account setup, please verify your email address.\n\n");
+        body.append("Click the link below to verify your email:\n");
+        body.append(verificationUrl).append("\n\n");
+        body.append("If you didn't create an account with Kids in Motion, you can safely ignore this email.\n\n");
+        body.append("This verification link will expire in 24 hours for security purposes.\n\n");
+        body.append("Welcome aboard!\n");
+        body.append("The Kids in Motion Team");
+
+        return body.toString();
+    }
+
+    /**
+     * Sends a simple email verification without URL (for manual verification workflow)
+     */
+    public boolean sendEmailVerificationNotice(String userEmail, String userName) {
+        try {
+            if (!emailDeliveryService.isEnabled()) {
+                logger.info("Email service is disabled, skipping email verification notice for {}", userEmail);
+                return false;
+            }
+
+            String subject = "Welcome to Kids in Motion - Account Created";
+            String emailBody = buildWelcomeEmailBody(userName);
+
+            boolean emailSent = emailDeliveryService.sendEmail(userEmail, subject, emailBody);
+            logger.info("Welcome email sent to {}: {}", userEmail, emailSent);
+
+            return emailSent;
+        } catch (Exception e) {
+            logger.error("Failed to send welcome email to {}: {}", userEmail, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Builds the welcome email message body for new accounts
+     */
+    private String buildWelcomeEmailBody(String userName) {
+        StringBuilder body = new StringBuilder();
+
+        body.append("Welcome to Kids in Motion").append(userName != null ? ", " + userName : "").append("!\n\n");
+        body.append("Your account has been successfully created. You can now:\n\n");
+        body.append("• Register your children for upcoming events\n");
+        body.append("• View event schedules and details\n");
+        body.append("• Sign up for volunteer opportunities\n");
+        body.append("• Stay updated with announcements\n\n");
+        body.append("Visit our website to get started:\n");
+        body.append("https://kidsinmotionpa.org\n\n");
+        body.append("If you have any questions, feel free to reach out to us at info@kidsinmotionpa.org.\n\n");
+        body.append("Welcome to the family!\n");
+        body.append("The Kids in Motion Team");
+
+        return body.toString();
+    }
 }

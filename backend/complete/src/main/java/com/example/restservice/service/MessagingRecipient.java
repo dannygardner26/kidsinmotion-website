@@ -14,6 +14,7 @@ public class MessagingRecipient {
     private boolean directEmailOnly;
     private boolean includedByDirectPhone;
     private boolean directPhoneOnly;
+    private boolean emailOptedOut; // User has opted out of email communications
     private final Set<RecipientCategory> categories = new LinkedHashSet<>();
 
     public Long getUserId() {
@@ -100,5 +101,13 @@ public class MessagingRecipient {
 
     public boolean hasCategory(RecipientCategory category) {
         return category != null && categories.contains(category);
+    }
+
+    public boolean isEmailOptedOut() {
+        return emailOptedOut;
+    }
+
+    public void setEmailOptedOut(boolean emailOptedOut) {
+        this.emailOptedOut = emailOptedOut;
     }
 }

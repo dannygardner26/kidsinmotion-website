@@ -205,8 +205,8 @@ public class EmailDeliveryService {
      * Colors match website theme: Primary #2f506a (indigo-dye), Secondary #e64f50 (imperial-red), Background #ede9e7 (isabelline)
      */
     private String createHtmlEmailTemplate(String subject, String body, String toAddress) {
-        // Create unsubscribe link (you can implement unsubscribe functionality later)
-        String unsubscribeUrl = "https://kidsinmotionpa.org/unsubscribe?email=" + java.net.URLEncoder.encode(toAddress, java.nio.charset.StandardCharsets.UTF_8);
+        // Create unsubscribe mailto link
+        String unsubscribeUrl = "mailto:info@kidsinmotionpa.org?subject=Unsubscribe%20Request&body=Please%20unsubscribe%20" + java.net.URLEncoder.encode(toAddress, java.nio.charset.StandardCharsets.UTF_8) + "%20from%20all%20communications.";
 
         // Convert plain text body to HTML (preserve line breaks)
         String htmlBody = body.replace("\n", "<br>");
@@ -233,12 +233,11 @@ public class EmailDeliveryService {
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%">
                                             <tr>
                                                 <td style="padding: 30px 40px; text-align: center;">
-                                                    <!-- Sports Icon as Logo Alternative -->
-                                                    <div style="display: inline-block; background: rgba(255, 255, 255, 0.15); border-radius: 50%%; padding: 20px; margin-bottom: 15px;">
-                                                        <div style="width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px;">⚽</div>
+                                                    <!-- Kids in Motion Logo -->
+                                                    <div style="display: inline-block; margin-bottom: 15px;">
+                                                        <img src="https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/realKIMlogo-transparent.png?alt=media" alt="Kids in Motion" style="width: 80px; height: 80px; border-radius: 50%%; background: rgba(255, 255, 255, 0.9); padding: 10px;">
                                                     </div>
                                                     <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; font-family: 'Montserrat', sans-serif; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Kids in Motion</h1>
-                                                    <p style="margin: 8px 0 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px; font-weight: 500;">Empowering every kid to play and learn through sports</p>
                                                 </td>
                                             </tr>
                                         </table>
@@ -268,33 +267,12 @@ public class EmailDeliveryService {
                                 <!-- Call to Action Button -->
                                 <tr>
                                     <td style="padding: 0 40px 40px 40px; text-align: center;">
-                                        <a href="https://kidsinmotionpa.org/dashboard" style="display: inline-block; background: linear-gradient(135deg, #e64f50 0%%, #eb7172 100%%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; font-family: 'Montserrat', sans-serif; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3); transition: transform 0.2s ease;">
-                                            View Dashboard →
+                                        <a href="https://kidsinmotionpa.org" style="display: inline-block; background: linear-gradient(135deg, #e64f50 0%%, #eb7172 100%%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; font-family: 'Montserrat', sans-serif; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3); transition: transform 0.2s ease;">
+                                            View Site →
                                         </a>
                                     </td>
                                 </tr>
 
-                                <!-- Features Section -->
-                                <tr>
-                                    <td style="padding: 20px 40px; background-color: #f8f9fa;">
-                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%">
-                                            <tr>
-                                                <td style="width: 33.33%%; text-align: center; padding: 10px;">
-                                                    <div style="color: #e64f50; font-size: 24px; margin-bottom: 8px;">🏆</div>
-                                                    <p style="margin: 0; color: #2f506a; font-size: 12px; font-weight: 600;">Programs</p>
-                                                </td>
-                                                <td style="width: 33.33%%; text-align: center; padding: 10px;">
-                                                    <div style="color: #e64f50; font-size: 24px; margin-bottom: 8px;">👨‍👩‍👧‍👦</div>
-                                                    <p style="margin: 0; color: #2f506a; font-size: 12px; font-weight: 600;">Community</p>
-                                                </td>
-                                                <td style="width: 33.33%%; text-align: center; padding: 10px;">
-                                                    <div style="color: #e64f50; font-size: 24px; margin-bottom: 8px;">⚡</div>
-                                                    <p style="margin: 0; color: #2f506a; font-size: 12px; font-weight: 600;">Growth</p>
-                                                </td>
-                                            </tr>
-                                        </table>
-                                    </td>
-                                </tr>
 
                                 <!-- Footer -->
                                 <tr>
@@ -305,7 +283,7 @@ public class EmailDeliveryService {
                                                     <div style="margin-bottom: 20px;">
                                                         <h3 style="margin: 0 0 10px 0; color: #ffffff; font-size: 18px; font-weight: 700; font-family: 'Montserrat', sans-serif;">Kids in Motion</h3>
                                                         <p style="margin: 0; color: rgba(255, 255, 255, 0.8); font-size: 14px; line-height: 1.5;">
-                                                            Building confidence through sports • Creating lasting memories
+                                                            Youth sports and activities
                                                         </p>
                                                     </div>
 
@@ -313,19 +291,16 @@ public class EmailDeliveryService {
                                                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="margin-bottom: 20px;">
                                                         <tr>
                                                             <td style="text-align: center; padding: 5px;">
-                                                                <span style="color: #e64f50; margin-right: 8px;">📧</span>
                                                                 <a href="mailto:info@kidsinmotionpa.org" style="color: rgba(255, 255, 255, 0.9); text-decoration: none; font-size: 14px;">info@kidsinmotionpa.org</a>
                                                             </td>
                                                         </tr>
                                                         <tr>
                                                             <td style="text-align: center; padding: 5px;">
-                                                                <span style="color: #e64f50; margin-right: 8px;">📞</span>
                                                                 <a href="tel:+14848856284" style="color: rgba(255, 255, 255, 0.9); text-decoration: none; font-size: 14px;">(484) 885-6284</a>
                                                             </td>
                                                         </tr>
                                                         <tr>
                                                             <td style="text-align: center; padding: 5px;">
-                                                                <span style="color: #e64f50; margin-right: 8px;">🌐</span>
                                                                 <a href="https://kidsinmotionpa.org" style="color: rgba(255, 255, 255, 0.9); text-decoration: none; font-size: 14px;">kidsinmotionpa.org</a>
                                                             </td>
                                                         </tr>

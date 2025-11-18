@@ -236,6 +236,8 @@ public class MessagingRecipientService {
             recipient.setEmail(sanitizeEmail(user.getEmail()));
             recipient.setPhoneNumber(sanitizePhone(user.getPhoneNumber()));
             recipient.setDisplayName(buildDisplayName(user));
+            // Check if user has opted out of email communications
+            recipient.setEmailOptedOut(user.getEmailOptedOut() != null && user.getEmailOptedOut());
             recipients.put(key, recipient);
         } else {
             // Update contact info if we have fresher data
@@ -245,6 +247,8 @@ public class MessagingRecipientService {
             if (!StringUtils.hasText(recipient.getEmail())) {
                 recipient.setEmail(sanitizeEmail(user.getEmail()));
             }
+            // Always update opt-out status to ensure it's current
+            recipient.setEmailOptedOut(user.getEmailOptedOut() != null && user.getEmailOptedOut());
         }
         recipient.addCategory(category);
         return recipient;
