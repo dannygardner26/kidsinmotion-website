@@ -211,7 +211,6 @@ public class ParticipantController {
                 participant.setParentUserFirstName(user.getFirstName());
                 participant.setParentUserLastName(user.getLastName());
                 participant.setParentUserPhoneNumber(user.getPhoneNumber());
-                participant.setParentUserUsername(user.getUsername());
                 participant.setParentUserFullName(user.getFullName());
 
                 // Update user's email communication preference based on registration consent

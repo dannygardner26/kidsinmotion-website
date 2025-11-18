@@ -16,7 +16,6 @@ const Register = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    username: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -28,34 +27,9 @@ const Register = () => {
   const [isLoading, setIsLoading] = useState(false); // Renamed for clarity
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
-  const [usernameStatus, setUsernameStatus] = useState(''); // '', 'checking', 'available', 'taken'
-  const [usernameValidationTimer, setUsernameValidationTimer] = useState(null);
+  // Username functionality removed
 
-  // Username validation function
-  const validateUsername = useCallback(async (username) => {
-    if (!username || username.length < 3) {
-      setUsernameStatus('');
-      return;
-    }
-
-    setUsernameStatus('checking');
-    try {
-      const response = await apiService.validateUsername(username.toLowerCase());
-      setUsernameStatus(response.available ? 'available' : 'taken');
-    } catch (error) {
-      console.error('Username validation error:', error);
-      setUsernameStatus('');
-    }
-  }, []);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (usernameValidationTimer) {
-        clearTimeout(usernameValidationTimer);
-      }
-    };
-  }, [usernameValidationTimer]);
+  // Username timer cleanup removed
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -63,40 +37,14 @@ const Register = () => {
       ...prevState,
       [name]: type === 'checkbox' ? checked : value
     }));
-
-    // Handle username validation with debouncing
-    if (name === 'username') {
-      setUsernameStatus('');
-      if (usernameValidationTimer) {
-        clearTimeout(usernameValidationTimer);
-      }
-
-      if (value.trim().length >= 3) {
-        const timer = setTimeout(() => {
-          validateUsername(value.trim());
-        }, 500);
-        setUsernameValidationTimer(timer);
-      }
-    }
   };
 
   const validateForm = () => {
     const errors = {};
-    const { firstName, lastName, username, email, password, confirmPassword, phoneNumber, agreeToTerms } = formData;
+    const { firstName, lastName, email, password, confirmPassword, phoneNumber, agreeToTerms } = formData;
 
     if (!firstName.trim()) errors.firstName = 'First name is required';
     if (!lastName.trim()) errors.lastName = 'Last name is required';
-
-    // Username validation
-    if (!username.trim()) {
-      errors.username = 'Username is required';
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      errors.username = 'Username can only contain letters, numbers, underscores, and hyphens';
-    } else if (username.length < 3 || username.length > 20) {
-      errors.username = 'Username must be 3-20 characters long';
-    } else if (usernameStatus === 'taken') {
-      errors.username = 'Username is already taken';
-    }
 
     // Either email or phone is required
     if (!email.trim() && !phoneNumber.trim()) {
@@ -139,30 +87,20 @@ const Register = () => {
         // 1. Check for duplicate accounts before creating Firebase user
         const duplicateData = await apiService.checkDuplicate(
           formData.email,
-          formData.phoneNumber,
-          formData.username.toLowerCase()
+          formData.phoneNumber
         );
         const duplicates = duplicateData.duplicates;
 
         // Check if any duplicates exist
-        if (duplicates.email || duplicates.phone || duplicates.username) {
+        if (duplicates.email || duplicates.phone) {
           let errorMessage = 'An account already exists with this ';
           const duplicateFields = [];
 
           if (duplicates.email) duplicateFields.push('email');
           if (duplicates.phone) duplicateFields.push('phone number');
-          if (duplicates.username) duplicateFields.push('username');
 
           errorMessage += duplicateFields.join(' and ');
-          errorMessage += '. Please ';
-
-          if (duplicates.email || duplicates.phone) {
-            errorMessage += 'log in instead';
-          } else {
-            errorMessage += 'choose a different ' + duplicateFields.join(' and ');
-          }
-
-          errorMessage += '.';
+          errorMessage += '. Please log in instead.';
 
           setError(errorMessage);
           setIsLoading(false);
@@ -184,7 +122,6 @@ const Register = () => {
         const profileData = {
           firstName: formData.firstName,
           lastName: formData.lastName,
-          username: formData.username,
           phoneNumber: formData.phoneNumber,
           userType: formData.role,
           grade: formData.grade || null,
@@ -379,43 +316,7 @@ const Register = () => {
                     </div>
                   </div>
 
-                  {/* Username field */}
-                  <div className="form-group">
-                    <label htmlFor="username">Username*</label>
-                    <input
-                      type="text"
-                      id="username"
-                      name="username"
-                      className={`form-control ${
-                        formErrors.username
-                          ? 'border-red-500'
-                          : usernameStatus === 'available'
-                          ? 'border-green-500'
-                          : usernameStatus === 'taken'
-                          ? 'border-red-500'
-                          : ''
-                      }`}
-                      value={formData.username}
-                      onChange={handleChange}
-                      placeholder="Enter a unique username"
-                      required
-                    />
-                    <small className="text-gray-500 text-xs">3–20 characters; letters, numbers, underscore, hyphen</small>
-
-                    {/* Username validation feedback */}
-                    {usernameStatus === 'checking' && (
-                      <p className="text-blue-500 text-xs italic mt-1">Checking availability...</p>
-                    )}
-                    {usernameStatus === 'available' && (
-                      <p className="text-green-500 text-xs italic mt-1">✓ Username is available</p>
-                    )}
-                    {usernameStatus === 'taken' && (
-                      <p className="text-red-500 text-xs italic mt-1">Username is already taken</p>
-                    )}
-                    {formErrors.username && (
-                      <p className="text-red-500 text-xs italic mt-1">{formErrors.username}</p>
-                    )}
-                  </div>
+                  {/* Username field removed */}
 
                   {/* Use theme form-group */}
                   <div className="form-group">

@@ -29,7 +29,6 @@ public class ParticipantFirestore {
     private String parentUserFirstName;
     private String parentUserLastName;
     private String parentUserPhoneNumber;
-    private String parentUserUsername;
     private String parentUserFullName;
     private String eventName;
     private String eventDate;
@@ -73,7 +72,6 @@ public class ParticipantFirestore {
         map.put("parentUserFirstName", parentUserFirstName);
         map.put("parentUserLastName", parentUserLastName);
         map.put("parentUserPhoneNumber", parentUserPhoneNumber);
-        map.put("parentUserUsername", parentUserUsername);
         map.put("parentUserFullName", parentUserFullName);
         map.put("eventName", eventName);
         map.put("eventDate", eventDate);
@@ -106,7 +104,6 @@ public class ParticipantFirestore {
         participant.setParentUserFirstName((String) map.get("parentUserFirstName"));
         participant.setParentUserLastName((String) map.get("parentUserLastName"));
         participant.setParentUserPhoneNumber((String) map.get("parentUserPhoneNumber"));
-        participant.setParentUserUsername((String) map.get("parentUserUsername"));
         participant.setParentUserFullName((String) map.get("parentUserFullName"));
         participant.setEventName((String) map.get("eventName"));
         participant.setEventDate((String) map.get("eventDate"));
@@ -180,9 +177,6 @@ public class ParticipantFirestore {
 
     public String getParentUserPhoneNumber() { return parentUserPhoneNumber; }
     public void setParentUserPhoneNumber(String parentUserPhoneNumber) { this.parentUserPhoneNumber = parentUserPhoneNumber; }
-
-    public String getParentUserUsername() { return parentUserUsername; }
-    public void setParentUserUsername(String parentUserUsername) { this.parentUserUsername = parentUserUsername; }
 
     public String getParentUserFullName() { return parentUserFullName; }
     public void setParentUserFullName(String parentUserFullName) { this.parentUserFullName = parentUserFullName; }

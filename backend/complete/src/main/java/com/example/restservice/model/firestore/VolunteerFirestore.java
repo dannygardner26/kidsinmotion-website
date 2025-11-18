@@ -26,7 +26,6 @@ public class VolunteerFirestore {
     private String userFirstName;
     private String userLastName;
     private String userPhoneNumber;
-    private String userUsername;
     private String userFullName;
     private String eventName;
     private String eventDate;
@@ -64,7 +63,6 @@ public class VolunteerFirestore {
         map.put("userFirstName", userFirstName);
         map.put("userLastName", userLastName);
         map.put("userPhoneNumber", userPhoneNumber);
-        map.put("userUsername", userUsername);
         map.put("userFullName", userFullName);
         map.put("eventName", eventName);
         map.put("eventDate", eventDate);
@@ -92,7 +90,6 @@ public class VolunteerFirestore {
         volunteer.setUserFirstName((String) map.get("userFirstName"));
         volunteer.setUserLastName((String) map.get("userLastName"));
         volunteer.setUserPhoneNumber((String) map.get("userPhoneNumber"));
-        volunteer.setUserUsername((String) map.get("userUsername"));
         volunteer.setUserFullName((String) map.get("userFullName"));
         volunteer.setEventName((String) map.get("eventName"));
         volunteer.setEventDate((String) map.get("eventDate"));
@@ -155,9 +152,6 @@ public class VolunteerFirestore {
 
     public String getUserPhoneNumber() { return userPhoneNumber; }
     public void setUserPhoneNumber(String userPhoneNumber) { this.userPhoneNumber = userPhoneNumber; }
-
-    public String getUserUsername() { return userUsername; }
-    public void setUserUsername(String userUsername) { this.userUsername = userUsername; }
 
     public String getUserFullName() { return userFullName; }
     public void setUserFullName(String userFullName) { this.userFullName = userFullName; }

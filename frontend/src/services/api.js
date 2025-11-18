@@ -313,15 +313,10 @@ class ApiService {
     }
   }
 
-  async validateUsername(username) {
-    return this.makeRequest('/users/validate-username', {
-      method: 'POST',
-      body: JSON.stringify({ username: username.toLowerCase() }),
-    });
-  }
+  // Username validation removed
 
   // Duplicate checking method (public endpoint)
-  async checkDuplicate(email, phoneNumber, username) {
+  async checkDuplicate(email, phoneNumber) {
     try {
       const response = await fetch(`${this.baseURL}/auth/check-duplicate`, {
         method: 'POST',
@@ -330,8 +325,7 @@ class ApiService {
         },
         body: JSON.stringify({
           email,
-          phoneNumber,
-          username: username ? username.toLowerCase() : null
+          phoneNumber
         })
       });
 
@@ -811,6 +805,45 @@ class ApiService {
     });
   }
 
+  // Broadcast History APIs
+  async getBroadcastHistory() {
+    return this.makeRequest('/messages/broadcast-history');
+  }
+
+  async getBroadcastDetails(id) {
+    return this.makeRequest(`/messages/broadcast-history/${id}`);
+  }
+
+  async downloadBroadcastReceipt(id) {
+    const response = await fetch(`${this.baseURL}/api/messages/broadcast-history/${id}/download`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${await this.getAuthToken()}`,
+        'Accept': 'text/csv',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to download receipt: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const filename = response.headers.get('Content-Disposition')
+      ?.match(/filename="(.+)"/)?.[1] || `broadcast-receipt-${id}.csv`;
+
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    return true;
+  }
+
   async markMessageAsRead(messageId) {
     return this.makeRequest(`/messages/${messageId}/read`, {
       method: 'PUT',
@@ -951,30 +984,7 @@ class ApiService {
     }
   }
 
-  // User profile endpoints
-  async getUserByUsername(username) {
-    return this.makeRequest(`/users/username/${username}`);
-  }
-
-  async updateUserProfileByUsername(username, profileData) {
-    return this.makeRequest(`/users/username/${username}`, {
-      method: 'PUT',
-      body: JSON.stringify(profileData),
-    });
-  }
-
-  async checkUsernameAvailability(username) {
-    try {
-      const response = await this.makeRequest('/users/validate-username', {
-        method: 'POST',
-        body: JSON.stringify({ username }),
-      });
-      return response.available;
-    } catch (error) {
-      console.error('Error checking username availability:', error);
-      return false;
-    }
-  }
+  // Username-based user profile endpoints removed
 
 
 }

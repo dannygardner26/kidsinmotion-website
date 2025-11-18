@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { apiService } from '../services/api';
+import BroadcastHistory from './BroadcastHistory';
 
 const BASE_USER_CATEGORIES = [
   { id: 'all', label: 'All Users', description: 'Everyone in the system' },
@@ -1065,6 +1066,9 @@ const AdminMessaging = () => {
         }
         }
       `}</style>
+
+      {/* Broadcast History Section */}
+      <BroadcastHistory />
     </div>
   );
 };

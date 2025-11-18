@@ -87,20 +87,9 @@ public class UserController {
                     needsUpdate = true;
                 }
 
-                // Check if user needs registration completion (missing username or userType)
-                if (user.getUsername() == null || user.getUsername().trim().isEmpty() ||
-                    user.getUserType() == null || user.getUserType().trim().isEmpty()) {
+                // Check if user needs registration completion (missing userType)
+                if (user.getUserType() == null || user.getUserType().trim().isEmpty()) {
                     needsRegistrationCompletion = true;
-
-                    // Auto-generate username if missing
-                    if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-                        String autoUsername = user.getUserType() != null ?
-                            user.getUserType().toLowerCase() : "user";
-                        autoUsername += "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
-                        user.setUsername(autoUsername);
-                        user.setUsernameLowercase(autoUsername.toLowerCase());
-                        needsUpdate = true;
-                    }
                 }
 
                 // Update user type if they should be admin or volunteer but aren't
@@ -112,12 +101,6 @@ public class UserController {
                     }
                     // Set admin account details for kidsinmotion0@gmail.com
                     if ("kidsinmotion0@gmail.com".equalsIgnoreCase(firebaseEmail)) {
-                        if (!"admin".equals(user.getUsername())) {
-                            user.setUsername("admin");
-                            user.setUsernameLowercase("admin");
-                            // Don't set usernameLastChangedAt to avoid cooldown
-                            needsUpdate = true;
-                        }
                         if (!"Kids In".equals(user.getFirstName())) {
                             user.setFirstName("Kids In");
                             needsUpdate = true;
@@ -186,9 +169,6 @@ public class UserController {
                     if ("kidsinmotion0@gmail.com".equalsIgnoreCase(firebaseEmail)) {
                         user.setFirstName("Kids In");
                         user.setLastName("Motion");
-                        user.setUsername("admin");
-                        user.setUsernameLowercase("admin");
-                        // Don't set usernameLastChangedAt to avoid cooldown
 
                         // Set admin password
                         try {
@@ -197,24 +177,11 @@ public class UserController {
                             System.err.println("Failed to set admin password: " + e.getMessage());
                             // Don't fail the whole sync operation
                         }
-                    } else {
-                        // Auto-generate username for other admin users
-                        String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
-                        user.setUsername(autoUsername);
-                        user.setUsernameLowercase(autoUsername.toLowerCase());
                     }
                 } else if (isVolunteerEmail(firebaseEmail)) {
                     user.setUserType("VOLUNTEER");
-                    // Auto-generate username for new users
-                    String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
-                    user.setUsername(autoUsername);
-                    user.setUsernameLowercase(autoUsername.toLowerCase());
                 } else {
                     user.setUserType("PARENT");
-                    // Auto-generate username for new users
-                    String autoUsername = user.getUserType().toLowerCase() + "_" + firebaseUid.substring(Math.max(0, firebaseUid.length() - 6));
-                    user.setUsername(autoUsername);
-                    user.setUsernameLowercase(autoUsername.toLowerCase());
                 }
 
                 // Assign random profile color
@@ -289,52 +256,7 @@ public class UserController {
 
             UserFirestore user = userOpt.get();
 
-            // Handle username change with cooldown validation
-            if (updates.containsKey("username")) {
-                String newUsername = (String) updates.get("username");
-
-                // Validate username format
-                if (newUsername == null || newUsername.trim().isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username cannot be empty"));
-                }
-
-                if (!newUsername.matches("^[a-zA-Z0-9_-]+$")) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username can only contain letters, numbers, underscore, and hyphen"));
-                }
-
-                if (newUsername.length() < 3 || newUsername.length() > 20) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username must be between 3 and 20 characters"));
-                }
-
-                String usernameLowercase = newUsername.toLowerCase();
-
-                // Check if username is actually changing (case-insensitive)
-                boolean usernameChanged = !usernameLowercase.equals(user.getUsernameLowercase());
-
-                if (usernameChanged) {
-                    // Check if username is taken (case-insensitive) - exclude current user
-                    if (userFirestoreRepository.existsByUsernameLowercase(usernameLowercase)) {
-                        return ResponseEntity.badRequest().body(Map.of("error", "Username is already taken"));
-                    }
-
-                    // Check cooldown period (90 days) only for actual changes
-                    if (user.getUsernameLastChangedAt() != null) {
-                        long daysSinceLastChange = (System.currentTimeMillis() - user.getUsernameLastChangedAt()) / (1000 * 60 * 60 * 24);
-                        if (daysSinceLastChange < 90) {
-                            long daysRemaining = 90 - daysSinceLastChange;
-                            return ResponseEntity.badRequest().body(Map.of("error", "You can only change your username once every 90 days. Please wait " + daysRemaining + " more days."));
-                        }
-                    }
-
-                    // Update username and set cooldown timestamp only when actually changing
-                    user.setUsername(newUsername);
-                    user.setUsernameLowercase(usernameLowercase);
-                    user.setUsernameLastChangedAt(System.currentTimeMillis());
-                } else {
-                    // Username didn't change, just update the case if needed
-                    user.setUsername(newUsername);
-                }
-            }
+            // Username functionality has been removed
 
             // Update other allowed fields
             if (updates.containsKey("firstName")) {
@@ -667,73 +589,7 @@ public class UserController {
         return response;
     }
 
-    // Username System Endpoints
-    @PostMapping("/users/validate-username")
-    public ResponseEntity<?> validateUsername(@RequestBody Map<String, String> request) {
-        try {
-            String username = request.get("username");
-            if (username == null || username.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of("available", false, "message", "Username is required"));
-            }
-
-            username = username.trim();
-            String usernameLower = username.toLowerCase();
-
-            // Validate format
-            if (username.length() < 3 || username.length() > 20) {
-                return ResponseEntity.ok(Map.of("available", false, "message", "Username must be 3-20 characters"));
-            }
-            if (!username.matches("^[a-zA-Z0-9_-]+$")) {
-                return ResponseEntity.ok(Map.of("available", false, "message", "Username can only contain letters, numbers, underscore, and hyphen"));
-            }
-
-            // Check availability
-            boolean exists = userFirestoreRepository.existsByUsernameLowercase(usernameLower);
-            if (exists) {
-                return ResponseEntity.ok(Map.of("available", false, "message", "Username is already taken"));
-            }
-
-            return ResponseEntity.ok(Map.of("available", true, "message", "Username is available"));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("available", false, "message", "Error checking username availability"));
-        }
-    }
-
-    @PostMapping("/users/check-username-cooldown")
-    public ResponseEntity<?> checkUsernameCooldown(HttpServletRequest request) {
-        try {
-            String firebaseUid = (String) request.getAttribute("firebaseUid");
-            if (firebaseUid == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-            }
-
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            UserFirestore user = userOpt.get();
-            if (user.getUsernameLastChangedAt() == null) {
-                return ResponseEntity.ok(Map.of("canChange", true, "daysRemaining", 0));
-            }
-
-            long currentTime = System.currentTimeMillis();
-            long threeMonthsMs = 90L * 24 * 60 * 60 * 1000; // 90 days in milliseconds
-            long timeSinceLastChange = currentTime - user.getUsernameLastChangedAt();
-
-            if (timeSinceLastChange >= threeMonthsMs) {
-                return ResponseEntity.ok(Map.of("canChange", true, "daysRemaining", 0));
-            } else {
-                long timeRemaining = threeMonthsMs - timeSinceLastChange;
-                long daysRemaining = timeRemaining / (24 * 60 * 60 * 1000);
-                return ResponseEntity.ok(Map.of("canChange", false, "daysRemaining", daysRemaining));
-            }
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error checking username cooldown"));
-        }
-    }
+    // Username system endpoints have been removed
 
     // Duplicate Account Check Endpoint
     @PostMapping("/auth/check-duplicate")
@@ -741,7 +597,6 @@ public class UserController {
         try {
             String email = request.get("email");
             String phoneNumber = request.get("phoneNumber");
-            String username = request.get("username");
 
             Map<String, Boolean> duplicates = new HashMap<>();
 
@@ -761,13 +616,8 @@ public class UserController {
                 duplicates.put("phone", false);
             }
 
-            // Check username duplicate (case-insensitive)
-            if (username != null && !username.trim().isEmpty()) {
-                boolean usernameExists = userFirestoreRepository.existsByUsernameLowercase(username.trim().toLowerCase());
-                duplicates.put("username", usernameExists);
-            } else {
-                duplicates.put("username", false);
-            }
+            // Username duplicate check removed
+            duplicates.put("username", false);
 
             return ResponseEntity.ok(Map.of("duplicates", duplicates));
         } catch (Exception e) {
@@ -797,8 +647,8 @@ public class UserController {
                 // Phone format (digits, spaces, dashes, parentheses, plus)
                 userOpt = userFirestoreRepository.findByPhoneNumber(identifier);
             } else {
-                // Username format
-                userOpt = userFirestoreRepository.findByUsernameLowercase(identifier.toLowerCase());
+                // Username functionality removed - no longer supported
+                return ResponseEntity.ok(Map.of("exists", false, "message", "Username login not supported"));
             }
 
             if (!userOpt.isPresent()) {
@@ -813,248 +663,9 @@ public class UserController {
         }
     }
 
-    // Profile Retrieval
-    @GetMapping("/users/profile/{username}")
-    public ResponseEntity<?> getUserProfileByUsername(@PathVariable String username, HttpServletRequest request) {
-        try {
-            String viewerFirebaseUid = (String) request.getAttribute("firebaseUid");
-            if (viewerFirebaseUid == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-            }
+    // Username-based profile retrieval endpoints have been removed
 
-            Optional<UserFirestore> targetUserOpt = userFirestoreRepository.findByUsernameLowercase(username.toLowerCase());
-            if (!targetUserOpt.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            UserFirestore targetUser = targetUserOpt.get();
-            Optional<UserFirestore> viewerOpt = userFirestoreRepository.findByFirebaseUid(viewerFirebaseUid);
-
-            // Check viewer permissions
-            boolean isOwnProfile = viewerFirebaseUid.equals(targetUser.getFirebaseUid());
-            boolean isAdmin = viewerOpt.isPresent() && viewerOpt.get().isAdmin();
-
-            Map<String, Object> profileData = new HashMap<>();
-
-            // Basic info always available
-            profileData.put("firebaseUid", targetUser.getFirebaseUid());
-            profileData.put("firstName", targetUser.getFirstName());
-            profileData.put("lastName", targetUser.getLastName());
-            profileData.put("username", targetUser.getUsername());
-            profileData.put("profilePictureUrl", targetUser.getProfilePictureUrl());
-            profileData.put("profileColor", targetUser.getProfileColor());
-            profileData.put("userType", targetUser.getUserType());
-
-            if (isOwnProfile || isAdmin) {
-                // Full access for own profile or admin
-                profileData.put("email", targetUser.getEmail());
-                profileData.put("phoneNumber", targetUser.getPhoneNumber());
-                profileData.put("grade", targetUser.getGrade());
-                profileData.put("school", targetUser.getSchool());
-                profileData.put("teams", targetUser.getTeams());
-                profileData.put("emailVerified", targetUser.getEmailVerified());
-                profileData.put("phoneVerified", targetUser.getPhoneVerified());
-                profileData.put("createdTimestamp", targetUser.getCreatedTimestamp());
-                profileData.put("lastLoginAt", targetUser.getLastLoginAt());
-
-                if (isAdmin) {
-                    profileData.put("isBanned", targetUser.getIsBanned());
-                    profileData.put("bannedAt", targetUser.getBannedAt());
-                    profileData.put("bannedReason", targetUser.getBannedReason());
-                }
-            } else {
-                // Public users only get basic info (already set above)
-                // Future: Add public privacy settings check here if needed
-            }
-
-            return ResponseEntity.ok(profileData);
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error retrieving user profile"));
-        }
-    }
-
-    // New endpoint that returns user profile by username with user wrapper
-    @GetMapping("/users/username/{username}")
-    public ResponseEntity<?> getUserByUsername(@PathVariable String username, HttpServletRequest request) {
-        try {
-            String viewerFirebaseUid = (String) request.getAttribute("firebaseUid");
-            if (viewerFirebaseUid == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-            }
-
-            Optional<UserFirestore> targetUserOpt = userFirestoreRepository.findByUsernameLowercase(username.toLowerCase());
-            if (!targetUserOpt.isPresent()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            UserFirestore targetUser = targetUserOpt.get();
-            Optional<UserFirestore> viewerOpt = userFirestoreRepository.findByFirebaseUid(viewerFirebaseUid);
-
-            // Check viewer permissions
-            boolean isOwnProfile = viewerFirebaseUid.equals(targetUser.getFirebaseUid());
-            boolean isAdmin = viewerOpt.isPresent() && viewerOpt.get().isAdmin();
-
-            Map<String, Object> profileData = new HashMap<>();
-
-            // Basic info always available
-            profileData.put("id", targetUser.getId()); // Firestore document ID
-            profileData.put("firebaseUid", targetUser.getFirebaseUid());
-            profileData.put("firstName", targetUser.getFirstName());
-            profileData.put("lastName", targetUser.getLastName());
-            profileData.put("username", targetUser.getUsername());
-            profileData.put("profilePictureUrl", targetUser.getProfilePictureUrl());
-            profileData.put("profileColor", targetUser.getProfileColor());
-            profileData.put("userType", targetUser.getUserType());
-
-            if (isOwnProfile || isAdmin) {
-                // Full access for own profile or admin
-                profileData.put("email", targetUser.getEmail());
-                profileData.put("phoneNumber", targetUser.getPhoneNumber());
-                profileData.put("grade", targetUser.getGrade());
-                profileData.put("school", targetUser.getSchool());
-                profileData.put("teams", targetUser.getTeams());
-                profileData.put("emailVerified", targetUser.getEmailVerified());
-                profileData.put("phoneVerified", targetUser.getPhoneVerified());
-                profileData.put("createdTimestamp", targetUser.getCreatedTimestamp());
-                profileData.put("lastLoginAt", targetUser.getLastLoginAt());
-
-                // Add hasPassword field for OAuth detection
-                boolean hasPassword = false;
-                try {
-                    UserRecord firebaseUser = firebaseAuthService.getUserRecord(targetUser.getFirebaseUid());
-                    UserInfo[] providerData = firebaseUser.getProviderData();
-                    for (UserInfo provider : providerData) {
-                        if ("password".equals(provider.getProviderId())) {
-                            hasPassword = true;
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    // Log error but don't fail the request
-                    System.err.println("Failed to get Firebase user provider info: " + e.getMessage());
-                }
-                profileData.put("hasPassword", hasPassword);
-
-                if (isAdmin) {
-                    profileData.put("isBanned", targetUser.getIsBanned());
-                    profileData.put("bannedAt", targetUser.getBannedAt());
-                    profileData.put("bannedReason", targetUser.getBannedReason());
-                }
-            }
-
-            // Return with user wrapper expected by UserProfile.jsx
-            return ResponseEntity.ok(Map.of("user", profileData));
-
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", "Error retrieving user profile"));
-        }
-    }
-
-    @PutMapping("/users/username/{username}")
-    public ResponseEntity<?> updateUserProfileByUsername(@PathVariable String username, @RequestBody Map<String, Object> updates, HttpServletRequest request) {
-        try {
-            String firebaseUid = (String) request.getAttribute("firebaseUid");
-            if (firebaseUid == null) {
-                return ResponseEntity.status(401).body(Map.of("error", "Authentication required"));
-            }
-
-            // Find user by username
-            Optional<UserFirestore> userOpt = userFirestoreRepository.findByUsernameLowercase(username.toLowerCase());
-            if (!userOpt.isPresent()) {
-                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
-            }
-
-            UserFirestore targetUser = userOpt.get();
-
-            // Check permissions: user can edit own profile or admin can edit any profile
-            Optional<UserFirestore> requesterOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
-            if (!requesterOpt.isPresent()) {
-                return ResponseEntity.status(403).body(Map.of("error", "User profile not found"));
-            }
-
-            UserFirestore requester = requesterOpt.get();
-            boolean isOwnProfile = targetUser.getFirebaseUid().equals(firebaseUid);
-            boolean isAdmin = requester.isAdmin();
-
-            if (!isOwnProfile && !isAdmin) {
-                return ResponseEntity.status(403).body(Map.of("error", "Permission denied"));
-            }
-
-            // Update allowed fields
-            if (updates.containsKey("firstName")) {
-                targetUser.setFirstName((String) updates.get("firstName"));
-            }
-            if (updates.containsKey("lastName")) {
-                targetUser.setLastName((String) updates.get("lastName"));
-            }
-            if (updates.containsKey("username")) {
-                String newUsername = (String) updates.get("username");
-
-                // Validate username format and length
-                if (newUsername == null || newUsername.trim().isEmpty()) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username cannot be null or empty"));
-                }
-                if (newUsername.length() < 3) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username must be at least 3 characters long"));
-                }
-                if (!newUsername.matches("^[a-zA-Z0-9_-]+$")) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Username can only contain letters, numbers, hyphens, and underscores"));
-                }
-
-                // Check if username is available (unless it's the same)
-                if (!newUsername.equalsIgnoreCase(targetUser.getUsername())) {
-                    if (userFirestoreRepository.existsByUsernameLowercase(newUsername.toLowerCase())) {
-                        return ResponseEntity.badRequest().body(Map.of("error", "Username already taken"));
-                    }
-                    targetUser.setUsername(newUsername);
-                    targetUser.setUsernameLowercase(newUsername.toLowerCase());
-                }
-            }
-            if (updates.containsKey("phoneNumber")) {
-                targetUser.setPhoneNumber((String) updates.get("phoneNumber"));
-            }
-            if (updates.containsKey("emergencyContactName")) {
-                targetUser.setEmergencyContactName((String) updates.get("emergencyContactName"));
-            }
-            if (updates.containsKey("emergencyContactPhone")) {
-                targetUser.setEmergencyContactPhone((String) updates.get("emergencyContactPhone"));
-            }
-            if (updates.containsKey("emergencyContactRelationship")) {
-                targetUser.setEmergencyContactRelationship((String) updates.get("emergencyContactRelationship"));
-            }
-            if (updates.containsKey("profileVisibility")) {
-                targetUser.setProfileVisibility((String) updates.get("profileVisibility"));
-            }
-
-            // Admin-only fields
-            if (isAdmin && !isOwnProfile) {
-                if (updates.containsKey("email")) {
-                    targetUser.setEmail((String) updates.get("email"));
-                }
-                if (updates.containsKey("userType")) {
-                    targetUser.setUserType((String) updates.get("userType"));
-                }
-                if (updates.containsKey("isBanned")) {
-                    targetUser.setIsBanned((Boolean) updates.get("isBanned"));
-                }
-                if (updates.containsKey("isEmailVerified")) {
-                    Boolean emailVerified = (Boolean) updates.get("isEmailVerified");
-                    targetUser.setEmailVerified(emailVerified);
-                    targetUser.setIsEmailVerified(emailVerified); // Maintain backward compatibility
-                }
-            }
-
-            targetUser.setUpdatedTimestamp(System.currentTimeMillis());
-            userFirestoreRepository.save(targetUser);
-
-            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to update profile"));
-        }
-    }
+    // Username-based profile update endpoint has been removed
 
     // Admin Features
     @PostMapping("/users/{userId}/ban")
@@ -1398,7 +1009,6 @@ public class UserController {
         response.put("lastName", user.getLastName());
         response.put("name", user.getFullName());
         response.put("email", user.getEmail());
-        response.put("username", user.getUsername());
         response.put("userType", user.getUserType());
         response.put("emailVerified", user.getEmailVerified());
         response.put("isBanned", user.getIsBanned());

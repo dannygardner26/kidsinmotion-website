@@ -17,15 +17,14 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
   }
 
   // Test accounts are exempt from profile completion requirements
-  if (profile?.username === 'parent' || profile?.username === 'volunteer' ||
-      user?.email === 'parent@test.com' || user?.email === 'volunteer@test.com') {
+  if (user?.email === 'parent@test.com' || user?.email === 'volunteer@test.com') {
     if (process.env.NODE_ENV !== 'production') {
-      console.log('Test account - no profile completion needed:', profile?.username, user?.email);
+      console.log('Test account - no profile completion needed:', user?.email);
     }
     return false;
   }
 
-  const hasRequiredFields = profile?.username && profile?.firstName && profile?.lastName;
+  const hasRequiredFields = profile?.firstName && profile?.lastName;
   const hasContact = profile?.email || profile?.phoneNumber;
   const validUserTypes = ['PARENT', 'VOLUNTEER', 'ADMIN'];
   const hasValidUserType = profile?.userType && validUserTypes.includes(profile.userType.toUpperCase());
@@ -45,7 +44,7 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     }
   } else {
     // For regular registration users, they should have already provided everything during registration
-    // Only require completion if truly missing critical fields (firstName, lastName, username, email)
+    // Only require completion if truly missing critical fields (firstName, lastName, email)
     if (!hasRequiredFields || !hasContact) {
       if (process.env.NODE_ENV !== 'production') {
         console.log('Regular registration user missing critical fields:', {
@@ -68,7 +67,6 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
       hasRequiredFields,
       hasContact,
       userType: profile?.userType,
-      username: profile?.username,
       firstName: profile?.firstName,
       lastName: profile?.lastName,
       email: profile?.email,
@@ -209,7 +207,7 @@ export const AuthProvider = ({ children }) => {
           email: user.email,
           firstName: user.displayName?.split(' ')[0] || '',
           lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-          username: user.email.split('@')[0], // Use email prefix as username
+          // Username field removed
           userType: 'USER',
           roles: ['ROLE_USER'],
           emailVerified: user.emailVerified,
@@ -256,9 +254,8 @@ export const AuthProvider = ({ children }) => {
           // Only redirect if not already on profile completion page
           const currentPath = window.location.pathname;
 
-          // Use profile username if available, otherwise use the user's email prefix
-          const username = actualProfile.username || user.email?.split('@')[0] || user.uid;
-          const accountPath = `/account/${username}`;
+          // Use firebaseUid for account path
+          const accountPath = `/account/${user.uid}`;
 
           if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true')) {
             if (process.env.NODE_ENV !== 'production') {
@@ -815,7 +812,7 @@ export const AuthProvider = ({ children }) => {
           email: currentUser.email,
           firstName: currentUser.displayName?.split(' ')[0] || '',
           lastName: currentUser.displayName?.split(' ').slice(1).join(' ') || '',
-          username: currentUser.email.split('@')[0],
+          // Username field removed
           userType: 'USER',
           roles: ['ROLE_USER'],
           emailVerified: currentUser.emailVerified,
@@ -858,7 +855,6 @@ export const AuthProvider = ({ children }) => {
     return Boolean(
       userProfile.firstName &&
       userProfile.lastName &&
-      userProfile.username &&
       (userProfile.email || userProfile.phoneNumber)
     );
   };

@@ -160,25 +160,6 @@ public class UserFirestoreRepository {
         return findByEmail(email).isPresent();
     }
 
-    public Optional<UserFirestore> findByUsernameLowercase(String usernameLowercase) throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
-                .whereEqualTo("usernameLowercase", usernameLowercase)
-                .limit(1)
-                .get();
-
-        QuerySnapshot querySnapshot = query.get();
-
-        if (!querySnapshot.getDocuments().isEmpty()) {
-            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
-            return Optional.of(UserFirestore.fromMap(document.getData(), document.getId()));
-        } else {
-            return Optional.empty();
-        }
-    }
-
-    public boolean existsByUsernameLowercase(String usernameLowercase) throws ExecutionException, InterruptedException {
-        return findByUsernameLowercase(usernameLowercase).isPresent();
-    }
 
     public Optional<UserFirestore> findByPhoneNumber(String phoneNumber) throws ExecutionException, InterruptedException {
         ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)

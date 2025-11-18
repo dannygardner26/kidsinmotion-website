@@ -152,7 +152,8 @@
       "Bash(firebase hosting:sites:list:*)",
       "Bash(gcloud run services replace:*)",
       "Bash(gcloud secrets create:*)",
-      "Bash(gcloud run revisions list:*)"
+      "Bash(gcloud run revisions list:*)",
+      "Bash(start \"C:\\Users\\danny\\Documents\\GitHub\\KidsInMotionJava\\email_template_preview.html\")"
     ],
     "deny": []
   }

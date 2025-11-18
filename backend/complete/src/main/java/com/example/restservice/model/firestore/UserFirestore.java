@@ -21,9 +21,6 @@ public class UserFirestore {
     private List<String> teams; // List of team/role names
     private String grade; // For volunteers: grade level
     private String school; // For volunteers: school/organization
-    private String username; // unique identifier for profile URLs and login, 3-20 characters
-    private String usernameLowercase; // lowercase version for case-insensitive lookups
-    private Long usernameLastChangedAt; // timestamp of last username change for 3-month cooldown
 
 
     // Emergency contact information
@@ -80,9 +77,6 @@ public class UserFirestore {
         map.put("teams", teams);
         map.put("grade", grade);
         map.put("school", school);
-        map.put("username", username);
-        map.put("usernameLowercase", usernameLowercase);
-        map.put("usernameLastChangedAt", usernameLastChangedAt);
 
 
         // Emergency contact information
@@ -147,9 +141,6 @@ public class UserFirestore {
         user.setTeams((List<String>) map.get("teams"));
         user.setGrade((String) map.get("grade"));
         user.setSchool((String) map.get("school"));
-        user.setUsername((String) map.get("username"));
-        user.setUsernameLowercase((String) map.get("usernameLowercase"));
-        user.setUsernameLastChangedAt(safeLongFromMap(map, "usernameLastChangedAt"));
 
 
         // Emergency contact information
@@ -255,14 +246,6 @@ public class UserFirestore {
         return (emailVerified != null && emailVerified) || (phoneVerified != null && phoneVerified);
     }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public String getUsernameLowercase() { return usernameLowercase; }
-    public void setUsernameLowercase(String usernameLowercase) { this.usernameLowercase = usernameLowercase; }
-
-    public Long getUsernameLastChangedAt() { return usernameLastChangedAt; }
-    public void setUsernameLastChangedAt(Long usernameLastChangedAt) { this.usernameLastChangedAt = usernameLastChangedAt; }
 
     public String getProfilePictureUrl() { return profilePictureUrl; }
     public void setProfilePictureUrl(String profilePictureUrl) { this.profilePictureUrl = profilePictureUrl; }

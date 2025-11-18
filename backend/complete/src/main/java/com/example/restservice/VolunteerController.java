@@ -159,7 +159,6 @@ public class VolunteerController {
                 volunteer.setUserFirstName(user.getFirstName());
                 volunteer.setUserLastName(user.getLastName());
                 volunteer.setUserPhoneNumber(user.getPhoneNumber());
-                volunteer.setUserUsername(user.getUsername());
                 volunteer.setUserFullName(user.getFullName());
             }
 
@@ -299,11 +298,7 @@ public class VolunteerController {
                     matches = true;
                 }
 
-                // Search in parent username
-                if (participant.getParentUserUsername() != null &&
-                    participant.getParentUserUsername().toLowerCase().contains(lowerQuery)) {
-                    matches = true;
-                }
+                // Username search removed
 
                 // Search in child name
                 if (participant.getChildName() != null &&
@@ -319,7 +314,6 @@ public class VolunteerController {
                         Map<String, Object> parent = new HashMap<>();
                         parent.put("parentUserId", participant.getParentUserId());
                         parent.put("parentName", participant.getParentUserFullName());
-                        parent.put("parentUsername", participant.getParentUserUsername());
                         parent.put("children", new ArrayList<Map<String, Object>>());
                         return parent;
                     });

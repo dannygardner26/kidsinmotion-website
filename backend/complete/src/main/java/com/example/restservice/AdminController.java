@@ -105,7 +105,6 @@ public class AdminController {
                 "password", "parent",
                 "firstName", "Parent",
                 "lastName", "Parent",
-                "username", "parent",
                 "phone", "4848856284",
                 "userType", "PARENT"
             ),
@@ -114,7 +113,6 @@ public class AdminController {
                 "password", "volunteer",
                 "firstName", "Volunteer",
                 "lastName", "Volunteer",
-                "username", "volunteer",
                 "phone", "4848856284",
                 "userType", "VOLUNTEER"
             )
@@ -125,7 +123,6 @@ public class AdminController {
             String password = (String) accountData.get("password");
             String firstName = (String) accountData.get("firstName");
             String lastName = (String) accountData.get("lastName");
-            String username = (String) accountData.get("username");
             String phone = (String) accountData.get("phone");
             String userType = (String) accountData.get("userType");
 
@@ -241,8 +238,6 @@ public class AdminController {
                 // Step 7: Create Firestore user document
                 UserFirestore newUser = new UserFirestore(newUid, firstName, lastName, email, phone);
                 newUser.setUserType(userType);
-                newUser.setUsername(username);
-                newUser.setUsernameLowercase(username.toLowerCase());
                 newUser.setEmailVerified(true);
                 newUser.setIsEmailVerified(true);
                 newUser.setPhoneVerified(false);
@@ -258,7 +253,6 @@ public class AdminController {
                 accountInfo.put("email", email);
                 accountInfo.put("uid", newUid);
                 accountInfo.put("userType", userType);
-                accountInfo.put("username", username);
                 createdAccounts.add(accountInfo);
 
             } catch (FirebaseAuthException e) {
