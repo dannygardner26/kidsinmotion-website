@@ -80,7 +80,7 @@ public class EmailDeliveryService {
         }
 
         try {
-            Email from = new Email(defaultFromAddress, "Kids in Motion");
+            Email from = new Email(defaultFromAddress, "Kids in Motion Team");
             Email to = new Email(toAddress);
 
             // Create HTML email template with unsubscribe functionality
@@ -151,7 +151,7 @@ public class EmailDeliveryService {
         }
 
         try {
-            Email from = new Email(defaultFromAddress, "Kids in Motion");
+            Email from = new Email(defaultFromAddress, "Kids in Motion Team");
             Email to = new Email(toAddress);
             Content content = new Content("text/plain", body);
             Mail mail = new Mail(from, subject, to, content);
