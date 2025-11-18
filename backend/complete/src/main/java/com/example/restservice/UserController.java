@@ -1144,6 +1144,89 @@ public class UserController {
     }
 
     /**
+     * Set Firebase email verification status to prevent automatic verification emails
+     */
+    @PostMapping("/admin/users/{uid}/email-verified")
+    public ResponseEntity<?> setEmailVerificationStatus(@PathVariable String uid, @RequestBody Map<String, Object> request, Authentication authentication) {
+        try {
+            Boolean verified = (Boolean) request.get("verified");
+            if (verified == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Missing 'verified' field"));
+            }
+
+            // Use FirebaseAuthService to set email verification status
+            firebaseAuthService.setEmailVerified(uid, verified);
+
+            logger.info("Email verification status updated for user {}: {}", uid, verified);
+            return ResponseEntity.ok(Map.of("message", "Email verification status updated successfully"));
+
+        } catch (Exception e) {
+            logger.error("Failed to update email verification status for user {}: {}", uid, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to update email verification status"));
+        }
+    }
+
+    /**
+     * Verify email using verification token
+     */
+    @PostMapping("/users/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            if (token == null || token.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Verification token is required"));
+            }
+
+            // Decode token
+            String decodedToken;
+            try {
+                decodedToken = new String(Base64.getDecoder().decode(token));
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid verification token"));
+            }
+
+            String[] parts = decodedToken.split("\\|");
+            if (parts.length != 2) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid token format"));
+            }
+
+            String email = parts[0];
+            long timestamp = Long.parseLong(parts[1]);
+
+            // Check if token is expired (24 hours)
+            long currentTime = System.currentTimeMillis();
+            long tokenAge = currentTime - timestamp;
+            long twentyFourHours = 24 * 60 * 60 * 1000;
+
+            if (tokenAge > twentyFourHours) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Verification token has expired"));
+            }
+
+            // Find user by email and verify them
+            Optional<UserFirestore> userOpt = firestoreUserService.getUserByEmail(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+
+            // Update Firebase verification status
+            firebaseAuthService.setEmailVerified(user.getFirebaseUid(), true);
+
+            // Update Firestore user
+            user.setEmailVerified(true);
+            firestoreUserService.updateUser(user.getFirebaseUid(), user);
+
+            logger.info("Email verified successfully for user: {}", email);
+            return ResponseEntity.ok(Map.of("message", "Email verified successfully", "email", email));
+
+        } catch (Exception e) {
+            logger.error("Failed to verify email: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Failed to verify email"));
+        }
+    }
+
+    /**
      * Send custom email verification using SendGrid with beautiful template
      */
     @PostMapping("/users/send-verification-email")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { apiService } from '../services/api';
 import { parseEmergencyContact } from '../utils/emergencyContactParser';
@@ -7,6 +7,7 @@ import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
   const { currentUser } = useAuth();
+  const errorRef = useRef(null);
   const [children, setChildren] = useState([]);
   const [selectedChildren, setSelectedChildren] = useState([]);
   const [existingRegistrations, setExistingRegistrations] = useState([]);
@@ -87,6 +88,16 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
       }
     }
   }, [existingRegistrations]);
+
+  // Scroll to error when it appears
+  useEffect(() => {
+    if (error && errorRef.current) {
+      errorRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }, [error]);
 
   const fetchChildrenFallback = async () => {
     try {
@@ -424,7 +435,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
         </div>
         <div className="card-body">
           {error && (
-            <div className="alert alert-danger mb-4">
+            <div ref={errorRef} className="alert alert-danger mb-4">
               {error}
             </div>
           )}

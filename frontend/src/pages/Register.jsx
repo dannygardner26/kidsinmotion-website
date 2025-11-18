@@ -21,7 +21,8 @@ const Register = () => {
     confirmPassword: '',
     phoneNumber: '',
     role: 'PARENT', // Default role
-    agreeToTerms: false
+    agreeToTerms: false,
+    emailConsent: false // Optional email consent
   });
 
   const [isLoading, setIsLoading] = useState(false); // Renamed for clarity
@@ -120,6 +121,25 @@ const Register = () => {
         });
         console.log("Firebase profile updated with display name.");
 
+        // 2.5. Disable Firebase's automatic email verification by setting email as verified temporarily
+        // We'll handle verification entirely through our custom SendGrid system
+        try {
+          const response = await fetch(`${process.env.REACT_APP_API_URL}/admin/users/${user.uid}/email-verified`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${await user.getIdToken()}`
+            },
+            body: JSON.stringify({ verified: true })
+          });
+
+          if (response.ok) {
+            console.log("Firebase email verification status set to prevent automatic emails");
+          }
+        } catch (error) {
+          console.warn("Failed to update Firebase email verification status (continuing anyway):", error);
+        }
+
         // 3. Send additional data to your backend to create the user profile
         const profileData = {
           firstName: formData.firstName,
@@ -129,7 +149,8 @@ const Register = () => {
           grade: formData.grade || null,
           school: formData.school || null,
           email: formData.email, // Ensure email is included for backend consistency
-          needsOnboarding: false // Regular registration users have completed profile
+          needsOnboarding: false, // Regular registration users have completed profile
+          emailConsent: formData.emailConsent // Optional email consent for newsletters
         };
 
         await apiService.syncUser();
@@ -494,12 +515,29 @@ const Register = () => {
                         required
                       />
                       <label className="text-sm text-gray-600" htmlFor="agreeToTerms">
-                        I agree to the <Link to="/terms" target="_blank" className="font-medium hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium hover:underline">Privacy Policy</Link>.
+                        I agree to the <Link to="/terms" target="_blank" className="font-medium hover:underline">Terms and Conditions</Link> and <Link to="/privacy" target="_blank" className="font-medium hover:underline">Privacy Policy</Link>.*
                       </label>
                     </div>
                     {formErrors.agreeToTerms && (
                       <p className="text-red-500 text-xs italic mt-1">{formErrors.agreeToTerms}</p>
                     )}
+                  </div>
+
+                  {/* Optional email consent checkbox */}
+                  <div className="mt-4 mb-4">
+                    <div className="flex items-start">
+                      <input
+                        className="mr-2 mt-1 leading-tight"
+                        type="checkbox"
+                        id="emailConsent"
+                        name="emailConsent"
+                        checked={formData.emailConsent}
+                        onChange={handleChange}
+                      />
+                      <label className="text-sm text-gray-600" htmlFor="emailConsent">
+                        I would like to receive general newsletters and updates from Kids in Motion. <span className="text-xs text-gray-500">(Optional - you'll still receive event confirmations and important account notifications)</span>
+                      </label>
+                    </div>
                   </div>
 
                   {/* Use theme button styles, add w-full */}

@@ -194,7 +194,7 @@ public class NotificationService {
         return result.toString();
     }
 
-    // Helper method to build registration confirmation email content
+    // Helper method to build registration confirmation email content with better HTML formatting
     private String buildRegistrationConfirmationEmail(ParticipantFirestore participant, EventFirestore event) {
         StringBuilder emailBody = new StringBuilder();
 
@@ -205,54 +205,59 @@ public class NotificationService {
         }
         emailBody.append("Dear ").append(parentName).append(",\n\n");
 
-        // Confirmation
-        emailBody.append("Your child ").append(participant.getChildName())
-                 .append(" has been successfully registered for ").append(event.getName()).append(".\n\n");
+        // Confirmation with emphasis
+        emailBody.append("🎉 <strong>Great news!</strong> Your child ").append(participant.getChildName())
+                 .append(" has been successfully registered for ").append("<strong>").append(event.getName()).append("</strong>").append(".\n\n");
 
-        // Event Details section
-        emailBody.append("EVENT DETAILS:\n");
-        emailBody.append("Event: ").append(event.getName()).append("\n");
-        emailBody.append("Date & Time: ").append(formatEventDateTime(event.getDate(), event.getStartTime(), event.getEndTime())).append("\n");
+        // Event Details section with better styling
+        emailBody.append("<h3 style=\"color: #2f506a; margin-top: 25px; margin-bottom: 15px;\">📅 Event Details</h3>\n");
+        emailBody.append("<div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;\">\n");
+        emailBody.append("<p><strong>Event:</strong> ").append(event.getName()).append("</p>\n");
+        emailBody.append("<p><strong>Date & Time:</strong> ").append(formatEventDateTime(event.getDate(), event.getStartTime(), event.getEndTime())).append("</p>\n");
 
         if (event.getLocation() != null && !event.getLocation().trim().isEmpty()) {
-            emailBody.append("Location: ").append(event.getLocation()).append("\n");
+            emailBody.append("<p><strong>Location:</strong> ").append(event.getLocation()).append("</p>\n");
         }
 
         if (event.getAgeGroup() != null && !event.getAgeGroup().trim().isEmpty()) {
-            emailBody.append("Age Group: ").append(event.getAgeGroup()).append("\n");
+            emailBody.append("<p><strong>Age Group:</strong> ").append(event.getAgeGroup()).append("</p>\n");
         }
 
         if (event.getPrice() != null && event.getPrice() > 0) {
-            emailBody.append("Price: $").append(String.format("%.2f", event.getPrice())).append("\n");
+            emailBody.append("<p><strong>Price:</strong> $").append(String.format("%.2f", event.getPrice())).append("</p>\n");
         }
 
-        emailBody.append("\n");
+        emailBody.append("</div>\n\n");
 
         // Child Information section
-        emailBody.append("CHILD INFORMATION:\n");
-        emailBody.append("Name: ").append(participant.getChildName()).append("\n");
-        emailBody.append("Age: ").append(participant.getChildAge()).append(" years old\n");
+        emailBody.append("<h3 style=\"color: #2f506a; margin-top: 25px; margin-bottom: 15px;\">👦 Child Information</h3>\n");
+        emailBody.append("<div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;\">\n");
+        emailBody.append("<p><strong>Name:</strong> ").append(participant.getChildName()).append("</p>\n");
+        emailBody.append("<p><strong>Age:</strong> ").append(participant.getChildAge()).append(" years old</p>\n");
 
         if (participant.getEmergencyContact() != null && !participant.getEmergencyContact().trim().isEmpty()) {
-            emailBody.append("Emergency Contact: ").append(participant.getEmergencyContact()).append("\n");
+            emailBody.append("<p><strong>Emergency Contact:</strong> ").append(participant.getEmergencyContact()).append("</p>\n");
         }
 
-        emailBody.append("\n");
+        emailBody.append("</div>\n\n");
 
         // Important Notes section
-        emailBody.append("IMPORTANT NOTES:\n");
-        emailBody.append("• Please ensure you can drop off and pick up your child at the scheduled times\n");
-        emailBody.append("• Bring any necessary equipment or materials mentioned in the event description\n");
-        emailBody.append("• Contact us immediately if your child has any medical concerns or allergies\n\n");
+        emailBody.append("<h3 style=\"color: #2f506a; margin-top: 25px; margin-bottom: 15px;\">⚠️ Important Notes</h3>\n");
+        emailBody.append("<ul style=\"padding-left: 20px; line-height: 1.8;\">\n");
+        emailBody.append("<li>Please ensure you can drop off and pick up your child at the scheduled times</li>\n");
+        emailBody.append("<li>Bring any necessary equipment or materials mentioned in the event description</li>\n");
+        emailBody.append("<li>Contact us immediately if your child has any medical concerns or allergies</li>\n");
+        emailBody.append("</ul>\n\n");
+
+        // Calendar notice
+        emailBody.append("<p style=\"background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;\">📅 <strong>Calendar Invitation:</strong> A calendar file is attached to this email. Click it to add this event to your calendar!</p>\n\n");
 
         // Cancellation Instructions
-        emailBody.append("CANCELLATION:\n");
-        emailBody.append("To cancel this registration, please visit your dashboard at kidsinmotionpa.org or contact us directly.\n\n");
+        emailBody.append("<h3 style=\"color: #2f506a; margin-top: 25px; margin-bottom: 15px;\">❌ Need to Cancel?</h3>\n");
+        emailBody.append("<p>To cancel this registration, please visit your <a href=\"https://kidsinmotionpa.org/dashboard\" style=\"color: #e64f50; text-decoration: none;\">dashboard</a> or contact us directly.</p>\n\n");
 
-        // Signature
-        emailBody.append("Thank you,\n");
-        emailBody.append("Kids in Motion Team\n");
-        emailBody.append("Email: info@kidsinmotionpa.org");
+        // Thank you message
+        emailBody.append("<p style=\"margin-top: 30px;\">Thank you for choosing Kids in Motion! We can't wait to see ").append(participant.getChildName()).append(" at the event.</p>");
 
         return emailBody.toString();
     }
@@ -391,25 +396,34 @@ public class NotificationService {
     }
 
     /**
-     * Builds the email verification message body
+     * Builds the email verification message body with HTML styling
      */
     private String buildEmailVerificationBody(String userName, String verificationUrl) {
         StringBuilder body = new StringBuilder();
 
         body.append("Welcome to Kids in Motion").append(userName != null ? ", " + userName : "").append("!\n\n");
-        body.append("Thank you for joining our community. To complete your account setup, please verify your email address.\n\n");
-        body.append("Click the link below to verify your email:\n");
-        body.append(verificationUrl).append("\n\n");
+        body.append("🎉 <strong>Thank you for joining our community!</strong> To complete your account setup and start registering for events, please verify your email address.\n\n");
+
+        // Verification button
+        body.append("<div style=\"text-align: center; margin: 30px 0;\">\n");
+        body.append("<a href=\"").append(verificationUrl).append("\" style=\"display: inline-block; background-color: #e64f50; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 18px; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3);\">✉️ Verify My Email</a>\n");
+        body.append("</div>\n\n");
+
+        body.append("<p style=\"color: #666; font-size: 14px; margin-top: 20px;\">Or copy and paste this link into your browser:</p>\n");
+        body.append("<p style=\"background-color: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 12px;\">").append(verificationUrl).append("</p>\n\n");
+
+        body.append("<div style=\"background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;\">\n");
+        body.append("<p style=\"margin: 0; color: #856404;\"><strong>⚠️ Important:</strong> This verification link will expire in 24 hours for security purposes.</p>\n");
+        body.append("</div>\n\n");
+
         body.append("If you didn't create an account with Kids in Motion, you can safely ignore this email.\n\n");
-        body.append("This verification link will expire in 24 hours for security purposes.\n\n");
-        body.append("Welcome aboard!\n");
-        body.append("The Kids in Motion Team");
+        body.append("<p style=\"margin-top: 30px;\"><strong>Welcome aboard!</strong></p>");
 
         return body.toString();
     }
 
     /**
-     * Sends a simple email verification without URL (for manual verification workflow)
+     * Sends email verification with verification link
      */
     public boolean sendEmailVerificationNotice(String userEmail, String userName) {
         try {
@@ -418,36 +432,48 @@ public class NotificationService {
                 return false;
             }
 
-            String subject = "Welcome to Kids in Motion - Account Created";
-            String emailBody = buildWelcomeEmailBody(userName);
+            // Create verification token (simple base64 encoded email + timestamp)
+            String verificationToken = Base64.getEncoder().encodeToString(
+                (userEmail + "|" + System.currentTimeMillis()).getBytes()
+            );
+
+            String verificationUrl = "https://kidsinmotionpa.org/verify-email?token=" + verificationToken;
+            String subject = "Verify Your Email - Kids in Motion";
+            String emailBody = buildEmailVerificationBody(userName, verificationUrl);
 
             boolean emailSent = emailDeliveryService.sendEmail(userEmail, subject, emailBody);
-            logger.info("Welcome email sent to {}: {}", userEmail, emailSent);
+            logger.info("Email verification sent to {}: {}", userEmail, emailSent);
 
             return emailSent;
         } catch (Exception e) {
-            logger.error("Failed to send welcome email to {}: {}", userEmail, e.getMessage());
+            logger.error("Failed to send email verification to {}: {}", userEmail, e.getMessage());
             return false;
         }
     }
 
     /**
-     * Builds the welcome email message body for new accounts
+     * Builds the welcome email message body for new accounts with HTML styling
      */
     private String buildWelcomeEmailBody(String userName) {
         StringBuilder body = new StringBuilder();
 
         body.append("Welcome to Kids in Motion").append(userName != null ? ", " + userName : "").append("!\n\n");
-        body.append("Your account has been successfully created. You can now:\n\n");
-        body.append("• Register your children for upcoming events\n");
-        body.append("• View event schedules and details\n");
-        body.append("• Sign up for volunteer opportunities\n");
-        body.append("• Stay updated with announcements\n\n");
-        body.append("Visit our website to get started:\n");
-        body.append("https://kidsinmotionpa.org\n\n");
-        body.append("If you have any questions, feel free to reach out to us at info@kidsinmotionpa.org.\n\n");
-        body.append("Welcome to the family!\n");
-        body.append("The Kids in Motion Team");
+        body.append("🎉 <strong>Your account has been successfully created!</strong> You can now:\n\n");
+        body.append("<div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 15px 0;\">\n");
+        body.append("<ul style=\"padding-left: 20px; line-height: 1.8; margin: 0;\">\n");
+        body.append("<li>Register your children for upcoming events</li>\n");
+        body.append("<li>View event schedules and details</li>\n");
+        body.append("<li>Sign up for volunteer opportunities</li>\n");
+        body.append("<li>Stay updated with announcements</li>\n");
+        body.append("</ul>\n");
+        body.append("</div>\n\n");
+
+        body.append("<div style=\"text-align: center; margin: 30px 0;\">\n");
+        body.append("<a href=\"https://kidsinmotionpa.org\" style=\"display: inline-block; background-color: #e64f50; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px;\">Get Started →</a>\n");
+        body.append("</div>\n\n");
+
+        body.append("If you have any questions, feel free to reach out to us at <a href=\"mailto:info@kidsinmotionpa.org\" style=\"color: #e64f50;\">info@kidsinmotionpa.org</a>.\n\n");
+        body.append("<p style=\"margin-top: 30px;\"><strong>Welcome to the family!</strong></p>");
 
         return body.toString();
     }

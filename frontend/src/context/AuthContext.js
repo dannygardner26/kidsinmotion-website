@@ -207,7 +207,7 @@ export const AuthProvider = ({ children }) => {
           email: user.email,
           firstName: user.displayName?.split(' ')[0] || '',
           lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
-          // Username field removed
+          username: user.email?.split('@')[0] || '', // Add username for routing
           userType: 'USER',
           roles: ['ROLE_USER'],
           emailVerified: user.emailVerified,
@@ -254,8 +254,9 @@ export const AuthProvider = ({ children }) => {
           // Only redirect if not already on profile completion page
           const currentPath = window.location.pathname;
 
-          // Use firebaseUid for account path
-          const accountPath = `/account/${user.uid}`;
+          // Use username (email prefix) for account path since route expects :username not :uid
+          const username = actualProfile?.username || user.email?.split('@')[0] || user.uid;
+          const accountPath = `/account/${username}`;
 
           if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true')) {
             if (process.env.NODE_ENV !== 'production') {

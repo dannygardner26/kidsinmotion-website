@@ -1,9 +1,20 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import Layout from './components/Layout';
 import AccountTypeSelector from './components/AccountTypeSelector';
+
+// ScrollToTop component to handle page scroll on route changes
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'));
@@ -19,6 +30,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const CreateEvent = lazy(() => import('./pages/CreateEvent'));
 const EventVolunteers = lazy(() => import('./pages/EventVolunteers'));
 const EventRegistrations = lazy(() => import('./pages/EventRegistrations'));
@@ -120,6 +132,7 @@ const AppWithOnboarding = () => {
 
                 {/* Firebase Auth Action Handler */}
                 <Route path="/auth/action" element={<AuthAction />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
 
                 {/* Routes only accessible when logged OUT */}
                 <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -278,6 +291,7 @@ const AppWithOnboarding = () => {
         <AuthProvider>
           <NotificationProvider>
             <Router>
+              <ScrollToTop />
               <AppWithOnboarding />
             </Router>
           </NotificationProvider>
