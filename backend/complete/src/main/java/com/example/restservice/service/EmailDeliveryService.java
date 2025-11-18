@@ -80,7 +80,7 @@ public class EmailDeliveryService {
         }
 
         try {
-            Email from = new Email(defaultFromAddress, "Kids in Motion Team");
+            Email from = new Email(defaultFromAddress, "Kids in Motion");
             Email to = new Email(toAddress);
 
             // Create HTML email template with unsubscribe functionality
@@ -151,7 +151,7 @@ public class EmailDeliveryService {
         }
 
         try {
-            Email from = new Email(defaultFromAddress, "Kids in Motion Team");
+            Email from = new Email(defaultFromAddress, "Kids in Motion");
             Email to = new Email(toAddress);
             Content content = new Content("text/plain", body);
             Mail mail = new Mail(from, subject, to, content);
@@ -219,20 +219,34 @@ public class EmailDeliveryService {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>%s</title>
                 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+                <style type="text/css">
+                    /* Gmail/Mobile client compatibility styles */
+                    @media only screen and (max-width: 600px) {
+                        .email-container { width: 100%% !important; }
+                        .header-padding { padding: 20px !important; }
+                        .content-padding { padding: 20px !important; }
+                        .footer-padding { padding: 20px !important; }
+                    }
+
+                    /* Ensure colors are consistent across clients */
+                    .email-blue { background-color: #2f506a !important; }
+                    .email-red { background-color: #e64f50 !important; color: #ffffff !important; }
+                    .email-bg { background-color: #ede9e7 !important; }
+                </style>
             </head>
             <body style="margin: 0; padding: 0; background-color: #ede9e7; font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="background-color: #ede9e7;">
                     <tr>
                         <td style="padding: 40px 20px;">
-                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(47, 80, 106, 0.15); overflow: hidden;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 30px rgba(47, 80, 106, 0.15); overflow: hidden;" class="email-container">
 
                                 <!-- Header with Logo and Brand -->
                                 <tr>
-                                    <td style="padding: 0; background: linear-gradient(135deg, #2f506a 0%%, #3a6587 100%%);">
+                                    <td style="padding: 0; background-color: #2f506a;" class="email-blue">
                                         <!-- Logo Section -->
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%">
                                             <tr>
-                                                <td style="padding: 30px 40px; text-align: center;">
+                                                <td style="padding: 30px 40px; text-align: center;" class="header-padding">
                                                     <!-- Kids in Motion Logo -->
                                                     <div style="display: inline-block; margin-bottom: 15px;">
                                                         <img src="https://firebasestorage.googleapis.com/v0/b/kids-in-motion-website-b1c09.firebasestorage.app/o/realKIMlogo-transparent.png?alt=media" alt="Kids in Motion" style="width: 80px; height: 80px; border-radius: 50%%; background: rgba(255, 255, 255, 0.9); padding: 10px;">
@@ -249,15 +263,15 @@ public class EmailDeliveryService {
 
                                 <!-- Subject -->
                                 <tr>
-                                    <td style="padding: 30px 40px 15px 40px;">
+                                    <td style="padding: 30px 40px 15px 40px;" class="content-padding">
                                         <h2 style="margin: 0; color: #2f506a; font-size: 24px; font-weight: 600; line-height: 1.3; font-family: 'Montserrat', sans-serif;">%s</h2>
-                                        <div style="width: 50px; height: 3px; background-color: #e64f50; margin: 15px 0 0 0; border-radius: 2px;"></div>
+                                        <div style="width: 50px; height: 3px; background-color: #e64f50; margin: 15px 0 0 0; border-radius: 2px;" class="email-red"></div>
                                     </td>
                                 </tr>
 
                                 <!-- Body Content -->
                                 <tr>
-                                    <td style="padding: 15px 40px 30px 40px;">
+                                    <td style="padding: 15px 40px 30px 40px;" class="content-padding">
                                         <div style="color: #383838; font-size: 16px; line-height: 1.7; font-family: 'Open Sans', sans-serif;">
                                             %s
                                         </div>
@@ -266,8 +280,8 @@ public class EmailDeliveryService {
 
                                 <!-- Call to Action Button -->
                                 <tr>
-                                    <td style="padding: 0 40px 40px 40px; text-align: center;">
-                                        <a href="https://kidsinmotionpa.org" style="display: inline-block; background: linear-gradient(135deg, #e64f50 0%%, #eb7172 100%%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; font-family: 'Montserrat', sans-serif; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3); transition: transform 0.2s ease;">
+                                    <td style="padding: 0 40px 40px 40px; text-align: center;" class="content-padding">
+                                        <a href="https://kidsinmotionpa.org" style="display: inline-block; background-color: #e64f50; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; font-size: 16px; font-family: 'Montserrat', sans-serif; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3);" class="email-red">
                                             View Site →
                                         </a>
                                     </td>
@@ -276,7 +290,7 @@ public class EmailDeliveryService {
 
                                 <!-- Footer -->
                                 <tr>
-                                    <td style="padding: 30px 40px; background-color: #2f506a; color: #ffffff;">
+                                    <td style="padding: 30px 40px; background-color: #2f506a; color: #ffffff;" class="email-blue footer-padding">
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%%">
                                             <tr>
                                                 <td style="text-align: center;">
