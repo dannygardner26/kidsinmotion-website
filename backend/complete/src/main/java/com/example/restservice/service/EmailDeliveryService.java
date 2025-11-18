@@ -85,11 +85,12 @@ public class EmailDeliveryService {
 
             // Create HTML email template with unsubscribe functionality
             String htmlBody = createHtmlEmailTemplate(subject, body, toAddress);
+            Content plainContent = new Content("text/plain", body); // Plain text version - MUST be first
             Content htmlContent = new Content("text/html", htmlBody);
-            Content plainContent = new Content("text/plain", body); // Fallback for plain text
 
-            Mail mail = new Mail(from, subject, to, htmlContent);
-            mail.addContent(plainContent); // Add both HTML and plain text versions
+            // SendGrid requires text/plain to come FIRST, then text/html
+            Mail mail = new Mail(from, subject, to, plainContent);
+            mail.addContent(htmlContent); // Add HTML version second
 
             logger.debug("Preparing SendGrid request - Endpoint: mail/send, Method: POST");
 
