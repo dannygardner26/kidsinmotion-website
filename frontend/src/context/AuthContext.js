@@ -279,15 +279,15 @@ export const AuthProvider = ({ children }) => {
 
         // Update verification status
         const emailVerified = user.emailVerified;
-        const phoneVerified = profile.phoneVerified || false;
+        const phoneVerified = actualProfile.phoneVerified || false;
         setIsEmailVerified(emailVerified);
         setIsPhoneVerified(phoneVerified);
 
         // Cache the profile for faster future loads
-        localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(profile));
+        localStorage.setItem(`userProfile_${user.uid}`, JSON.stringify(actualProfile));
 
         if (process.env.NODE_ENV !== 'production') {
-          console.log("Firebase-only profile created:", profile);
+          console.log("Firebase-only profile created:", actualProfile);
         }
       } catch (error) {
         // Enhanced error handling for auth initialization issues
