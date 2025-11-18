@@ -402,18 +402,18 @@ public class NotificationService {
         StringBuilder body = new StringBuilder();
 
         body.append("Welcome to Kids in Motion").append(userName != null ? ", " + userName : "").append("!\n\n");
-        body.append("🎉 <strong>Thank you for joining our community!</strong> To complete your account setup and start registering for events, please verify your email address.\n\n");
+        body.append("<strong>Thank you for joining our community!</strong> To complete your account setup and start registering for events, please verify your email address.\n\n");
 
         // Verification button
         body.append("<div style=\"text-align: center; margin: 30px 0;\">\n");
-        body.append("<a href=\"").append(verificationUrl).append("\" style=\"display: inline-block; background-color: #e64f50; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 18px; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3);\">✉️ Verify My Email</a>\n");
+        body.append("<a href=\"").append(verificationUrl).append("\" style=\"display: inline-block; background-color: #e64f50; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 18px; box-shadow: 0 4px 12px rgba(230, 79, 80, 0.3);\">Verify My Email</a>\n");
         body.append("</div>\n\n");
 
         body.append("<p style=\"color: #666; font-size: 14px; margin-top: 20px;\">Or copy and paste this link into your browser:</p>\n");
         body.append("<p style=\"background-color: #f8f9fa; padding: 10px; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 12px;\">").append(verificationUrl).append("</p>\n\n");
 
         body.append("<div style=\"background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;\">\n");
-        body.append("<p style=\"margin: 0; color: #856404;\"><strong>⚠️ Important:</strong> This verification link will expire in 24 hours for security purposes.</p>\n");
+        body.append("<p style=\"margin: 0; color: #856404;\"><strong>Important:</strong> This verification link will expire in 24 hours for security purposes.</p>\n");
         body.append("</div>\n\n");
 
         body.append("If you didn't create an account with Kids in Motion, you can safely ignore this email.\n\n");

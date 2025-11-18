@@ -366,25 +366,13 @@ const VerificationPrompt = ({
         </div>
       )}
 
-      {/* Status Display */}
+      {/* Status Display - Only Email Required */}
       <div style={{ marginBottom: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
           <i className={`fas ${isEmailVerified ? 'fa-check-circle' : 'fa-times-circle'}`}
              style={{ marginRight: '8px', color: isEmailVerified ? '#28a745' : '#dc3545' }}></i>
           <span style={{ fontSize: '14px' }}>
             Email {isEmailVerified ? 'Verified' : 'Not Verified'}
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <i className={`fas ${isPhoneVerified ? 'fa-check-circle' : 'fa-times-circle'}`}
-             style={{ marginRight: '8px', color: isPhoneVerified ? '#28a745' : '#dc3545' }}></i>
-          <span style={{ fontSize: '14px' }}>
-            Phone {isPhoneVerified ? 'Verified' : 'Not Verified'}
-            {userPhone && !smsAvailable && (
-              <span style={{ color: '#856404', marginLeft: '8px' }}>
-                (SMS unavailable)
-              </span>
-            )}
           </span>
         </div>
       </div>
