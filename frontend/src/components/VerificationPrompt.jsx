@@ -20,6 +20,7 @@ const VerificationPrompt = ({
   const [sendingEmailVerification, setSendingEmailVerification] = useState(false);
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [error, setError] = useState(null);
+  const [emailResendCooldown, setEmailResendCooldown] = useState(0);
 
   // Phone verification state
   const [phoneVerificationCode, setPhoneVerificationCode] = useState('');
@@ -52,12 +53,23 @@ const VerificationPrompt = ({
     try {
       await sendEmailVerification();
       setEmailVerificationSent(true);
+      startEmailResendCooldown(); // Start cooldown after successful send
       setTimeout(() => {
         setEmailVerificationSent(false);
       }, 5000);
     } catch (error) {
       console.error('Error sending email verification:', error);
-      setError('Failed to send verification email. Please try again.');
+
+      // Enhanced error handling for rate limiting
+      if (error.message.includes('Too many')) {
+        setError('You\'ve requested too many verification emails. Please wait a few minutes before trying again.');
+        startEmailResendCooldown(); // Start cooldown even on rate limit
+      } else if (error.message.includes('rate limit')) {
+        setError('Rate limit reached. Please wait before requesting another verification email.');
+        startEmailResendCooldown();
+      } else {
+        setError('Failed to send verification email. Please try again in a moment.');
+      }
     } finally {
       setSendingEmailVerification(false);
     }
@@ -69,6 +81,20 @@ const VerificationPrompt = ({
     } catch (error) {
       console.error('Error refreshing verification status:', error);
     }
+  };
+
+  // Email resend cooldown helper
+  const startEmailResendCooldown = () => {
+    setEmailResendCooldown(60); // 60 seconds
+    const timer = setInterval(() => {
+      setEmailResendCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
   // Phone verification handlers
@@ -171,19 +197,19 @@ const VerificationPrompt = ({
           ) : (
             <button
               onClick={handleSendEmailVerification}
-              disabled={sendingEmailVerification || verificationLoading}
+              disabled={sendingEmailVerification || verificationLoading || emailResendCooldown > 0}
               style={{
-                backgroundColor: '#007bff',
+                backgroundColor: emailResendCooldown > 0 ? '#6c757d' : '#007bff',
                 color: 'white',
                 border: 'none',
                 padding: '8px 16px',
                 borderRadius: '4px',
-                cursor: sendingEmailVerification ? 'not-allowed' : 'pointer',
-                opacity: sendingEmailVerification ? 0.6 : 1,
+                cursor: (sendingEmailVerification || emailResendCooldown > 0) ? 'not-allowed' : 'pointer',
+                opacity: (sendingEmailVerification || emailResendCooldown > 0) ? 0.6 : 1,
                 fontSize: '14px'
               }}
             >
-              {sendingEmailVerification ? 'Sending...' : 'Send Verification Email'}
+              {sendingEmailVerification ? 'Sending...' : emailResendCooldown > 0 ? `Resend in ${emailResendCooldown}s` : 'Send Verification Email'}
             </button>
           )}
         </div>

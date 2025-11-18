@@ -1071,11 +1071,25 @@ const Dashboard = () => {
                 <h5 className="alert-heading mb-1">Complete Your Account Setup</h5>
                 <p className="mb-2">
                   {userProfile?.hasPassword === false
-                    ? 'Set up your password and complete your profile information to access all features.'
-                    : 'Complete your account setup to access all features.'
+                    ? 'Help us personalize your Kids in Motion experience! We need your profile details to connect you with events, send important updates, and enable your Kids in Motion account.'
+                    : 'Help us personalize your Kids in Motion experience! Please provide some additional details for event registration and communication.'
                   }
-                  {getMissingFields().length > 0 && ` Missing: ${getMissingFields().join(', ')}`}
                 </p>
+                {getMissingFields().length > 0 && (
+                  <div className="missing-fields-info mb-2">
+                    <small className="text-muted">
+                      <i className="fas fa-info-circle mr-1"></i>
+                      <strong>Why we need this information:</strong>
+                      <ul className="mt-1 mb-0" style={{ fontSize: '0.85rem', paddingLeft: '1.2rem' }}>
+                        {getMissingFields().includes('first name') && <li>Your name helps volunteers and staff identify you during events</li>}
+                        {getMissingFields().includes('last name') && <li>Your full name is required for event registration and emergency contact</li>}
+                        {getMissingFields().includes('email') && <li>Email address is needed for event updates, receipts, and important announcements</li>}
+                        {getMissingFields().includes('phone number') && <li>Phone number enables SMS updates and emergency contact during events</li>}
+                        {getMissingFields().includes('user type') && <li>Account type helps us show you relevant events and features</li>}
+                      </ul>
+                    </small>
+                  </div>
+                )}
                 <Link
                   to={userProfile?.username ? `/account/${userProfile.username}?edit=true` : "/dashboard"}
                   className="btn btn-info btn-sm me-2"
@@ -1085,8 +1099,8 @@ const Dashboard = () => {
                 </Link>
                 {!userProfile?.hasPassword && (
                   <small className="text-muted d-block mt-1">
-                    <i className="fas fa-info-circle mr-1"></i>
-                    OAuth users: Set up your password for email/password login access
+                    <i className="fas fa-key mr-1"></i>
+                    <strong>Signed in with Google?</strong> Create a password so you can also log in directly with your email if needed
                   </small>
                 )}
               </div>

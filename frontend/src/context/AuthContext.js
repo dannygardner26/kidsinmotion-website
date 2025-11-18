@@ -265,8 +265,8 @@ export const AuthProvider = ({ children }) => {
             // Show user-friendly message about profile completion
             const isOAuth = actualProfile?.registrationSource === 'oauth';
             const message = isOAuth
-              ? 'Welcome! We need a few more details to complete your account setup...'
-              : 'Completing your profile setup...';
+              ? 'Welcome to Kids in Motion! Let\'s finish setting up your account so you can register for events and receive important updates...'
+              : 'Finishing your account setup to connect you with events and activities...';
 
             // You could show a toast notification here if you have a notification system
             console.log(message);
