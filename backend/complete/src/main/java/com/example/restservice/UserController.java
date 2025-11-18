@@ -7,6 +7,7 @@ import com.example.restservice.repository.firestore.UserFirestoreRepository;
 import com.example.restservice.model.firestore.UserFirestore;
 import com.example.restservice.security.FirebaseAuthService;
 import com.example.restservice.service.MessagingService;
+import com.example.restservice.service.NotificationService;
 import com.example.restservice.service.SmsDeliveryService;
 import com.google.firebase.auth.UserRecord;
 import com.google.firebase.auth.UserInfo;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +46,9 @@ public class UserController {
 
     @Autowired
     private MessagingService messagingService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private SmsDeliveryService smsDeliveryService;
@@ -1486,7 +1491,7 @@ public class UserController {
 
             Optional<UserFirestore> userOpt = userFirestoreRepository.findByEmail(email);
             if (!userOpt.isPresent()) {
-                return ResponseEntity.notFound().body(Map.of("error", "User not found with email: " + email));
+                return ResponseEntity.status(404).body(Map.of("error", "User not found with email: " + email));
             }
 
             UserFirestore user = userOpt.get();
@@ -1525,6 +1530,46 @@ public class UserController {
         } catch (Exception e) {
             System.err.println("Error subscribing user: " + e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", "Error processing subscribe request"));
+        }
+    }
+
+    /**
+     * Send custom email verification using SendGrid with beautiful template
+     */
+    @PostMapping("/users/send-verification-email")
+    public ResponseEntity<?> sendCustomEmailVerification(@RequestBody Map<String, String> request, Authentication authentication) {
+        try {
+            String firebaseUid = authentication.getName();
+            String email = request.get("email");
+            String name = request.get("name");
+
+            if (!StringUtils.hasText(email)) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email address is required"));
+            }
+
+            // Verify the user exists and the email matches
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByFirebaseUid(firebaseUid);
+            if (!userOpt.isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
+            }
+
+            UserFirestore user = userOpt.get();
+            if (!email.equals(user.getEmail())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email verification can only be sent to your registered email"));
+            }
+
+            // Use our NotificationService to send branded verification email
+            boolean emailSent = notificationService.sendEmailVerificationNotice(email, name);
+
+            if (emailSent) {
+                return ResponseEntity.ok(Map.of("message", "Verification email sent successfully"));
+            } else {
+                return ResponseEntity.internalServerError().body(Map.of("error", "Failed to send verification email"));
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error sending custom email verification: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error processing verification request"));
         }
     }
 }

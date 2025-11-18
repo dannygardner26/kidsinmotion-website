@@ -723,20 +723,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Verification helper methods
+  // Verification helper methods - now using custom SendGrid system
   const sendEmailVerification = async () => {
     if (!currentUser) throw new Error('No user logged in');
 
     setVerificationLoading(true);
     try {
-      const { sendEmailVerification } = await import('firebase/auth');
-      await sendEmailVerification(currentUser);
+      // Use our custom backend SendGrid verification system
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/send-verification-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await currentUser.getIdToken()}`
+        },
+        body: JSON.stringify({
+          email: currentUser.email,
+          name: currentUser.displayName || 'User'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        // Check for rate limiting or other specific errors
+        if (response.status === 429) {
+          throw new Error('Too many verification requests. Please wait before requesting another.');
+        }
+        throw new Error(errorData.error || 'Failed to send verification email');
+      }
+
       if (process.env.NODE_ENV !== 'production') {
-        console.log('Email verification sent');
+        console.log('Custom email verification sent via SendGrid');
       }
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('Error sending email verification:', error);
+        console.error('Error sending custom email verification:', error);
       }
       throw error;
     } finally {
