@@ -28,11 +28,15 @@ import java.time.ZoneOffset;
 import java.util.concurrent.TimeUnit;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = {"https://kidsinmotionpa.org", "https://www.kidsinmotionpa.org"})
 public class UserController {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
     private UserFirestoreRepository userFirestoreRepository;
@@ -1203,7 +1207,7 @@ public class UserController {
             }
 
             // Find user by email and verify them
-            Optional<UserFirestore> userOpt = firestoreUserService.getUserByEmail(email);
+            Optional<UserFirestore> userOpt = userFirestoreRepository.findByEmail(email);
             if (userOpt.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User not found"));
             }
@@ -1215,7 +1219,7 @@ public class UserController {
 
             // Update Firestore user
             user.setEmailVerified(true);
-            firestoreUserService.updateUser(user.getFirebaseUid(), user);
+            userFirestoreRepository.save(user);
 
             logger.info("Email verified successfully for user: {}", email);
             return ResponseEntity.ok(Map.of("message", "Email verified successfully", "email", email));

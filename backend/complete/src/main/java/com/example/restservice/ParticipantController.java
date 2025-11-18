@@ -101,7 +101,7 @@ public class ParticipantController {
                         parentUserDetails.put("lastName", parentUser.getLastName());
                         parentUserDetails.put("email", parentUser.getEmail());
                         parentUserDetails.put("phoneNumber", parentUser.getPhoneNumber());
-                        parentUserDetails.put("username", parentUser.getUsername());
+                        parentUserDetails.put("username", parentUser.getEmail());
 
                         // Update denormalized fields on participant if they're empty
                         if (participant.getParentUserFirstName() == null || participant.getParentUserFirstName().isEmpty()) {
