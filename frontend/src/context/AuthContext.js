@@ -29,15 +29,16 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
   const validUserTypes = ['PARENT', 'VOLUNTEER', 'ADMIN'];
   const hasValidUserType = profile?.userType && validUserTypes.includes(profile.userType.toUpperCase());
 
-  // For OAuth users (registrationSource: 'oauth'), require profile completion if missing anything
-  if (profile?.registrationSource === 'oauth') {
+  // For OAuth users (registrationSource: 'oauth') or users missing userType, require profile completion if missing anything
+  if (profile?.registrationSource === 'oauth' || !hasValidUserType) {
     if (!hasRequiredFields || !hasContact || !hasValidUserType) {
       if (process.env.NODE_ENV !== 'production') {
-        console.log('OAuth user needs profile completion:', {
+        console.log('OAuth/incomplete user needs profile completion:', {
           hasRequiredFields,
           hasContact,
           hasValidUserType,
-          userType: profile?.userType
+          userType: profile?.userType,
+          registrationSource: profile?.registrationSource
         });
       }
       return true;

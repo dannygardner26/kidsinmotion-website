@@ -155,6 +155,7 @@ const Register = () => {
 
       await apiService.syncUser();
       // Use AuthContext's updateProfile to ensure local state and Firestore are updated immediately
+      // This ensures the dashboard shows the correct view for volunteers
       await updateProfile(profileData);
 
       console.log("Backend profile created successfully.");

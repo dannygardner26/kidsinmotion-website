@@ -148,7 +148,7 @@ const AdminMessaging = () => {
 
       // Fetch recipients for newly selected categories
       newCategories.forEach(catId => {
-        if (catId !== 'all' && !prev.includes(catId)) {
+        if (!prev.includes(catId)) {
           fetchRecipients(catId);
         }
       });

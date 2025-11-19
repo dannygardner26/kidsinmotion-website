@@ -114,6 +114,35 @@ const VerificationPrompt = ({
               border: '1px solid #c3e6cb',
               color: '#155724',
               padding: '8px',
+              borderRadius: '4px',
+              marginBottom: '10px',
+              fontSize: '14px'
+            }}>
+              <i className="fas fa-check" style={{ marginRight: '5px' }}></i>
+              Verification email sent! Please check your inbox and spam folder.
+            </div>
+          ) : (
+            <button
+              onClick={handleSendEmailVerification}
+              disabled={sendingEmailVerification || emailResendCooldown > 0}
+              style={{
+                backgroundColor: emailResendCooldown > 0 ? '#6c757d' : '#007bff',
+                color: 'white',
+                border: 'none',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                cursor: emailResendCooldown > 0 ? 'not-allowed' : 'pointer',
+                fontSize: '14px',
+                opacity: emailResendCooldown > 0 ? 0.6 : 1
+              }}
+            >
+              <i className="fas fa-envelope" style={{ marginRight: '5px' }}></i>
+              {emailResendCooldown > 0 ? `Resend in ${emailResendCooldown}s` : 'Resend Verification Email'}
+            </button>
+          )}
+        </div>
+      )}
+
       <div style={{ marginBottom: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
           <i className={`fas ${isEmailVerified ? 'fa-check-circle' : 'fa-times-circle'}`}

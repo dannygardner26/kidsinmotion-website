@@ -614,9 +614,9 @@ const UsersAndRegistrations = () => {
                 ))}
               </tbody>
             </table >
-          </div >
+          </div>
         )}
-      </div >
+      </div>
 
       {/* User Profile Modal */}
       {
@@ -965,7 +965,7 @@ const UsersAndRegistrations = () => {
           </div>
         )
       }
-    </div >
+    </div>
   );
 };
 

@@ -59,7 +59,9 @@ const AccountDetails = () => {
 
   const isAdmin = currentUserProfile?.userType === 'ADMIN';
   const isSelfEdit = currentUserProfile?.username === username ||
-                    (currentUser && currentUser.email && username === currentUser.email.split('@')[0]);
+                    (currentUser && currentUser.email && username === currentUser.email.split('@')[0]) ||
+                    (currentUser && currentUser.uid && username === currentUser.uid) ||
+                    (username === 'default' && currentUser);
 
   // Check URL parameters for initial edit mode
   useEffect(() => {
@@ -200,6 +202,11 @@ const AccountDetails = () => {
         }
 
         console.log('Admin fetching other user profile for username:', username);
+
+        // Handle undefined username for OAuth users
+        if (!username || username === 'undefined') {
+          throw new Error('Invalid username parameter');
+        }
 
         // First try fetching by username from Firestore
         try {

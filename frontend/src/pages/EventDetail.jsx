@@ -314,7 +314,7 @@ const EventDetail = () => {
               <div className="card-header">
                 <h3>
                   <i className="fas fa-user-plus"></i>
-                  Registration
+                  Child Registration
                 </h3>
               </div>
               <div className="card-content">
@@ -332,6 +332,9 @@ const EventDetail = () => {
                       <div className="capacity-number">{event.capacity || '∞'}</div>
                       <div className="capacity-label">Available Spots</div>
                     </div>
+                    <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.875rem', color: '#64748b' }}>
+                      For parents to register their children
+                    </div>
 
                     {currentUser ? (
                       <div className="action-buttons">
@@ -340,7 +343,7 @@ const EventDetail = () => {
                           className="btn-primary register-pulse"
                         >
                           <i className="fas fa-plus-circle"></i>
-                          Sign Up Your Child
+                          Register Child for Event
                         </Link>
                       </div>
                     ) : (
@@ -350,14 +353,14 @@ const EventDetail = () => {
                           className="btn-primary"
                         >
                           <i className="fas fa-sign-in-alt"></i>
-                          Login to Register
+                          Login to Register Child
                         </Link>
                         <Link
                           to="/register"
                           className="btn-outline"
                         >
                           <i className="fas fa-user-plus"></i>
-                          Create Account
+                          Create Parent Account
                         </Link>
                       </div>
                     )}
@@ -372,10 +375,13 @@ const EventDetail = () => {
                 <div className="card-header volunteer-header">
                   <h3>
                     <i className="fas fa-hands-helping"></i>
-                    Volunteer
+                    Volunteer Signup
                   </h3>
                 </div>
                 <div className="card-content">
+                  <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.875rem', color: '#64748b' }}>
+                    For adults who want to help at this event
+                  </div>
                   <p className="volunteer-text">Help make this event amazing!</p>
                   {currentUser ? (
                     <div style={{ textAlign: 'center' }}>

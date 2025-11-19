@@ -1136,12 +1136,8 @@ const Dashboard = () => {
                   <div className="profile-actions mt-3">
                     <button
                       onClick={() => {
-                        const username = userProfile?.username || userProfile?.email?.split('@')[0] || currentUser?.uid;
-                        if (username) {
-                          navigate(`/account/${username}?edit=true`);
-                        } else {
-                          navigate('/dashboard');
-                        }
+                        const username = userProfile?.username || userProfile?.email?.split('@')[0] || currentUser?.uid || 'default';
+                        navigate(`/account/${username}?edit=true`);
                       }}
                       className="btn btn-outline btn-sm"
                       title="Edit your profile"
