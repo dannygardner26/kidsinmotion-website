@@ -25,6 +25,8 @@ public class BroadcastMessageRequest {
 
     private List<String> selectedRecipients = new ArrayList<>();
 
+    private boolean overrideOptOuts = false;
+
     public String getSubject() {
         return subject;
     }
@@ -79,5 +81,13 @@ public class BroadcastMessageRequest {
 
     public void setSelectedRecipients(List<String> selectedRecipients) {
         this.selectedRecipients = selectedRecipients != null ? selectedRecipients : new ArrayList<>();
+    }
+
+    public boolean isOverrideOptOuts() {
+        return overrideOptOuts;
+    }
+
+    public void setOverrideOptOuts(boolean overrideOptOuts) {
+        this.overrideOptOuts = overrideOptOuts;
     }
 }

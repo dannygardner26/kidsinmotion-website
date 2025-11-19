@@ -139,7 +139,7 @@ public class MessagingService {
                 handleInboxDelivery(recipient, inboxTemplate, result);
             }
             if (sendEmail) {
-                handleEmailDelivery(recipient, request.getSubject(), emailBody, result);
+                handleEmailDelivery(recipient, request.getSubject(), emailBody, request, result);
             }
             if (sendSms) {
                 handleSmsDelivery(recipient, smsBody, result);
@@ -199,6 +199,7 @@ public class MessagingService {
     private void handleEmailDelivery(MessagingRecipient recipient,
                                      String subject,
                                      String body,
+                                     BroadcastMessageRequest request,
                                      BroadcastResult result) {
         if (!StringUtils.hasText(recipient.getEmail())) {
             result.incrementEmailSkipped();
@@ -217,7 +218,12 @@ public class MessagingService {
         }
 
         // Check if user has opted out of email communications
-        if (recipient.isEmailOptedOut()) {
+        // Skip this check if admin has enabled override for ALL_USERS category
+        boolean hasAllUsersCategory = request.getCategories() != null &&
+                                    request.getCategories().contains("all");
+        boolean shouldOverrideOptOut = hasAllUsersCategory && request.isOverrideOptOuts();
+
+        if (recipient.isEmailOptedOut() && !shouldOverrideOptOut) {
             result.incrementEmailSkipped();
             result.addFailure(new BroadcastResult.DeliveryFailure("email",
                     "User has opted out of email communications",

@@ -300,6 +300,11 @@ public class UserController {
                 user.setEmergencyContactRelationship((String) updates.get("emergencyContactRelationship"));
             }
 
+            // Handle email preferences
+            if (updates.containsKey("emailOptedOut")) {
+                user.setEmailOptedOut((Boolean) updates.get("emailOptedOut"));
+            }
+
             // Handle email change with Firebase Auth integration
             if (updates.containsKey("email")) {
                 String newEmail = (String) updates.get("email");

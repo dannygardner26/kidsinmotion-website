@@ -30,6 +30,7 @@ const AdminMessaging = () => {
   const [categoryRecipients, setCategoryRecipients] = useState({});
   const [selectedRecipients, setSelectedRecipients] = useState([]);
   const [loadingRecipients, setLoadingRecipients] = useState({});
+  const [overrideOptOuts, setOverrideOptOuts] = useState(false);
 
   // Fetch events for dynamic categories
   useEffect(() => {
@@ -215,6 +216,7 @@ const AdminMessaging = () => {
     directPhoneNumbers: parsedContacts.phoneNumbers, // Always include direct phone numbers if they exist
     categories: selectedCategories, // Always include selected categories
     selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
+    overrideOptOuts: overrideOptOuts && selectedCategories.includes('all'), // Only apply override when ALL users is selected
   });
 
   const validatePayload = (payload) => {
@@ -367,6 +369,28 @@ const AdminMessaging = () => {
             )}
           </div>
         </section>
+
+        {/* Override Opt-outs Section - Only show when "All Users" is selected */}
+        {selectedCategories.includes('all') && (
+          <section className="panel-section">
+            <div className="override-section">
+              <label className="override-checkbox">
+                <input
+                  type="checkbox"
+                  checked={overrideOptOuts}
+                  onChange={(e) => setOverrideOptOuts(e.target.checked)}
+                />
+                <span>
+                  <strong>Include users who have opted out of email communications</strong>
+                  <small>
+                    When checked, this message will be sent to ALL users, including those who have opted out of regular email communications.
+                    Use this only for critical announcements that all users must receive.
+                  </small>
+                </span>
+              </label>
+            </div>
+          </section>
+        )}
 
         {/* Direct Contact Information Section */}
         <section className="panel-section">

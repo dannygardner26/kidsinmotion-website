@@ -29,7 +29,8 @@ const AccountDetails = () => {
     emergencyContactPhone: '',
     emergencyContactRelationship: '',
     profileVisibility: 'PUBLIC',
-    password: ''
+    password: '',
+    emailOptedOut: false
   });
   const [originalUsername, setOriginalUsername] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -164,7 +165,8 @@ const AccountDetails = () => {
         emergencyContactName: userData.emergencyContactName || '',
         emergencyContactPhone: userData.emergencyContactPhone || '',
         emergencyContactRelationship: userData.emergencyContactRelationship || '',
-        password: ''
+        password: '',
+        emailOptedOut: userData.emailOptedOut || false
       });
 
         // Set username cooldown info
@@ -217,7 +219,8 @@ const AccountDetails = () => {
               emergencyContactName: userData.emergencyContactName || '',
               emergencyContactPhone: userData.emergencyContactPhone || '',
               emergencyContactRelationship: userData.emergencyContactRelationship || '',
-              password: ''
+              password: '',
+              emailOptedOut: userData.emailOptedOut || false
             });
             setProfileData(userData);
             setOriginalUsername(userData.username);
@@ -409,7 +412,8 @@ const AccountDetails = () => {
         userType: formData.userType,
         emergencyContactName: formData.emergencyContactName,
         emergencyContactPhone: formData.emergencyContactPhone,
-        emergencyContactRelationship: formData.emergencyContactRelationship
+        emergencyContactRelationship: formData.emergencyContactRelationship,
+        emailOptedOut: formData.emailOptedOut
       };
 
       // Include email for admin editing others when changed
@@ -636,7 +640,8 @@ const AccountDetails = () => {
       emergencyContactName: profileData.emergencyContactName || '',
       emergencyContactPhone: profileData.emergencyContactPhone || '',
       emergencyContactRelationship: profileData.emergencyContactRelationship || '',
-      password: ''
+      password: '',
+      emailOptedOut: profileData.emailOptedOut || false
     });
     setErrors({});
     setSuccessMessage('');
@@ -952,6 +957,53 @@ const AccountDetails = () => {
                       <div className="info-card">
                         <label className="info-label">Account Type</label>
                         <div className="info-value">{profileData.userType}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Email Preferences */}
+                  <div className="section-header">
+                    <h4>Email Preferences</h4>
+                  </div>
+
+                  <div className="row mb-3">
+                    <div className="col-12">
+                      <div className="info-card">
+                        <label className="info-label">General Emails</label>
+                        <div className="info-value">
+                          {formData.emailOptedOut ? (
+                            <span className="badge badge-secondary">
+                              <i className="fas fa-times-circle mr-1"></i>
+                              Opted Out
+                            </span>
+                          ) : (
+                            <span className="badge badge-success">
+                              <i className="fas fa-check-circle mr-1"></i>
+                              Opted In
+                            </span>
+                          )}
+                        </div>
+                        <div className="info-description">
+                          You {formData.emailOptedOut ? 'have opted out of' : 'will receive'} general announcements and newsletters.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row mb-3">
+                    <div className="col-12">
+                      <div className="info-card">
+                        <label className="info-label">Event Communications</label>
+                        <div className="info-value">
+                          <span className="badge badge-info">
+                            <i className="fas fa-calendar-check mr-1"></i>
+                            Required for Events
+                          </span>
+                        </div>
+                        <div className="info-description">
+                          <strong>All users MUST receive event-related emails</strong> (registration confirmations, reminders, cancellations) to participate in events.
+                          This cannot be disabled for your safety and to ensure you receive critical event information.
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1322,6 +1374,45 @@ const AccountDetails = () => {
                       </div>
                     </>
                   )}
+
+                  {/* Email Preferences */}
+                  <div className="section-header">
+                    <h4>Email Preferences</h4>
+                    <small className="text-muted">Control which types of emails you receive</small>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-12">
+                      <div className="form-group">
+                        <div className="form-check">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            id="emailOptedOut"
+                            name="emailOptedOut"
+                            checked={formData.emailOptedOut}
+                            onChange={handleInputChange}
+                          />
+                          <label className="form-check-label" htmlFor="emailOptedOut">
+                            <strong>Opt out of general emails</strong>
+                            <small className="form-text text-muted d-block">
+                              Check this to stop receiving general announcements, newsletters, and marketing emails.
+                            </small>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row">
+                    <div className="col-12">
+                      <div className="alert alert-info">
+                        <i className="fas fa-info-circle mr-2"></i>
+                        <strong>Important:</strong> All users MUST receive event-related emails (registration confirmations, reminders, cancellations) to participate in events.
+                        This ensures you receive critical safety and scheduling information.
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Emergency Contact */}
                   <div className="section-header">

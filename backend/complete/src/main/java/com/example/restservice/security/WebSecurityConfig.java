@@ -60,6 +60,7 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/upcoming", "/api/events/past").permitAll() // Allow public event viewing
                 .requestMatchers(HttpMethod.GET, "/api/events/{id}").permitAll() // Allow public event detail viewing
                 .requestMatchers("/api/announcements/recent", "/api/announcements/active").permitAll() // Allow public announcements
+                .requestMatchers(HttpMethod.POST, "/api/users/verify-email").permitAll() // Allow email verification without authentication
                 // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/events").hasRole("ADMIN") // Allow admin to create events
