@@ -93,19 +93,9 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
   const loadMessages = async () => {
     if (!currentUser) return;
 
-    if (!isAdminUser) {
-      const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
-      const normalizedSaved = normalizeMessageLinks(savedMessages, true);
-      setMessages(normalizedSaved);
-      const unread = normalizedSaved.filter(msg => !msg.read).length;
-      setUnreadCount(unread);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
-      // Try to load messages from backend
+      // Try to load messages from backend for ALL users
       const response = await apiService.getInboxMessages();
       if (response && response.messages) {
         const normalizedMessages = normalizeMessageLinks(response.messages);
@@ -113,7 +103,7 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
         setMessages(normalizedMessages);
         setUnreadCount(response.unreadCount !== undefined ? response.unreadCount : unreadFromApi);
       } else {
-        // API returned null (403 handled gracefully) or invalid format - use localStorage fallback
+        // API returned null or invalid format - use localStorage fallback
         const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
         const normalizedSaved = normalizeMessageLinks(savedMessages, true);
         const unread = normalizedSaved.filter(msg => !msg.read).length;
@@ -146,9 +136,9 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
     // Determine user type - volunteers typically have 'volunteer' in email or specific roles
     const email = userProfile?.email || currentUser?.email || '';
     const isVolunteer = email.toLowerCase().includes('volunteer') ||
-                       userProfile?.roles?.includes('ROLE_VOLUNTEER') ||
-                       userProfile?.accountType === 'volunteer' ||
-                       userProfile?.userType === 'VOLUNTEER';
+      userProfile?.roles?.includes('ROLE_VOLUNTEER') ||
+      userProfile?.accountType === 'volunteer' ||
+      userProfile?.userType === 'VOLUNTEER';
 
     // Filter out old messages and profile completion messages (regenerate if needed)
     const filteredMessages = newMessages.filter(msg => !(msg.type === 'welcome' || msg.type === 'profile-completion' || (msg.type === 'volunteer' && msg.title !== 'Apply for a Team!')));
@@ -187,29 +177,29 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
     if (isVerified && !hasWelcomeMessage) {
       const welcomeMessage = isVolunteer
         ? {
-            id: `vol_team_${Date.now()}`,
-            type: 'welcome',
-            title: 'Apply for a Team!',
-            message: 'Choose from our available volunteer teams: Coaching, Event Coordination, Social Media, Website Development, Community Outreach, and more! Submit your application to get started.',
-            actionLink: '/volunteer',
-            actionText: 'Apply Now',
-            from: 'Kids in Motion Team',
-            timestamp: new Date().toISOString(),
-            read: false,
-            isSystem: true
-          }
+          id: `vol_team_${Date.now()}`,
+          type: 'welcome',
+          title: 'Apply for a Team!',
+          message: 'Choose from our available volunteer teams: Coaching, Event Coordination, Social Media, Website Development, Community Outreach, and more! Submit your application to get started.',
+          actionLink: '/volunteer',
+          actionText: 'Apply Now',
+          from: 'Kids in Motion Team',
+          timestamp: new Date().toISOString(),
+          read: false,
+          isSystem: true
+        }
         : {
-            id: `parent_welcome_${Date.now()}`,
-            type: 'welcome',
-            title: 'Discover Our Programs!',
-            message: 'Explore our free sports clinics and programs designed to help kids build skills, make friends, and have fun! Check out our upcoming events and register your children today.',
-            actionLink: '/events',
-            actionText: 'View Events',
-            from: 'Kids in Motion Team',
-            timestamp: new Date().toISOString(),
-            read: false,
-            isSystem: true
-          };
+          id: `parent_welcome_${Date.now()}`,
+          type: 'welcome',
+          title: 'Discover Our Programs!',
+          message: 'Explore our free sports clinics and programs designed to help kids build skills, make friends, and have fun! Check out our upcoming events and register your children today.',
+          actionLink: '/events',
+          actionText: 'View Events',
+          from: 'Kids in Motion Team',
+          timestamp: new Date().toISOString(),
+          read: false,
+          isSystem: true
+        };
       newMessages.unshift(welcomeMessage);
       didMutate = true;
     }

@@ -16,7 +16,11 @@ const BroadcastHistory = () => {
     try {
       setLoading(true);
       const response = await apiService.getBroadcastHistory();
-      setHistory(response.history || []);
+      if (Array.isArray(response)) {
+        setHistory(response);
+      } else {
+        setHistory(response.history || []);
+      }
       setError('');
     } catch (err) {
       setError('Failed to load broadcast history: ' + err.message);

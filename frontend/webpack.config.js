@@ -10,8 +10,8 @@ const fs = require('fs');
 // Determine which .env file to load
 // Check if webpack is running in production mode - improved detection
 const isProduction = process.argv.includes('--mode=production') ||
-                    (process.argv.includes('--mode') && process.argv[process.argv.indexOf('--mode') + 1] === 'production') ||
-                    process.env.NODE_ENV === 'production';
+  (process.argv.includes('--mode') && process.argv[process.argv.indexOf('--mode') + 1] === 'production') ||
+  process.env.NODE_ENV === 'production';
 const envFile = isProduction ? '.env.production' : '.env.development';
 
 // Load the appropriate env file
@@ -52,6 +52,8 @@ module.exports = {
     historyApiFallback: true, // Important for single-page applications using React Router
     headers: {
       'X-Content-Type-Options': 'nosniff',
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none'
     },
     setupMiddlewares: (middlewares, devServer) => {
       devServer.app.use((req, res, next) => {
@@ -96,7 +98,7 @@ module.exports = {
         test: /\.(png|svg|jpg|jpeg|gif)$/i,
         type: 'asset/resource',
         generator: {
-           filename: 'static/media/[name][ext]'
+          filename: 'static/media/[name][ext]'
         }
       },
     ]

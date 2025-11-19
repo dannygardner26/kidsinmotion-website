@@ -208,6 +208,26 @@ const AdminMessaging = () => {
     );
   };
 
+  const totalUniqueRecipients = useMemo(() => {
+    const uniqueIds = new Set();
+
+    // Add from selected categories
+    selectedCategories.forEach(catId => {
+      const recipients = categoryRecipients[catId] || [];
+      recipients.forEach(r => {
+        if (r.firebaseUid) uniqueIds.add(r.firebaseUid);
+        else if (r.email) uniqueIds.add(r.email);
+        else if (r.id) uniqueIds.add(r.id);
+      });
+    });
+
+    // Add from direct contacts
+    parsedContacts.emails.forEach(email => uniqueIds.add(email));
+    parsedContacts.phoneNumbers.forEach(phone => uniqueIds.add(phone));
+
+    return uniqueIds.size;
+  }, [selectedCategories, categoryRecipients, parsedContacts]);
+
   const buildPayload = () => ({
     subject: subject.trim(),
     message: message.trim(),
@@ -217,6 +237,7 @@ const AdminMessaging = () => {
     categories: selectedCategories, // Always include selected categories
     selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
     overrideOptOuts: overrideOptOuts && selectedCategories.includes('all'), // Only apply override when ALL users is selected
+    senderEmail: 'info@kidsinmotionpa.org',
   });
 
   const validatePayload = (payload) => {
@@ -287,83 +308,88 @@ const AdminMessaging = () => {
           <h4>User Categories</h4>
           <p className="section-hint">Select one or more audiences to include in this message.</p>
 
-            {loadingEvents && (
-              <div className="loading-categories">
-                <i className="fas fa-spinner fa-spin"></i> Loading event categories...
-              </div>
-            )}
-
-            <div className="category-grid">
-              {/* Base categories */}
-              {BASE_USER_CATEGORIES.map(category => {
-                const isChecked = selectedCategories.includes(category.id);
-                return (
-                  <label key={category.id} className={`category-card ${isChecked ? 'checked' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleCategory(category.id)}
-                    />
-                    <span>
-                      <strong>{category.label}</strong>
-                      <small>{category.description}</small>
-                    </span>
-                  </label>
-                );
-              })}
-
-              {/* Event-specific categories */}
-              {!loadingEvents && events.length > 0 && (
-                <>
-                  <div className="category-section-divider">
-                    <h5>Event-Specific Categories</h5>
-                  </div>
-                  {events.map(event => (
-                    <React.Fragment key={event.id}>
-                      {/* Parents for this event */}
-                      {(() => {
-                        const categoryId = `event-parents-${event.id}`;
-                        const isChecked = selectedCategories.includes(categoryId);
-                        return (
-                          <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleCategory(categoryId)}
-                            />
-                            <span>
-                              <strong>Parents - {event.name}</strong>
-                              <small>Parents with children registered for "{event.name}"</small>
-                            </span>
-                          </label>
-                        );
-                      })()}
-
-                      {/* Volunteers for this event */}
-                      {(() => {
-                        const categoryId = `event-volunteers-${event.id}`;
-                        const isChecked = selectedCategories.includes(categoryId);
-                        return (
-                          <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => toggleCategory(categoryId)}
-                            />
-                            <span>
-                              <strong>Volunteers - {event.name}</strong>
-                              <small>Volunteers signed up for "{event.name}"</small>
-                            </span>
-                          </label>
-                        );
-                      })()}
-                    </React.Fragment>
-                  ))}
-                </>
-              )}
+          {loadingEvents && (
+            <div className="loading-categories">
+              <i className="fas fa-spinner fa-spin"></i> Loading event categories...
             </div>
+          )}
+
+          <div className="category-grid">
+            {/* Base categories */}
+            {BASE_USER_CATEGORIES.map(category => {
+              const isChecked = selectedCategories.includes(category.id);
+              return (
+                <label key={category.id} className={`category-card ${isChecked ? 'checked' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleCategory(category.id)}
+                  />
+                  <span>
+                    <strong>{category.label}</strong>
+                    <small>{category.description}</small>
+                  </span>
+                </label>
+              );
+            })}
+
+            {/* Event-specific categories */}
+            {!loadingEvents && events.length > 0 && (
+              <>
+                <div className="category-section-divider">
+                  <h5>Event-Specific Categories</h5>
+                </div>
+                {events.map(event => (
+                  <React.Fragment key={event.id}>
+                    {/* Parents for this event */}
+                    {(() => {
+                      const categoryId = `event-parents-${event.id}`;
+                      const isChecked = selectedCategories.includes(categoryId);
+                      return (
+                        <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleCategory(categoryId)}
+                          />
+                          <span>
+                            <strong>Parents - {event.name}</strong>
+                            <small>Parents with children registered for "{event.name}"</small>
+                          </span>
+                        </label>
+                      );
+                    })()}
+
+                    {/* Volunteers for this event */}
+                    {(() => {
+                      const categoryId = `event-volunteers-${event.id}`;
+                      const isChecked = selectedCategories.includes(categoryId);
+                      return (
+                        <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleCategory(categoryId)}
+                          />
+                          <span>
+                            <strong>Volunteers - {event.name}</strong>
+                            <small>Volunteers signed up for "{event.name}"</small>
+                          </span>
+                        </label>
+                      );
+                    })()}
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+          </div>
           <div className="section-meta">
             {selectedCategories.length} categor{selectedCategories.length === 1 ? 'y' : 'ies'} selected
+            {totalUniqueRecipients > 0 && (
+              <span className="ml-2 badge badge-info">
+                ~{totalUniqueRecipients} unique recipient{totalUniqueRecipients !== 1 ? 's' : ''}
+              </span>
+            )}
             {!loadingEvents && events.length > 0 && (
               <span> • {events.length} event{events.length === 1 ? '' : 's'} loaded</span>
             )}

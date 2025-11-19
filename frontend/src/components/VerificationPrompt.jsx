@@ -114,33 +114,6 @@ const VerificationPrompt = ({
               border: '1px solid #c3e6cb',
               color: '#155724',
               padding: '8px',
-              borderRadius: '4px',
-              fontSize: '14px'
-            }}>
-              ✓ Verification email sent! Check your inbox and click the verification link.
-            </div>
-          ) : (
-            <button
-              onClick={handleSendEmailVerification}
-              disabled={sendingEmailVerification || verificationLoading || emailResendCooldown > 0}
-              style={{
-                backgroundColor: emailResendCooldown > 0 ? '#6c757d' : '#007bff',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: (sendingEmailVerification || emailResendCooldown > 0) ? 'not-allowed' : 'pointer',
-                opacity: (sendingEmailVerification || emailResendCooldown > 0) ? 0.6 : 1,
-                fontSize: '14px'
-              }}
-            >
-              {sendingEmailVerification ? 'Sending...' : emailResendCooldown > 0 ? `Resend in ${emailResendCooldown}s` : 'Send Verification Email'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Status Display - Only Email Required */}
       <div style={{ marginBottom: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
           <i className={`fas ${isEmailVerified ? 'fa-check-circle' : 'fa-times-circle'}`}

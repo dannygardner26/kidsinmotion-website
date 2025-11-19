@@ -88,6 +88,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
   const [isGoogleOAuthLogin, setIsGoogleOAuthLogin] = useState(false);
+  const isGoogleOAuthLoginRef = React.useRef(false);
+
+  const setGoogleOAuthLogin = (value) => {
+    setIsGoogleOAuthLogin(value);
+    isGoogleOAuthLoginRef.current = value;
+  };
 
   // Verification states
   const [isEmailVerified, setIsEmailVerified] = useState(false);
@@ -108,10 +114,10 @@ export const AuthProvider = ({ children }) => {
       try {
         // Enhanced user validation to prevent 400 errors from corrupted accounts
         const isUserReady = user.uid &&
-                           user.email &&
-                           typeof user.getIdToken === 'function' &&
-                           user.uid.length > 10 && // Valid UID should be longer than 10 chars
-                           user.email.includes('@'); // Basic email validation
+          user.email &&
+          typeof user.getIdToken === 'function' &&
+          user.uid.length > 10 && // Valid UID should be longer than 10 chars
+          user.email.includes('@'); // Basic email validation
 
         if (!isUserReady && retryCount < 3) {
           if (process.env.NODE_ENV !== 'production') {
@@ -232,6 +238,48 @@ export const AuthProvider = ({ children }) => {
         let actualProfile;
         try {
           actualProfile = await firestoreUserService.ensureUserExists(user, defaultProfile);
+
+          // Check if this is a new Firestore profile (created just now)
+          // If so, try to sync with backend to recover legacy data (for existing SQL users)
+          if (actualProfile.createdAt === defaultProfile.createdAt) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log("New Firestore profile detected. Attempting to sync with legacy backend data...");
+            }
+
+            try {
+              // Attempt to fetch existing profile from SQL backend
+              // This is crucial for existing users logging in with OAuth for the first time
+              const backendProfile = await apiService.syncUser();
+
+              if (backendProfile && (backendProfile.userType !== 'USER' || backendProfile.phoneNumber)) {
+                if (process.env.NODE_ENV !== 'production') {
+                  console.log("Found legacy backend data, updating Firestore:", backendProfile);
+                }
+
+                // Merge backend data into Firestore profile
+                // We prioritize backend data for roles and contact info
+                const mergedProfile = {
+                  ...actualProfile,
+                  firstName: backendProfile.firstName || actualProfile.firstName,
+                  lastName: backendProfile.lastName || actualProfile.lastName,
+                  phoneNumber: backendProfile.phoneNumber || actualProfile.phoneNumber,
+                  userType: backendProfile.userType || actualProfile.userType,
+                  roles: backendProfile.roles || actualProfile.roles,
+                  // Keep Firestore-specific fields
+                  updatedAt: new Date().toISOString()
+                };
+
+                // Update Firestore with merged data
+                actualProfile = await firestoreUserService.updateUser(user.uid, mergedProfile);
+              }
+            } catch (syncError) {
+              // Ignore sync errors - backend might be down or user truly new
+              if (process.env.NODE_ENV !== 'production') {
+                console.warn("Legacy backend sync failed or no legacy data found:", syncError);
+              }
+            }
+          }
+
           if (process.env.NODE_ENV !== 'production') {
             console.log("User profile from Firestore:", actualProfile);
             console.log("Is existing user?", actualProfile.createdAt !== defaultProfile.createdAt);
@@ -293,8 +341,8 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         // Enhanced error handling for auth initialization issues
         const isAuthError = error.code === 'auth/internal-error' ||
-                           error.code === 'auth/network-request-failed' ||
-                           error.message?.includes('not fully initialized');
+          error.code === 'auth/network-request-failed' ||
+          error.message?.includes('not fully initialized');
 
         if (isAuthError && retryCount < 2) {
           // Retry with exponential backoff for auth initialization errors
@@ -460,8 +508,8 @@ export const AuthProvider = ({ children }) => {
                 console.log("Initialization delay complete, syncing user with backend...");
               }
 
-              await syncUserWithBackend(user, isGoogleOAuthLogin);
-              setIsGoogleOAuthLogin(false); // Reset flag after use
+              await syncUserWithBackend(user, isGoogleOAuthLoginRef.current);
+              setGoogleOAuthLogin(false); // Reset flag after use
 
               // Update verification status
               setIsEmailVerified(user.emailVerified);
@@ -655,8 +703,8 @@ export const AuthProvider = ({ children }) => {
 
         // Handle specific auth errors
         if (error.code === 'auth/user-token-expired' ||
-            error.code === 'auth/internal-error' ||
-            error.code === 'auth/network-request-failed') {
+          error.code === 'auth/internal-error' ||
+          error.code === 'auth/network-request-failed') {
 
           // Try one more time with forced refresh before giving up
           if (!forceRefresh) {
@@ -898,7 +946,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     getIdToken, // Provide function to get token
     syncUserWithBackend, // For manual sync if needed
-    setIsGoogleOAuthLogin, // For flagging Google OAuth logins
+    setIsGoogleOAuthLogin: setGoogleOAuthLogin, // For flagging Google OAuth logins
     // Verification properties and methods
     isEmailVerified,
     isPhoneVerified,

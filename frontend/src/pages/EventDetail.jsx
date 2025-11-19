@@ -13,7 +13,7 @@ const EventDetail = () => {
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     // Set up real-time listener for this specific event
     firebaseRealtimeService.subscribeToEvent(
@@ -35,7 +35,7 @@ const EventDetail = () => {
       firebaseRealtimeService.unsubscribe(`event_${id}`);
     };
   }, [id]);
-  
+
   const fetchEventDetails = async () => {
     try {
       const eventData = await apiService.getEvent(id);
@@ -107,13 +107,13 @@ const EventDetail = () => {
     });
   };
 
-  
+
   // Format date for display - using fixed timezone utility
   const formatDate = (dateString, startTime, endTime) => {
     if (!dateString) return 'TBD';
     return formatEventDateTime(dateString, startTime, endTime);
   };
-  
+
   // Format duration
   const formatDuration = (date, startTime, endTime) => {
     if (!date || !startTime || !endTime) return 'TBD';
@@ -143,7 +143,7 @@ const EventDetail = () => {
       return 'TBD';
     }
   };
-  
+
   if (isLoading) {
     return (
       <>
@@ -156,7 +156,7 @@ const EventDetail = () => {
       </>
     );
   }
-  
+
   if (error || !event) {
     return (
       <>
@@ -175,10 +175,10 @@ const EventDetail = () => {
       </>
     );
   }
-  
+
   const isPastEvent = new Date(event.date + 'T00:00:00') < new Date();
   const sportBackground = getSportBackground(event.ageGroup);
-  
+
   return (
     <div className="event-detail-container">
       {/* Top Navigation Bar */}
@@ -335,23 +335,13 @@ const EventDetail = () => {
 
                     {currentUser ? (
                       <div className="action-buttons">
-                        {userProfile?.userType === 'VOLUNTEER' ? (
-                          <Link
-                            to={`/events/${event.id}/volunteer`}
-                            className="btn-primary register-pulse"
-                          >
-                            <i className="fas fa-hands-helping"></i>
-                            Sign Up to Volunteer
-                          </Link>
-                        ) : (
-                          <Link
-                            to={`/events/${event.id}/register`}
-                            className="btn-primary register-pulse"
-                          >
-                            <i className="fas fa-plus-circle"></i>
-                            Sign Up Your Child
-                          </Link>
-                        )}
+                        <Link
+                          to={`/events/${event.id}/register`}
+                          className="btn-primary register-pulse"
+                        >
+                          <i className="fas fa-plus-circle"></i>
+                          Sign Up Your Child
+                        </Link>
                       </div>
                     ) : (
                       <div className="action-buttons">
