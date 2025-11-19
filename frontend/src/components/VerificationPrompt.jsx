@@ -22,30 +22,6 @@ const VerificationPrompt = ({
   const [error, setError] = useState(null);
   const [emailResendCooldown, setEmailResendCooldown] = useState(0);
 
-  // Phone verification state
-  const [phoneVerificationCode, setPhoneVerificationCode] = useState('');
-  const [sendingPhoneCode, setSendingPhoneCode] = useState(false);
-  const [phoneCodeSent, setPhoneCodeSent] = useState(false);
-  const [verifyingPhoneCode, setVerifyingPhoneCode] = useState(false);
-  const [phoneVerificationError, setPhoneVerificationError] = useState('');
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [smsAvailable, setSmsAvailable] = useState(true); // Default to true to avoid hiding until checked
-
-  // Check SMS availability on component mount
-  useEffect(() => {
-    const checkSmsAvailability = async () => {
-      try {
-        const response = await apiService.getSmsAvailability();
-        setSmsAvailable(response.smsEnabled);
-      } catch (error) {
-        console.warn('Failed to check SMS availability:', error);
-        setSmsAvailable(false); // Assume not available if check fails
-      }
-    };
-
-    checkSmsAvailability();
-  }, []);
-
   const handleSendEmailVerification = async () => {
     setSendingEmailVerification(true);
     setError(null);
@@ -97,57 +73,6 @@ const VerificationPrompt = ({
     }, 1000);
   };
 
-  // Phone verification handlers
-  const handleSendPhoneVerification = async () => {
-    setSendingPhoneCode(true);
-    setPhoneVerificationError('');
-
-    try {
-      await sendPhoneVerification();
-      setPhoneCodeSent(true);
-      startResendCooldown();
-    } catch (error) {
-      console.error('Error sending phone verification:', error);
-      setPhoneVerificationError(error.message || 'Failed to send verification code');
-    } finally {
-      setSendingPhoneCode(false);
-    }
-  };
-
-  const handleVerifyPhoneCode = async () => {
-    if (!phoneVerificationCode || phoneVerificationCode.length !== 6) {
-      setPhoneVerificationError('Please enter a 6-digit code');
-      return;
-    }
-
-    setVerifyingPhoneCode(true);
-    setPhoneVerificationError('');
-
-    try {
-      await verifyPhoneCode(phoneVerificationCode);
-      await refreshVerificationStatus();
-      setPhoneCodeSent(false);
-      setPhoneVerificationCode('');
-    } catch (error) {
-      console.error('Error verifying phone code:', error);
-      setPhoneVerificationError(error.message || 'Invalid verification code');
-    } finally {
-      setVerifyingPhoneCode(false);
-    }
-  };
-
-  const startResendCooldown = () => {
-    setResendCooldown(60);
-    const timer = setInterval(() => {
-      setResendCooldown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
 
   return (
     <div style={{
@@ -164,7 +89,7 @@ const VerificationPrompt = ({
       </div>
 
       <p style={{ marginBottom: '15px' }}>
-        To register for events and sign up as a volunteer, you need to verify at least one contact method.
+        To register for events and sign up as a volunteer, you need to verify your email address.
       </p>
 
       {/* Email Verification Section */}
@@ -212,157 +137,6 @@ const VerificationPrompt = ({
               {sendingEmailVerification ? 'Sending...' : emailResendCooldown > 0 ? `Resend in ${emailResendCooldown}s` : 'Send Verification Email'}
             </button>
           )}
-        </div>
-      )}
-
-      {/* Phone Verification Section */}
-      {!isPhoneVerified && userPhone && smsAvailable && (
-        <div style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-          padding: '15px',
-          borderRadius: '6px',
-          marginBottom: '15px',
-          border: '1px solid #ddd'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-            <i className="fas fa-phone" style={{ marginRight: '8px', color: '#dc3545' }}></i>
-            <strong>Phone Verification</strong>
-          </div>
-          <p style={{ margin: '5px 0 10px 0', fontSize: '14px' }}>
-            Phone: {userPhone}
-          </p>
-
-          {/* Phone verification error */}
-          {phoneVerificationError && (
-            <div style={{
-              backgroundColor: '#f8d7da',
-              border: '1px solid #f5c6cb',
-              color: '#721c24',
-              padding: '8px',
-              borderRadius: '4px',
-              marginBottom: '10px',
-              fontSize: '14px'
-            }}>
-              {phoneVerificationError}
-            </div>
-          )}
-
-          {!phoneCodeSent ? (
-            /* Send verification code button */
-            <button
-              onClick={handleSendPhoneVerification}
-              disabled={sendingPhoneCode}
-              style={{
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: sendingPhoneCode ? 'not-allowed' : 'pointer',
-                opacity: sendingPhoneCode ? 0.6 : 1,
-                fontSize: '14px'
-              }}
-            >
-              {sendingPhoneCode ? (
-                <>
-                  <i className="fas fa-spinner fa-spin" style={{ marginRight: '5px' }}></i>
-                  Sending Code...
-                </>
-              ) : (
-                'Send Verification Code'
-              )}
-            </button>
-          ) : (
-            /* Code input and verify section */
-            <div>
-              <p style={{ fontSize: '14px', marginBottom: '10px' }}>
-                Enter the 6-digit code sent to your phone:
-              </p>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-                <input
-                  type="text"
-                  value={phoneVerificationCode}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                    setPhoneVerificationCode(value);
-                  }}
-                  placeholder="123456"
-                  maxLength="6"
-                  style={{
-                    padding: '8px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    width: '100px',
-                    textAlign: 'center',
-                    fontSize: '16px',
-                    letterSpacing: '2px'
-                  }}
-                />
-                <button
-                  onClick={handleVerifyPhoneCode}
-                  disabled={verifyingPhoneCode || phoneVerificationCode.length !== 6}
-                  style={{
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    cursor: (verifyingPhoneCode || phoneVerificationCode.length !== 6) ? 'not-allowed' : 'pointer',
-                    opacity: (verifyingPhoneCode || phoneVerificationCode.length !== 6) ? 0.6 : 1,
-                    fontSize: '14px'
-                  }}
-                >
-                  {verifyingPhoneCode ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin" style={{ marginRight: '5px' }}></i>
-                      Verifying...
-                    </>
-                  ) : (
-                    'Verify Code'
-                  )}
-                </button>
-              </div>
-
-              {/* Resend code button */}
-              <button
-                onClick={handleSendPhoneVerification}
-                disabled={resendCooldown > 0 || sendingPhoneCode}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: resendCooldown > 0 ? '#6c757d' : '#007bff',
-                  border: 'none',
-                  padding: '4px 8px',
-                  cursor: (resendCooldown > 0 || sendingPhoneCode) ? 'not-allowed' : 'pointer',
-                  fontSize: '12px',
-                  textDecoration: resendCooldown > 0 ? 'none' : 'underline'
-                }}
-              >
-                {resendCooldown > 0 ? `Resend available in ${resendCooldown}s` : 'Resend Code'}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* SMS Not Available Message */}
-      {!isPhoneVerified && userPhone && !smsAvailable && (
-        <div style={{
-          backgroundColor: 'rgba(255, 193, 7, 0.1)',
-          padding: '15px',
-          borderRadius: '6px',
-          marginBottom: '15px',
-          border: '1px solid #ffc107'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-            <i className="fas fa-info-circle" style={{ marginRight: '8px', color: '#856404' }}></i>
-            <strong>SMS Verification Unavailable</strong>
-          </div>
-          <p style={{ margin: '5px 0', fontSize: '14px', color: '#856404' }}>
-            Phone verification via SMS is not currently configured. Please use email verification or contact an administrator.
-          </p>
-          <p style={{ margin: '5px 0 0 0', fontSize: '14px' }}>
-            Phone: {userPhone} (Cannot verify via SMS)
-          </p>
         </div>
       )}
 
