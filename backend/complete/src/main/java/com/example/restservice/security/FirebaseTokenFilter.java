@@ -246,6 +246,11 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
             return true; // Other auth endpoints are public
         }
 
+        // Email verification endpoint is public (users click links when not logged in)
+        if ("POST".equalsIgnoreCase(method) && requestPath.equals("/api/users/verify-email")) {
+            return true;
+        }
+
         // H2 console for development
         if (requestPath.startsWith("/h2-console/")) {
             return true;
