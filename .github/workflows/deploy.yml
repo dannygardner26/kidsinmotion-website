@@ -19,15 +19,37 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Verify Firebase configuration
+        run: |
+          echo "🔍 Verifying Firebase configuration..."
+          if [ ! -f "frontend/firebase.json" ]; then
+            echo "❌ frontend/firebase.json not found"
+            exit 1
+          fi
+          if [ ! -f "frontend/.firebaserc" ]; then
+            echo "❌ frontend/.firebaserc not found"
+            exit 1
+          fi
+          echo "✅ Firebase configuration verified"
+          echo "📄 Firebase config:"
+          cat frontend/firebase.json
+
       - name: Install dependencies
         run: |
+          echo "📦 Installing dependencies..."
           cd frontend
           npm ci
+          echo "✅ Dependencies installed"
 
       - name: Build frontend
         run: |
+          echo "🏗️ Building frontend..."
           cd frontend
           npm run build
+          echo "✅ Build completed"
+          echo "📦 Build size:"
+          du -sh build/
+          ls -lh build/
         env:
           NODE_ENV: production
           REACT_APP_FIREBASE_API_KEY: AIzaSyCFe7YIJX_0VtKYDYA7GVTMoJDeTTAufeg
@@ -49,11 +71,30 @@ jobs:
           projectId: kids-in-motion-website-b1c09
           entryPoint: './frontend'
 
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "✅ Frontend deployed successfully!"
+          echo "🌐 Production URL: https://kidsinmotionpa.org"
+          echo "🌐 Firebase URL: https://kids-in-motion-website-b1c09.web.app"
+          echo "📅 Deployment time: $(date)"
+
   deploy-backend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Verify Cloud Build configuration
+        run: |
+          echo "🔍 Verifying Cloud Build configuration..."
+          if [ ! -f "cloudbuild.yaml" ]; then
+            echo "❌ cloudbuild.yaml not found"
+            exit 1
+          fi
+          echo "✅ Cloud Build configuration found"
+          echo "📄 Cloud Build config:"
+          cat cloudbuild.yaml
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -63,8 +104,33 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Verify GCP authentication
+        run: |
+          echo "🔐 Verifying GCP authentication..."
+          gcloud config list
+          gcloud projects describe kids-in-motion-website-b1c09
+
       - name: Trigger Cloud Build
         run: |
+          echo "🏗️ Triggering Cloud Build..."
           gcloud builds submit --config cloudbuild.yaml \
             --project kids-in-motion-website-b1c09 \
             --region us-east4
+          echo "✅ Cloud Build submitted"
+
+      - name: Check Cloud Run status
+        if: success()
+        run: |
+          echo "🔍 Checking Cloud Run deployment..."
+          gcloud run services describe kidsinmotion-website \
+            --region us-east4 \
+            --project kids-in-motion-website-b1c09 \
+            --format="value(status.url)"
+          echo "✅ Backend deployed successfully!"
+
+      - name: Deployment summary
+        if: success()
+        run: |
+          echo "✅ Backend deployed successfully!"
+          echo "🌐 API URL: https://kidsinmotion-website-839796180413.us-east4.run.app/api"
+          echo "📅 Deployment time: $(date)"
