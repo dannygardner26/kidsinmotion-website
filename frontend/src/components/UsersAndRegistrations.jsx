@@ -560,7 +560,7 @@ const UsersAndRegistrations = () => {
                   <tr key={user.id} className={user.isBanned ? 'banned-row' : ''}>
                     <td>
                       <Link
-                        to={`/account/${user.username || user.firebaseUid || user.id}`}
+                        to={`/account/${user.username || user.firebaseUid || user.id || user.email?.split('@')[0] || 'unknown'}`}
                         className="user-name-link"
                         title="Edit user profile"
                       >
@@ -592,7 +592,7 @@ const UsersAndRegistrations = () => {
                     <td>
                       <div className="action-buttons">
                         <Link
-                          to={`/account/${user.username}`}
+                          to={`/account/${user.username || user.firebaseUid || user.id || user.email?.split('@')[0] || 'unknown'}`}
                           className="btn btn-sm btn-primary"
                         >
                           Edit Profile
@@ -709,7 +709,7 @@ const UsersAndRegistrations = () => {
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={handleCloseUserProfile}>Close</button>
-                <Link to={`/account/${selectedUser.username}`} className="btn btn-primary">Edit Full Profile</Link>
+                <Link to={`/account/${selectedUser.username || selectedUser.firebaseUid || selectedUser.id || selectedUser.email?.split('@')[0] || 'unknown'}`} className="btn btn-primary">Edit Full Profile</Link>
               </div>
             </div>
           </div>

@@ -16,10 +16,12 @@ const BroadcastHistory = () => {
     try {
       setLoading(true);
       const response = await apiService.getBroadcastHistory();
+      console.log('Broadcast history response:', response);
+
       if (Array.isArray(response)) {
         setHistory(response);
       } else {
-        setHistory(response.history || []);
+        setHistory(response?.history || response || []);
       }
       setError('');
     } catch (err) {
@@ -101,13 +103,13 @@ const BroadcastHistory = () => {
           </div>
         )}
 
-        {history.length === 0 ? (
+        {history.length === 0 && !error ? (
           <div className="empty-state">
             <i className="fas fa-history"></i>
             <h4>No Broadcast History</h4>
             <p>Your broadcast messages will appear here after you send them.</p>
           </div>
-        ) : (
+        ) : history.length > 0 ? (
           <div className="history-table-container">
             <table className="history-table">
               <thead>
@@ -186,7 +188,7 @@ const BroadcastHistory = () => {
               </tbody>
             </table>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Broadcast Details Modal */}

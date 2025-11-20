@@ -153,6 +153,49 @@ class FirestoreUserService {
     }
   }
 
+  async fetchUserByIdentifier(identifier) {
+    try {
+      console.log('Fetching user by identifier from Firestore:', identifier);
+
+      if (!identifier || identifier === 'unknown') {
+        console.warn('Missing or invalid identifier for fetchUserByIdentifier');
+        return null;
+      }
+
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef);
+      const querySnapshot = await getDocs(q);
+
+      let foundUser = null;
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        // Try multiple matching criteria
+        if (userData.username === identifier ||
+            doc.id === identifier ||
+            userData.firebaseUid === identifier ||
+            userData.email === identifier ||
+            userData.email?.split('@')[0] === identifier) {
+          foundUser = {
+            id: doc.id,
+            firebaseUid: doc.id,
+            ...userData
+          };
+        }
+      });
+
+      if (foundUser) {
+        console.log('Fetched user by identifier from Firestore:', foundUser);
+      } else {
+        console.log('No user found with identifier:', identifier);
+      }
+
+      return foundUser;
+    } catch (error) {
+      console.error('Error fetching user by identifier from Firestore:', error);
+      return null;
+    }
+  }
+
   async deleteUser(firebaseUid) {
     try {
       console.log('Deleting user from Firestore:', firebaseUid);

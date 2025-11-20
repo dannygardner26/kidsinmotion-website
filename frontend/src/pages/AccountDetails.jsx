@@ -44,6 +44,7 @@ const AccountDetails = () => {
   const [pendingAccountType, setPendingAccountType] = useState('');
   const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // View/Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -204,13 +205,13 @@ const AccountDetails = () => {
         console.log('Admin fetching other user profile for username:', username);
 
         // Handle undefined username for OAuth users
-        if (!username || username === 'undefined') {
+        if (!username || username === 'undefined' || username === 'unknown') {
           throw new Error('Invalid username parameter');
         }
 
-        // First try fetching by username from Firestore
+        // Try fetching by various identifiers from Firestore
         try {
-          const userData = await firestoreUserService.fetchUserByUsername(username);
+          const userData = await firestoreUserService.fetchUserByIdentifier(username);
           if (userData) {
             console.log('Loaded user profile for admin view:', userData);
             setFormData({
@@ -230,7 +231,7 @@ const AccountDetails = () => {
               emailOptedOut: userData.emailOptedOut || false
             });
             setProfileData(userData);
-            setOriginalUsername(userData.username);
+            setOriginalUsername(userData.username || username);
           } else {
             throw new Error('User not found');
           }
@@ -256,6 +257,9 @@ const AccountDetails = () => {
       ...prev,
       [name]: newValue
     }));
+
+    // Mark as having unsaved changes
+    setHasUnsavedChanges(true);
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -600,6 +604,7 @@ const AccountDetails = () => {
       setSuccessMessage('Account updated successfully!');
       setOriginalUsername(formData.username);
       setIsEditMode(false);
+      setHasUnsavedChanges(false);
 
       // Refresh profile data only for admin changes or actual backend users
       // Skip refresh for Firebase users editing themselves
@@ -633,7 +638,21 @@ const AccountDetails = () => {
   };
 
   const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm(
+        'You have unsaved changes. Are you sure you want to discard them?\n\n' +
+        'Choose:\n' +
+        '• OK to discard changes and stop editing\n' +
+        '• Cancel to continue editing'
+      );
+
+      if (!confirmed) {
+        return; // User chose to continue editing
+      }
+    }
+
     setIsEditMode(false);
+    setHasUnsavedChanges(false);
     setFormData({
       firstName: profileData.firstName || '',
       lastName: profileData.lastName || '',
@@ -673,6 +692,7 @@ const AccountDetails = () => {
       setShowAccountTypeModal(true);
     } else {
       setFormData(prev => ({ ...prev, userType: newType }));
+      setHasUnsavedChanges(true);
     }
   };
 

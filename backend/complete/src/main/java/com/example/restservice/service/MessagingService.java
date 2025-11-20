@@ -341,10 +341,7 @@ public class MessagingService {
     private String buildEmailBody(BroadcastMessageRequest request, String initiatedBy) {
         StringBuilder builder = new StringBuilder();
         builder.append(request.getMessage());
-        if (StringUtils.hasText(initiatedBy)) {
-            builder.append("\n\n— ").append(initiatedBy);
-        }
-        builder.append("\nKids in Motion Admin Team");
+        builder.append("\n\nKids in Motion Admin Team");
         return builder.toString();
     }
 

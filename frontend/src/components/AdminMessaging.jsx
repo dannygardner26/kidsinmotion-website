@@ -234,7 +234,7 @@ const AdminMessaging = () => {
     deliveryChannels: channels,
     directEmails: parsedContacts.emails, // Always include direct emails if they exist
     directPhoneNumbers: parsedContacts.phoneNumbers, // Always include direct phone numbers if they exist
-    categories: selectedCategories, // Always include selected categories
+    categories: selectedRecipients.length > 0 ? [] : selectedCategories, // Only use categories if no specific recipients selected
     selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
     overrideOptOuts: overrideOptOuts && selectedCategories.includes('all'), // Only apply override when ALL users is selected
     senderEmail: 'info@kidsinmotionpa.org',
@@ -551,8 +551,19 @@ const AdminMessaging = () => {
 
             {selectedRecipients.length > 0 && (
               <div className="selected-recipients-summary">
-                <strong>{selectedRecipients.length} specific recipient{selectedRecipients.length === 1 ? '' : 's'} selected</strong>
-                <p className="section-hint">When specific recipients are selected, the message will only be sent to them (not all users in the selected categories).</p>
+                <div className="alert alert-info">
+                  <i className="fas fa-info-circle mr-2"></i>
+                  <strong>{selectedRecipients.length} specific recipient{selectedRecipients.length === 1 ? '' : 's'} selected</strong>
+                  <p className="mb-2 mt-1"><strong>Important:</strong> The message will ONLY be sent to these selected recipients, not to all users in the categories above.</p>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-warning"
+                    onClick={() => setSelectedRecipients([])}
+                  >
+                    <i className="fas fa-times mr-1"></i>
+                    Clear Selection (Send to All in Categories)
+                  </button>
+                </div>
               </div>
             )}
           </section>
