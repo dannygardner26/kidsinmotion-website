@@ -79,7 +79,7 @@ public class MessagingService {
         // Process general categories and direct emails/phones
         if (!generalCategories.isEmpty() || (request.getDirectEmails() != null && !request.getDirectEmails().isEmpty()) || (request.getDirectPhoneNumbers() != null && !request.getDirectPhoneNumbers().isEmpty())) {
             MessagingRecipientService.RecipientResolutionResult generalResult =
-                    recipientService.resolveRecipients(generalCategories, request.getDirectEmails(), request.getDirectPhoneNumbers(), null, null);
+                    recipientService.resolveRecipients(generalCategories, request.getDirectEmails(), request.getDirectPhoneNumbers(), null, request.getSelectedRecipients());
             allRecipients.addAll(generalResult.getRecipients());
             allCategoryCounts.putAll(generalResult.getCategoryCounts());
             allDirectEmailsWithoutAccounts.addAll(generalResult.getDirectEmailsWithoutAccounts());
