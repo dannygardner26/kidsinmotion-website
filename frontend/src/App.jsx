@@ -276,9 +276,16 @@ const AppWithOnboarding = () => {
           {shouldShowOnboarding && (
             <AccountTypeSelector
               onComplete={(profile) => {
-                console.log('Onboarding completed:', profile);
-                // Redirect to profile completion
-                window.location.href = `/account/${profile.username}?complete=true`;
+                console.log('Account type selected:', profile);
+                // After account type selection, redirect to profile completion
+                const username = profile?.username || profile?.email?.split('@')[0];
+                if (username) {
+                  // Redirect to profile completion so they can see their account and complete it
+                  window.location.href = `/account/${username}?complete=true`;
+                } else {
+                  // Fallback to dashboard if username not available
+                  window.location.href = '/dashboard';
+                }
               }}
             />
           )}

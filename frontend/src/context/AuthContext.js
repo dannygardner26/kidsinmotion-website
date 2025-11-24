@@ -24,6 +24,21 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
     return false;
   }
 
+  // REGULAR REGISTRATION USERS ARE EXEMPT - They already provided all required fields
+  // Check for registrationSource === 'password' OR needsOnboarding === false
+  const isRegularRegistration = profile?.registrationSource === 'password' || profile?.needsOnboarding === false;
+  
+  if (isRegularRegistration) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Regular registration user - no profile completion needed:', {
+        registrationSource: profile?.registrationSource,
+        needsOnboarding: profile?.needsOnboarding,
+        userType: profile?.userType
+      });
+    }
+    return false; // Regular registration users already completed their profile during signup
+  }
+
   const hasRequiredFields = profile?.firstName && profile?.lastName;
   const hasContact = profile?.email || profile?.phoneNumber;
   const validUserTypes = ['PARENT', 'VOLUNTEER', 'ADMIN'];
@@ -307,13 +322,35 @@ export const AuthProvider = ({ children }) => {
           const username = actualProfile?.username || user.email?.split('@')[0] || user.uid;
           const accountPath = `/account/${username}`;
 
-          if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true')) {
+          // Don't redirect regular registration users - they already completed their profile
+          const isRegularRegistration = actualProfile?.registrationSource === 'password' || actualProfile?.needsOnboarding === false;
+          if (isRegularRegistration) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('Regular registration user - skipping profile completion redirect');
+            }
+            return; // Exit early, don't redirect
+          }
+
+          // Check if this is an OAuth user who hasn't selected account type yet
+          const isOAuth = actualProfile?.registrationSource === 'oauth';
+          const needsAccountType = isOAuth && (!actualProfile?.userType || actualProfile?.userType === 'USER');
+
+          // For OAuth users without account type, don't redirect - let AccountTypeSelector show
+          if (needsAccountType) {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('OAuth user needs account type selection - showing AccountTypeSelector');
+            }
+            // Don't redirect - AccountTypeSelector will show via needsOnboarding flag
+            return; // Exit early, let the onboarding modal handle it
+          }
+
+          // Only redirect to profile completion if not already there and account type is set
+          if (!currentPath.includes('/account/') && !currentPath.includes('?complete=true') && actualProfile?.userType && actualProfile?.userType !== 'USER') {
             if (process.env.NODE_ENV !== 'production') {
               console.log('Redirecting to profile completion:', accountPath, 'for user with userType:', actualProfile?.userType);
             }
 
             // Show user-friendly message about profile completion
-            const isOAuth = actualProfile?.registrationSource === 'oauth';
             const message = isOAuth
               ? 'Welcome to Kids in Motion! Let\'s finish setting up your account so you can register for events and receive important updates...'
               : 'Finishing your account setup to connect you with events and activities...';

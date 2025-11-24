@@ -42,6 +42,7 @@ const AccountDetails = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showAccountTypeModal, setShowAccountTypeModal] = useState(false);
   const [pendingAccountType, setPendingAccountType] = useState('');
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const [showEmailChangeModal, setShowEmailChangeModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -639,18 +640,15 @@ const AccountDetails = () => {
 
   const handleCancel = () => {
     if (hasUnsavedChanges) {
-      const confirmed = window.confirm(
-        'You have unsaved changes. Are you sure you want to discard them?\n\n' +
-        'Choose:\n' +
-        '• OK to discard changes and stop editing\n' +
-        '• Cancel to continue editing'
-      );
-
-      if (!confirmed) {
-        return; // User chose to continue editing
-      }
+      setShowCancelConfirmModal(true);
+      return;
     }
 
+    // No unsaved changes, proceed with cancel
+    cancelEdit();
+  };
+
+  const cancelEdit = () => {
     setIsEditMode(false);
     setHasUnsavedChanges(false);
     setFormData({
@@ -1695,6 +1693,69 @@ const AccountDetails = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Cancel Confirmation Modal */}
+      {showCancelConfirmModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '2rem',
+            maxWidth: '400px',
+            width: '90%',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+          }}>
+            <h3 style={{ marginBottom: '1rem', color: '#374151' }}>Discard Changes?</h3>
+            <p style={{ marginBottom: '1.5rem', color: '#6b7280' }}>
+              You have unsaved changes. Are you sure you want to discard them?
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirmModal(false)}
+                style={{
+                  padding: '0.5rem 1rem',
+                  border: '1px solid #d1d5db',
+                  backgroundColor: 'white',
+                  color: '#374151',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Continue Editing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCancelConfirmModal(false);
+                  cancelEdit();
+                }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  border: 'none',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  borderRadius: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Discard Changes
+              </button>
             </div>
           </div>
         </div>

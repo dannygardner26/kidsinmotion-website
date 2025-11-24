@@ -876,12 +876,12 @@ class ApiService {
 
   // Volunteer Employee endpoints
   async getAllVolunteerEmployees() {
-    return this.makeRequest('/volunteer/admin/all');
+    return this.makeRequest('/volunteers/admin/all');
   }
 
 
   async getVolunteerStatus() {
-    return this.makeRequest('/volunteer/status');
+    return this.makeRequest('/volunteers/status');
   }
 
   async registerVolunteerEmployee(data) {
@@ -893,7 +893,7 @@ class ApiService {
 
 
   async updateVolunteerEmployeeStatus(volunteerEmployeeId, status, adminNotes = '') {
-    return this.makeRequest('/volunteer/admin/update-status', {
+    return this.makeRequest('/volunteers/admin/update-status', {
       method: 'POST',
       body: JSON.stringify({
         volunteerEmployeeId,

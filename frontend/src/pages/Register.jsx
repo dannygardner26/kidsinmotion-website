@@ -150,15 +150,30 @@ const Register = () => {
         school: formData.school || null,
         email: formData.email, // Ensure email is included for backend consistency
         needsOnboarding: false, // Regular registration users have completed profile
+        registrationSource: 'password', // Track that this is regular registration
+        hasPassword: true, // Regular registration users have passwords
         emailConsent: formData.emailConsent // Optional email consent for newsletters
       };
 
       await apiService.syncUser();
-      // Use AuthContext's updateProfile to ensure local state and Firestore are updated immediately
-      // This ensures the dashboard shows the correct view for volunteers
-      await updateProfile(profileData);
+      console.log("User synced with backend, now saving profile data:", profileData);
 
-      console.log("Backend profile created successfully.");
+      // Use backend API to save the complete profile data with proper validation
+      try {
+        const profileResult = await apiService.updateUserProfile(profileData);
+        console.log("Profile data saved to backend successfully:", profileResult);
+      } catch (profileError) {
+        console.error("Failed to save profile to backend:", profileError);
+        // Don't throw here, continue with local state update as fallback
+      }
+
+      // Also update local state for immediate UI updates
+      try {
+        await updateProfile(profileData);
+        console.log("Profile data updated in local state and Firestore");
+      } catch (localError) {
+        console.error("Failed to update local profile state:", localError);
+      }
 
       // 4. Send email verification using our custom SendGrid system
       try {
@@ -188,8 +203,13 @@ const Register = () => {
           message: 'Check your email to verify your account.'
         });
       } catch (verificationError) {
-        console.warn("Failed to send verification email:", verificationError);
-        // Don't block registration if verification email fails
+        console.error("Failed to send verification email:", verificationError);
+        // Show user that verification email failed but don't block registration
+        addNotification({
+          type: 'warning',
+          title: 'Email Verification',
+          message: 'Account created successfully, but verification email failed to send. You can request it again from your dashboard.'
+        });
       }
 
       // 5. Redirect to dashboard with verification prompt

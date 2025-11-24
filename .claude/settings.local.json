@@ -155,7 +155,9 @@
       "Bash(gcloud run revisions list:*)",
       "Bash(start \"C:\\Users\\danny\\Documents\\GitHub\\KidsInMotionJava\\email_template_preview.html\")",
       "Bash(gcloud beta builds log:*)",
-      "Bash(gradle:*)"
+      "Bash(gradle:*)",
+      "Bash(firebase --version)",
+      "Bash(gcloud:*)"
     ],
     "deny": []
   }

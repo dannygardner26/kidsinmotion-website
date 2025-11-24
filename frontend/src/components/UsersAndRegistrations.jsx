@@ -49,8 +49,6 @@ const UsersAndRegistrations = () => {
   const [newAccountType, setNewAccountType] = useState('');
   const [accountTypeWarnings, setAccountTypeWarnings] = useState([]);
 
-  // Test account reset state
-  const [isResettingTestAccounts, setIsResettingTestAccounts] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -385,7 +383,7 @@ const UsersAndRegistrations = () => {
 
   // Delete user handler
   const handleDeleteUser = async () => {
-    if (!deleteUser || !deleteReason.trim()) return;
+    if (!deleteUser) return;
 
     setActionLoading(prev => ({ ...prev, [deleteUser.id]: true }));
 
@@ -395,7 +393,7 @@ const UsersAndRegistrations = () => {
         await firestoreUserService.deleteUser(deleteUser.id);
         result = { message: 'User deleted successfully (Firestore)' };
       } else {
-        result = await apiService.deleteUser(deleteUser.id, deleteReason);
+        result = await apiService.deleteUser(deleteUser.id, deleteReason.trim() || 'Admin deletion');
       }
 
       // Remove user from local state
@@ -414,51 +412,6 @@ const UsersAndRegistrations = () => {
     }
   };
 
-  const handleResetTestAccounts = async () => {
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      'Are you sure you want to reset test accounts?\n\n' +
-      'This will DELETE and RECREATE the following accounts:\n' +
-      '• parent@gmail.com (and all related participant records)\n' +
-      '• volunteer@gmail.com (and all related volunteer records)\n\n' +
-      'This action cannot be undone.'
-    );
-
-    if (!confirmed) {
-      return; // User cancelled
-    }
-
-    setIsResettingTestAccounts(true);
-    try {
-      const response = await apiService.resetTestAccounts();
-
-      // Check response.success to determine outcome
-      if (response.success) {
-        // Show success message with account details
-        const accountCount = response.createdAccounts?.length || 0;
-        const accountsList = response.createdAccounts?.map(acc => acc.email).join(', ') || '';
-        showNotification(
-          `Successfully reset ${accountCount} test account(s): ${accountsList}`,
-          'success'
-        );
-      } else {
-        // Show error notification with list of errors
-        const errorSummary = response.errors?.join('; ') || 'Unknown error occurred';
-        showNotification(
-          `Test account reset failed: ${errorSummary}`,
-          'error'
-        );
-      }
-
-      // Refresh the user list to show the updated test accounts
-      await fetchAllData();
-    } catch (error) {
-      console.error('Reset test accounts error:', error);
-      showNotification('Failed to reset test accounts: ' + error.message, 'error');
-    } finally {
-      setIsResettingTestAccounts(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -475,24 +428,6 @@ const UsersAndRegistrations = () => {
         <h2>User Management</h2>
         <p>Manage user roles, permissions, and account status</p>
         <div className="header-actions">
-          <button
-            onClick={handleResetTestAccounts}
-            className="btn btn-warning"
-            disabled={isResettingTestAccounts || isLoading}
-            title="Deletes and recreates parent@gmail.com and volunteer@gmail.com test accounts"
-          >
-            {isResettingTestAccounts ? (
-              <>
-                <i className="fas fa-spinner fa-spin mr-2"></i>
-                Resetting...
-              </>
-            ) : (
-              <>
-                <i className="fas fa-redo mr-2"></i>
-                Reset Test Accounts
-              </>
-            )}
-          </button>
           <button
             onClick={() => {
               console.log('Manual refresh triggered');
@@ -866,12 +801,12 @@ const UsersAndRegistrations = () => {
                 </ul>
 
                 <div className="form-group mt-3">
-                  <label>Reason for deletion (required):</label>
+                  <label>Reason for deletion (optional):</label>
                   <textarea
                     className="form-control"
                     value={deleteReason}
                     onChange={(e) => setDeleteReason(e.target.value)}
-                    placeholder="Please provide a reason for deleting this user..."
+                    placeholder="Optional: Provide a reason for deleting this user..."
                     rows="3"
                   ></textarea>
                 </div>
@@ -881,7 +816,7 @@ const UsersAndRegistrations = () => {
                 <button
                   className="btn btn-danger"
                   onClick={handleDeleteUser}
-                  disabled={!deleteReason.trim() || actionLoading[deleteUser.id]}
+                  disabled={actionLoading[deleteUser.id]}
                 >
                   {actionLoading[deleteUser.id] ? (
                     <>

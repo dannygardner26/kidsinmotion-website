@@ -84,7 +84,7 @@ const AdminMessaging = () => {
       return { emails: [], phoneNumbers: [] };
     }
     const parts = contactList
-      .split(/[,;\n\s]+/)
+      .split(/[,;\n]+/)
       .map(entry => entry.trim())
       .filter(entry => entry.length > 0);
 
@@ -92,12 +92,12 @@ const AdminMessaging = () => {
     const phoneNumbers = [];
 
     parts.forEach(part => {
-      // Email pattern: contains @ and .
-      if (part.includes('@') && part.includes('.')) {
+      // Email pattern: basic email validation
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(part)) {
         emails.push(part.toLowerCase());
       }
       // Phone pattern: contains digits and potentially +, -, (, ), spaces
-      else if (/^[+]?[(]?[\d\s\-()]+$/.test(part) && /\d/.test(part)) {
+      else if (/^[+]?[(]?[\d\s\-()]+$/.test(part) && /\d{3,}/.test(part)) {
         // Clean phone number: remove spaces, dashes, parentheses
         const cleaned = part.replace(/[\s\-()]/g, '');
         phoneNumbers.push(cleaned);
@@ -228,17 +228,28 @@ const AdminMessaging = () => {
     return uniqueIds.size;
   }, [selectedCategories, categoryRecipients, parsedContacts]);
 
-  const buildPayload = () => ({
-    subject: subject.trim(),
-    message: message.trim(),
-    deliveryChannels: channels,
-    directEmails: parsedContacts.emails, // Always include direct emails if they exist
-    directPhoneNumbers: parsedContacts.phoneNumbers, // Always include direct phone numbers if they exist
-    categories: selectedRecipients.length > 0 ? [] : selectedCategories, // Only use categories if no specific recipients selected
-    selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
-    overrideOptOuts: overrideOptOuts && selectedCategories.includes('all'), // Only apply override when ALL users is selected
-    senderEmail: 'info@kidsinmotionpa.org',
-  });
+  const buildPayload = () => {
+    const payload = {
+      subject: subject.trim(),
+      message: message.trim(),
+      deliveryChannels: channels,
+      directEmails: parsedContacts.emails, // Always include direct emails if they exist
+      directPhoneNumbers: parsedContacts.phoneNumbers, // Always include direct phone numbers if they exist
+      categories: selectedRecipients.length > 0 ? [] : selectedCategories, // Only use categories if no specific recipients selected
+      selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
+      overrideOptOuts: overrideOptOuts && selectedCategories.includes('all'), // Only apply override when ALL users is selected
+      senderEmail: 'info@kidsinmotionpa.org',
+    };
+
+    console.log('Built payload:', {
+      ...payload,
+      selectedRecipientsCount: payload.selectedRecipients.length,
+      categoriesCount: payload.categories.length,
+      selectedRecipientsData: payload.selectedRecipients
+    });
+
+    return payload;
+  };
 
   const validatePayload = (payload) => {
     if (!payload.subject) {
@@ -250,8 +261,11 @@ const AdminMessaging = () => {
     if (payload.deliveryChannels.length === 0) {
       return 'Select at least one delivery channel.';
     }
-    // Require at least one recipient source (categories, direct emails, or phone numbers)
-    if (payload.categories.length === 0 && payload.directEmails.length === 0 && payload.directPhoneNumbers.length === 0) {
+    // Require at least one recipient source (categories, direct emails, phone numbers, or selected recipients)
+    if (payload.categories.length === 0 &&
+        payload.directEmails.length === 0 &&
+        payload.directPhoneNumbers.length === 0 &&
+        payload.selectedRecipients.length === 0) {
       return 'Select at least one user category or enter direct contact information.';
     }
     return null;
@@ -271,6 +285,7 @@ const AdminMessaging = () => {
 
     try {
       setSending(true);
+      console.log('Sending broadcast message with payload:', payload);
       const response = await apiService.broadcastMessage(payload);
       setDeliveryResult(response);
       setSuccess(`Message queued for ${response.totalRecipients} recipient${response.totalRecipients === 1 ? '' : 's'}.`);
@@ -523,7 +538,11 @@ const AdminMessaging = () => {
                                   />
                                 </td>
                                 <td className="name-column">
-                                  {recipient.displayName || 'Unknown User'}
+                                  {recipient.displayName ||
+                                   (recipient.firstName && recipient.lastName ?
+                                    `${recipient.firstName} ${recipient.lastName}` :
+                                    recipient.firstName || recipient.lastName ||
+                                    recipient.username || 'Unknown User')}
                                 </td>
                                 <td className="email-column">
                                   {recipient.email || '—'}
@@ -978,6 +997,7 @@ const AdminMessaging = () => {
           display: flex;
           justify-content: flex-end;
           gap: 1rem;
+          flex-wrap: wrap;
         }
 
         .panel-actions .btn {
@@ -986,6 +1006,10 @@ const AdminMessaging = () => {
           gap: 0.5rem;
           font-weight: 600;
           text-transform: none;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
 
         .loading-spinner-small {
@@ -1014,10 +1038,17 @@ const AdminMessaging = () => {
 
           .panel-actions {
             flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
           }
 
           .panel-actions .btn {
             justify-content: center;
+            width: 100%;
+            max-width: 100%;
+            white-space: normal;
+            text-align: center;
+            padding: 0.75rem 1rem;
           }
         }
 

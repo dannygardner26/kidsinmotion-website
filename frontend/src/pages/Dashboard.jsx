@@ -61,6 +61,11 @@ const Dashboard = () => {
     // Admin accounts are exempt from profile completion checks
     if (isAdmin()) return false;
 
+    // Respect the needsOnboarding flag - regular registration users have completed their profile
+    if (userProfile.needsOnboarding === false) {
+      return false; // User completed registration normally, no profile completion needed
+    }
+
     // Check if there are any missing fields first
     if (getMissingFields().length === 0) return false;
 
@@ -94,6 +99,11 @@ const Dashboard = () => {
   // Get missing fields for banner message
   const getMissingFields = () => {
     if (!userProfile) return [];
+
+    // Regular registration users don't need profile completion
+    if (userProfile.needsOnboarding === false) {
+      return []; // No missing fields for users who completed regular registration
+    }
 
     const missing = [];
     if (!userProfile.firstName || userProfile.firstName.trim() === '') missing.push('first name');
