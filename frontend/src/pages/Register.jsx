@@ -158,8 +158,13 @@ const Register = () => {
       await apiService.syncUser();
       console.log("User synced with backend, now saving profile data:", profileData);
 
+      // Wait a moment for sync to complete before saving profile
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       // Use backend API to save the complete profile data with proper validation
       try {
+        // Get fresh token to ensure it's valid
+        const token = await user.getIdToken();
         const profileResult = await apiService.updateUserProfile(profileData);
         console.log("Profile data saved to backend successfully:", profileResult);
       } catch (profileError) {
@@ -176,12 +181,18 @@ const Register = () => {
       }
 
       // 4. Send email verification using our custom SendGrid system
+      // Wait a moment to ensure user token is fully ready
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       try {
+        // Get fresh token to ensure it's valid
+        const token = await user.getIdToken(true); // Force refresh
+        
         const response = await fetch(`${process.env.REACT_APP_API_URL}/users/send-verification-email`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await user.getIdToken()}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
             email: user.email,
@@ -190,7 +201,7 @@ const Register = () => {
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
           throw new Error(errorData.error || 'Failed to send verification email');
         }
 

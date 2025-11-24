@@ -1288,8 +1288,13 @@ const AccountDetails = () => {
                     </>
                   )}
 
-                  {/* Account Type Selection for incomplete profiles */}
-                  {isSelfEdit && (formData.userType === 'USER' || formData.userType === 'user' || !formData.userType) && (
+                  {/* Account Type Selection for incomplete profiles - ONLY for OAuth users */}
+                  {isSelfEdit && 
+                    (formData.userType === 'USER' || formData.userType === 'user' || !formData.userType) &&
+                    (profileData?.registrationSource === 'oauth' || !profileData?.registrationSource) && // Only show for OAuth users or users without registrationSource
+                    profileData?.registrationSource !== 'password' && // Don't show for regular registration users
+                    profileData?.needsOnboarding !== false && // Don't show if onboarding is complete
+                    (
                     <>
                       <div className="section-header">
                         <h4>Complete Your Account Setup</h4>
@@ -1413,15 +1418,19 @@ const AccountDetails = () => {
                           <input
                             type="checkbox"
                             className="form-check-input"
-                            id="emailOptedOut"
-                            name="emailOptedOut"
-                            checked={formData.emailOptedOut}
-                            onChange={handleInputChange}
+                            id="emailConsent"
+                            name="emailConsent"
+                            checked={!formData.emailOptedOut} // Invert: checked means they consent (not opted out)
+                            onChange={(e) => {
+                              // When checkbox changes, invert the value for emailOptedOut
+                              setFormData(prev => ({ ...prev, emailOptedOut: !e.target.checked }));
+                            }}
                           />
-                          <label className="form-check-label" htmlFor="emailOptedOut">
-                            <strong>Opt out of general emails</strong>
-                            <small className="form-text text-muted d-block">
-                              Check this to stop receiving general announcements, newsletters, and marketing emails.
+                          <label className="form-check-label" htmlFor="emailConsent">
+                            <strong>I consent to receiving general emails</strong>
+                            <small className="form-text text-muted d-block mt-1">
+                              Receive general announcements, newsletters, and updates from Kids in Motion. 
+                              You will always receive important event-related emails regardless of this setting.
                             </small>
                           </label>
                         </div>
