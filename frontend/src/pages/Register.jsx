@@ -158,16 +158,19 @@ const Register = () => {
       // Wait a moment for user to be fully initialized
       await new Promise(resolve => setTimeout(resolve, 500));
 
+      // First, sync user to create the user record in backend
       await apiService.syncUser();
       console.log("User synced with backend, now saving profile data:", profileData);
 
       // Wait a moment for sync to complete before saving profile
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       // Use backend API to save the complete profile data with proper validation
+      // This will update the userType and other fields that syncUser set to defaults
       try {
         // Get fresh token to ensure it's valid
         const token = await user.getIdToken(true); // Force refresh
+        console.log("Updating user profile with data:", profileData);
         const profileResult = await apiService.updateUserProfile(profileData);
         console.log("Profile data saved to backend successfully:", profileResult);
       } catch (profileError) {
@@ -177,7 +180,7 @@ const Register = () => {
 
       // Also update local state for immediate UI updates
       // Wait a bit more to ensure auth state has updated
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
       try {
         await updateProfile(profileData);
         console.log("Profile data updated in local state and Firestore");
