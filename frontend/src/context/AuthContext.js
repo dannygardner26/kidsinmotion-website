@@ -789,9 +789,36 @@ export const AuthProvider = ({ children }) => {
       // Cache the updated profile using authUser.uid (not currentUser which might be null)
       localStorage.setItem(`userProfile_${authUser.uid}`, JSON.stringify(updatedProfile));
 
+      // Sanitize profile data for Firestore - only include serializable fields
+      // Remove any Firebase Auth object properties that can't be saved to Firestore
+      const sanitizedProfile = {};
+      const allowedFields = [
+        'uid', 'firebaseUid', 'email', 'firstName', 'lastName', 'username', 
+        'phoneNumber', 'userType', 'roles', 'grade', 'school', 
+        'profilePictureUrl', 'profileColor', 'emailVerified', 'phoneVerified',
+        'needsOnboarding', 'registrationSource', 'hasPassword', 'emailOptedOut',
+        'emergencyContactName', 'emergencyContactPhone', 'emergencyContactRelationship',
+        'profileVisibility', 'isBanned', 'bannedAt', 'bannedReason',
+        'createdAt', 'createdTimestamp', 'updatedAt', 'updatedTimestamp', 
+        'lastLoginAt', 'isActive', 'emailConsent'
+      ];
+      
+      for (const key of allowedFields) {
+        if (updatedProfile.hasOwnProperty(key)) {
+          const value = updatedProfile[key];
+          // Only include primitive values, strings, numbers, booleans, arrays, or plain objects
+          if (value !== null && value !== undefined && 
+              (typeof value === 'string' || typeof value === 'number' || 
+               typeof value === 'boolean' || Array.isArray(value) ||
+               (typeof value === 'object' && value.constructor === Object))) {
+            sanitizedProfile[key] = value;
+          }
+        }
+      }
+
       // Update in Firestore for admin dashboard
       try {
-        await firestoreUserService.updateUser(authUser.uid, updatedProfile);
+        await firestoreUserService.updateUser(authUser.uid, sanitizedProfile);
         if (process.env.NODE_ENV !== 'production') {
           console.log("Profile updated in Firestore for admin dashboard");
         }
