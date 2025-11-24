@@ -771,6 +771,12 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
+      // Get current user from auth directly (not from state, which might be stale)
+      const authUser = auth.currentUser;
+      if (!authUser) {
+        throw new Error('No authenticated user found');
+      }
+
       // Firebase-only profile update (no backend sync)
       const updatedProfile = {
         ...userProfile,
@@ -780,12 +786,12 @@ export const AuthProvider = ({ children }) => {
 
       setUserProfile(updatedProfile);
 
-      // Cache the updated profile
-      localStorage.setItem(`userProfile_${currentUser.uid}`, JSON.stringify(updatedProfile));
+      // Cache the updated profile using authUser.uid (not currentUser which might be null)
+      localStorage.setItem(`userProfile_${authUser.uid}`, JSON.stringify(updatedProfile));
 
       // Update in Firestore for admin dashboard
       try {
-        await firestoreUserService.updateUser(currentUser.uid, updatedProfile);
+        await firestoreUserService.updateUser(authUser.uid, updatedProfile);
         if (process.env.NODE_ENV !== 'production') {
           console.log("Profile updated in Firestore for admin dashboard");
         }

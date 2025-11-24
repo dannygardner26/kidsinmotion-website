@@ -155,16 +155,19 @@ const Register = () => {
         emailConsent: formData.emailConsent // Optional email consent for newsletters
       };
 
+      // Wait a moment for user to be fully initialized
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       await apiService.syncUser();
       console.log("User synced with backend, now saving profile data:", profileData);
 
       // Wait a moment for sync to complete before saving profile
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Use backend API to save the complete profile data with proper validation
       try {
         // Get fresh token to ensure it's valid
-        const token = await user.getIdToken();
+        const token = await user.getIdToken(true); // Force refresh
         const profileResult = await apiService.updateUserProfile(profileData);
         console.log("Profile data saved to backend successfully:", profileResult);
       } catch (profileError) {
@@ -173,21 +176,25 @@ const Register = () => {
       }
 
       // Also update local state for immediate UI updates
+      // Wait a bit more to ensure auth state has updated
+      await new Promise(resolve => setTimeout(resolve, 300));
       try {
         await updateProfile(profileData);
         console.log("Profile data updated in local state and Firestore");
       } catch (localError) {
         console.error("Failed to update local profile state:", localError);
+        // This is not critical, continue with email verification
       }
 
       // 4. Send email verification using our custom SendGrid system
-      // Wait a moment to ensure user token is fully ready
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait a moment to ensure user token is fully ready and profile is saved
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       try {
         // Get fresh token to ensure it's valid
         const token = await user.getIdToken(true); // Force refresh
         
+        console.log("Sending verification email to:", user.email);
         const response = await fetch(`${process.env.REACT_APP_API_URL}/users/send-verification-email`, {
           method: 'POST',
           headers: {
@@ -200,12 +207,14 @@ const Register = () => {
           })
         });
 
+        const responseData = await response.json().catch(() => ({}));
+        
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(errorData.error || 'Failed to send verification email');
+          console.error("Verification email response error:", response.status, responseData);
+          throw new Error(responseData.error || `Failed to send verification email (${response.status})`);
         }
 
-        console.log("Custom email verification sent successfully via SendGrid");
+        console.log("Custom email verification sent successfully via SendGrid:", responseData);
 
         // Add success notification
         addNotification({
@@ -219,7 +228,7 @@ const Register = () => {
         addNotification({
           type: 'warning',
           title: 'Email Verification',
-          message: 'Account created successfully, but verification email failed to send. You can request it again from your dashboard.'
+          message: `Account created successfully, but verification email failed to send: ${verificationError.message}. You can request it again from your dashboard.`
         });
       }
 
