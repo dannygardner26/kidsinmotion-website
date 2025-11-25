@@ -258,14 +258,15 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
           const messageRef = doc(db, 'users', currentUser.uid, 'messages', messageId);
           await updateDoc(messageRef, { read: true });
           console.log('Marked Firestore message as read directly:', messageId);
-      } catch (error) {
-        console.error('Error marking Firestore message as read:', error);
-        // Fallback to local update if Firestore fails
-        const updatedMessages = messages.map(msg =>
-          msg.id === messageId ? { ...msg, read: true } : msg
-        );
-        setMessages(updatedMessages);
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        } catch (error) {
+          console.error('Error marking Firestore message as read:', error);
+          // Fallback to local update if Firestore fails
+          const updatedMessages = messages.map(msg =>
+            msg.id === messageId ? { ...msg, read: true } : msg
+          );
+          setMessages(updatedMessages);
+          setUnreadCount(prev => Math.max(0, prev - 1));
+        }
       }
     }
   };
