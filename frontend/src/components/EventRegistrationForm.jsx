@@ -164,40 +164,38 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
     setIsSubmitting(true);
     setError(null);
 
-    if (selectedChildren.length === 0) {
-      setError('Please select at least one child to register for this event.');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!formData.agreesToCommunications) {
-      setError('Please agree to receive communications from Kids in Motion to continue with registration.');
-      setIsSubmitting(false);
-      return;
-    }
-
-    if (!formData.confirmDropoffPickup) {
-      setError('Please confirm that you can dropoff and pickup your child(ren) at the scheduled times.');
-      setIsSubmitting(false);
-      return;
-    }
-
+    // Collect missing required fields (only warn, don't block)
+    const missingFields = [];
+    
     if (!formData.emergencyContactFirstName || !formData.emergencyContactFirstName.trim()) {
-      setError('Please provide an emergency contact first name.');
-      setIsSubmitting(false);
-      return;
+      missingFields.push('Emergency Contact First Name');
     }
-
+    
     if (!formData.emergencyContactLastName || !formData.emergencyContactLastName.trim()) {
-      setError('Please provide an emergency contact last name.');
-      setIsSubmitting(false);
-      return;
+      missingFields.push('Emergency Contact Last Name');
+    }
+    
+    if (!formData.emergencyContactPhone || !formData.emergencyContactPhone.trim()) {
+      missingFields.push('Emergency Contact Phone Number or Email');
+    }
+    
+    if (!formData.agreesToCommunications) {
+      missingFields.push('Agreement to receive communications');
+    }
+    
+    if (!formData.confirmDropoffPickup) {
+      missingFields.push('Confirmation of drop-off and pick-up availability');
     }
 
-    if (!formData.emergencyContactPhone || !formData.emergencyContactPhone.trim()) {
-      setError('Please provide an emergency contact phone number or email.');
-      setIsSubmitting(false);
-      return;
+    // If no children selected, allow submission to delete all registrations
+    if (selectedChildren.length === 0) {
+      // This will be handled by the cancellation logic below
+      // No need to block or show error
+    } else if (missingFields.length > 0) {
+      // Show warning if children are selected but required fields are missing
+      const warningMessage = `⚠️ Warning: The following required fields are missing:\n\n${missingFields.map(field => `• ${field}`).join('\n')}\n\nYour registration will be deleted and will not count. Please fill in all required fields to complete your registration.`;
+      setError(warningMessage);
+      // Still allow submission to proceed - don't return early
     }
 
     try {
@@ -211,6 +209,7 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
         // Find if this registration matches any selected child
         const matchingChild = selectedChildren.find(childId => {
           const child = children.find(c => c.id === childId);
+          if (!child) return false; // Safety check: child not found
           const childName = child.fullName || `${child.firstName} ${child.lastName}`;
           const normalizedRegName = normalizeName(reg.childName);
           const normalizedChildName = normalizeName(childName);
@@ -249,6 +248,25 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
           reg => !successfullyCancelledIds.includes(reg.id)
         );
         setExistingRegistrations(updatedExistingRegistrations);
+      }
+
+      // If no children are selected, we're done (all registrations cancelled)
+      if (selectedChildren.length === 0) {
+        if (successfullyCancelledIds.length > 0) {
+          onSuccess('All registrations have been removed for this event.');
+        } else {
+          onSuccess('No registrations to update.');
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If children are selected but required fields are missing, don't create registrations
+      if (missingFields.length > 0) {
+        const warningMessage = `⚠️ Registration incomplete. The following required fields are missing:\n\n${missingFields.map(field => `• ${field}`).join('\n')}\n\nYour registration will be deleted and will not count. Please fill in all required fields and try again.`;
+        setError(warningMessage);
+        setIsSubmitting(false);
+        return;
       }
 
       // Now process each selected child - create or update registrations
@@ -694,9 +712,14 @@ const EventRegistrationForm = ({ event, onSuccess, onCancel }) => {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={isSubmitting || selectedChildren.length === 0}
+                  disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Registering...' : `Register ${selectedChildren.length === 1 ? 'Child' : 'Children'}`}
+                  {isSubmitting 
+                    ? 'Processing...' 
+                    : selectedChildren.length === 0 
+                      ? (existingRegistrations.length > 0 ? 'Remove All Registrations' : 'Submit')
+                      : `Register ${selectedChildren.length === 1 ? 'Child' : 'Children'}`
+                  }
                 </button>
               </div>
             </form>
