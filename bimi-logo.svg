@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Transparent background -->
+  
+  <!-- Speed lines (reddish-orange) behind runner -->
+  <g id="speed-lines" opacity="0.9">
+    <path d="M 120 75 Q 100 85 80 95" stroke="#FF6B35" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M 125 85 Q 105 95 85 105" stroke="#FF6B35" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M 130 95 Q 110 105 90 115" stroke="#FF6B35" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 115 65 Q 95 75 75 85" stroke="#FF6B35" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M 135 105 Q 115 115 95 125" stroke="#FF6B35" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Runner silhouette (dark blue) -->
+  <g id="runner" fill="#2f506a">
+    <!-- Head -->
+    <circle cx="145" cy="45" r="9"/>
+    <!-- Body/torso -->
+    <ellipse cx="145" cy="68" rx="7" ry="15"/>
+    <!-- Left arm (forward) -->
+    <path d="M 145 65 L 158 52" stroke="#2f506a" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <!-- Right arm (back) -->
+    <path d="M 145 65 L 132 58" stroke="#2f506a" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <!-- Left leg (forward) -->
+    <path d="M 145 80 L 152 105" stroke="#2f506a" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <!-- Right leg (back) -->
+    <path d="M 145 80 L 138 110" stroke="#2f506a" stroke-width="6" stroke-linecap="round" fill="none"/>
+  </g>
+  
+  <!-- Text: KIDS (with beige outline) -->
+  <g id="kids-text">
+    <!-- Outline layer -->
+    <text x="100" y="42" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="none" stroke="#F5F5DC" stroke-width="2" text-anchor="middle" paint-order="stroke fill">
+      KIDS
+    </text>
+    <!-- Main text layer -->
+    <text x="100" y="42" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#2f506a" text-anchor="middle">
+      KIDS
+    </text>
+  </g>
+  
+  <!-- Text: IN MOTION (with beige outline) -->
+  <g id="motion-text">
+    <!-- Outline layer for IN -->
+    <text x="100" y="68" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="none" stroke="#F5F5DC" stroke-width="1.8" text-anchor="middle" paint-order="stroke fill">
+      IN
+    </text>
+    <!-- Main text layer for IN -->
+    <text x="100" y="68" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#2f506a" text-anchor="middle">
+      IN
+    </text>
+    
+    <!-- Outline layer for MOTION -->
+    <text x="100" y="88" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="none" stroke="#F5F5DC" stroke-width="2" text-anchor="middle" paint-order="stroke fill">
+      MOTION
+    </text>
+    <!-- Main text layer for MOTION -->
+    <text x="100" y="88" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#2f506a" text-anchor="middle">
+      MOTION
+    </text>
+  </g>
+</svg>
+

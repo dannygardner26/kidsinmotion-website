@@ -54,21 +54,16 @@ public class NotificationService {
     @Async
     public void sendRegistrationNotificationsAsync(ParticipantFirestore participant, EventFirestore event, String userEmail, String userId) {
         try {
-            // Send email notification with calendar invite
+            // Send email notification (without calendar file)
             if (emailDeliveryService.isEnabled()) {
                 String emailBody = buildRegistrationConfirmationEmail(participant, event);
-                String calendarInvite = generateCalendarInvite(participant, event);
-                String calendarFilename = "event_" + event.getName().replaceAll("[^a-zA-Z0-9]", "_") + ".ics";
 
-                boolean emailSent = emailDeliveryService.sendEmailWithAttachment(
+                boolean emailSent = emailDeliveryService.sendEmail(
                     userEmail,
                     "Registration Confirmed: " + event.getName(),
-                    emailBody,
-                    Base64.getEncoder().encodeToString(calendarInvite.getBytes()),
-                    calendarFilename,
-                    "text/calendar"
+                    emailBody
                 );
-                logger.info("Registration confirmation email with calendar invite sent to {}: {}", userEmail, emailSent);
+                logger.info("Registration confirmation email sent to {}: {}", userEmail, emailSent);
             } else {
                 logger.info("Email service is disabled, skipping registration confirmation email for {}", userEmail);
             }
@@ -89,19 +84,14 @@ public class NotificationService {
         NotificationDeliveryStatus status = new NotificationDeliveryStatus();
 
         try {
-            // Send email notification with calendar invite
+            // Send email notification (without calendar file)
             if (emailDeliveryService.isEnabled()) {
                 String emailBody = buildRegistrationConfirmationEmail(participant, event);
-                String calendarInvite = generateCalendarInvite(participant, event);
-                String calendarFilename = "event_" + event.getName().replaceAll("[^a-zA-Z0-9]", "_") + ".ics";
 
-                boolean emailSent = emailDeliveryService.sendEmailWithAttachment(
+                boolean emailSent = emailDeliveryService.sendEmail(
                     userEmail,
                     "Registration Confirmed: " + event.getName(),
-                    emailBody,
-                    Base64.getEncoder().encodeToString(calendarInvite.getBytes()),
-                    calendarFilename,
-                    "text/calendar"
+                    emailBody
                 );
 
                 status.setEmailSent(emailSent);
@@ -109,7 +99,7 @@ public class NotificationService {
                     "Registration confirmation email sent successfully" :
                     "Failed to send registration confirmation email");
 
-                logger.info("Registration confirmation email with calendar invite sent to {}: {}", userEmail, emailSent);
+                logger.info("Registration confirmation email sent to {}: {}", userEmail, emailSent);
             } else {
                 status.setEmailSent(false);
                 status.setEmailStatusMessage("Email service is disabled or not configured");
@@ -248,9 +238,6 @@ public class NotificationService {
         emailBody.append("<li>Bring any necessary equipment or materials mentioned in the event description</li>\n");
         emailBody.append("<li>Contact us immediately if your child has any medical concerns or allergies</li>\n");
         emailBody.append("</ul>\n\n");
-
-        // Calendar notice
-        emailBody.append("<p style=\"background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin: 20px 0;\">📅 <strong>Calendar Invitation:</strong> A calendar file is attached to this email. Click it to add this event to your calendar!</p>\n\n");
 
         // Cancellation Instructions
         emailBody.append("<h3 style=\"color: #2f506a; margin-top: 25px; margin-bottom: 15px;\">❌ Need to Cancel?</h3>\n");

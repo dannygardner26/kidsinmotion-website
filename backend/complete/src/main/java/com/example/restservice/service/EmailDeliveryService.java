@@ -153,8 +153,15 @@ public class EmailDeliveryService {
         try {
             Email from = new Email(defaultFromAddress, "Kids in Motion");
             Email to = new Email(toAddress);
-            Content content = new Content("text/plain", body);
-            Mail mail = new Mail(from, subject, to, content);
+            
+            // Create HTML email template (same as regular sendEmail method)
+            String htmlBody = createHtmlEmailTemplate(subject, body, toAddress);
+            Content plainContent = new Content("text/plain", body); // Plain text version - MUST be first
+            Content htmlContent = new Content("text/html", htmlBody);
+            
+            // SendGrid requires text/plain to come FIRST, then text/html
+            Mail mail = new Mail(from, subject, to, plainContent);
+            mail.addContent(htmlContent); // Add HTML version second
 
             // Add attachment
             if (StringUtils.hasText(attachmentContent) && StringUtils.hasText(attachmentFilename)) {
