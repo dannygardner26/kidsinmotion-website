@@ -32,6 +32,22 @@ const AdminMessaging = () => {
   const [loadingRecipients, setLoadingRecipients] = useState({});
   const [overrideOptOuts, setOverrideOptOuts] = useState(false);
 
+  // Helper function to format event date
+  const formatEventDate = (dateString) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString + 'T00:00:00');
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return '';
+    }
+  };
+
   // Fetch events for dynamic categories
   useEffect(() => {
     const fetchEvents = async () => {
@@ -56,10 +72,13 @@ const AdminMessaging = () => {
     if (!loadingEvents && events.length > 0) {
       // Add event-specific categories
       events.forEach(event => {
+        const dateStr = formatEventDate(event.date);
+        const eventLabel = dateStr ? `${event.name} (${dateStr})` : event.name;
+        
         // Parents registered for this event
         categories.push({
           id: `event-parents-${event.id}`,
-          label: `Parents - ${event.name}`,
+          label: `Parents - ${eventLabel}`,
           description: `Parents with children registered for "${event.name}"`,
           eventId: event.id,
           eventName: event.name
@@ -68,7 +87,7 @@ const AdminMessaging = () => {
         // Volunteers registered for this event
         categories.push({
           id: `event-volunteers-${event.id}`,
-          label: `Volunteers - ${event.name}`,
+          label: `Volunteers - ${eventLabel}`,
           description: `Volunteers signed up for "${event.name}"`,
           eventId: event.id,
           eventName: event.name
@@ -235,7 +254,7 @@ const AdminMessaging = () => {
       deliveryChannels: channels,
       directEmails: parsedContacts.emails, // Always include direct emails if they exist
       directPhoneNumbers: parsedContacts.phoneNumbers, // Always include direct phone numbers if they exist
-      categories: selectedRecipients.length > 0 ? [] : selectedCategories, // Only use categories if no specific recipients selected
+      categories: selectedCategories, // Always include categories - backend will filter by selectedRecipients if provided
       selectedRecipients: selectedRecipients.length > 0 ? selectedRecipients : [],
       overrideOptOuts: overrideOptOuts && selectedCategories.includes('all'), // Only apply override when ALL users is selected
       senderEmail: 'info@kidsinmotionpa.org',
@@ -354,47 +373,52 @@ const AdminMessaging = () => {
                 <div className="category-section-divider">
                   <h5>Event-Specific Categories</h5>
                 </div>
-                {events.map(event => (
-                  <React.Fragment key={event.id}>
-                    {/* Parents for this event */}
-                    {(() => {
-                      const categoryId = `event-parents-${event.id}`;
-                      const isChecked = selectedCategories.includes(categoryId);
-                      return (
-                        <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleCategory(categoryId)}
-                          />
-                          <span>
-                            <strong>Parents - {event.name}</strong>
-                            <small>Parents with children registered for "{event.name}"</small>
-                          </span>
-                        </label>
-                      );
-                    })()}
+                {events.map(event => {
+                  const dateStr = formatEventDate(event.date);
+                  const eventLabel = dateStr ? `${event.name} (${dateStr})` : event.name;
+                  
+                  return (
+                    <React.Fragment key={event.id}>
+                      {/* Parents for this event */}
+                      {(() => {
+                        const categoryId = `event-parents-${event.id}`;
+                        const isChecked = selectedCategories.includes(categoryId);
+                        return (
+                          <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleCategory(categoryId)}
+                            />
+                            <span>
+                              <strong>Parents - {eventLabel}</strong>
+                              <small>Parents with children registered for "{event.name}"</small>
+                            </span>
+                          </label>
+                        );
+                      })()}
 
-                    {/* Volunteers for this event */}
-                    {(() => {
-                      const categoryId = `event-volunteers-${event.id}`;
-                      const isChecked = selectedCategories.includes(categoryId);
-                      return (
-                        <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleCategory(categoryId)}
-                          />
-                          <span>
-                            <strong>Volunteers - {event.name}</strong>
-                            <small>Volunteers signed up for "{event.name}"</small>
-                          </span>
-                        </label>
-                      );
-                    })()}
-                  </React.Fragment>
-                ))}
+                      {/* Volunteers for this event */}
+                      {(() => {
+                        const categoryId = `event-volunteers-${event.id}`;
+                        const isChecked = selectedCategories.includes(categoryId);
+                        return (
+                          <label key={categoryId} className={`category-card event-category ${isChecked ? 'checked' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => toggleCategory(categoryId)}
+                            />
+                            <span>
+                              <strong>Volunteers - {eventLabel}</strong>
+                              <small>Volunteers signed up for "{event.name}"</small>
+                            </span>
+                          </label>
+                        );
+                      })()}
+                    </React.Fragment>
+                  );
+                })}
               </>
             )}
           </div>
