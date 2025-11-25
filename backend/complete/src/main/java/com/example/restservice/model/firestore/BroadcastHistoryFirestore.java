@@ -19,6 +19,7 @@ public class BroadcastHistoryFirestore {
     private List<String> categories; // recipient categories
     private List<String> directEmails; // direct email addresses
     private List<String> directPhoneNumbers; // direct phone numbers
+    private List<String> selectedRecipients; // selected recipient IDs
 
     // Delivery statistics
     private int totalRecipients;
@@ -54,6 +55,7 @@ public class BroadcastHistoryFirestore {
         map.put("categories", categories);
         map.put("directEmails", directEmails);
         map.put("directPhoneNumbers", directPhoneNumbers);
+        map.put("selectedRecipients", selectedRecipients);
         map.put("totalRecipients", totalRecipients);
         map.put("inboxSent", inboxSent);
         map.put("inboxSkipped", inboxSkipped);
@@ -81,6 +83,7 @@ public class BroadcastHistoryFirestore {
         history.setCategories((List<String>) map.get("categories"));
         history.setDirectEmails((List<String>) map.get("directEmails"));
         history.setDirectPhoneNumbers((List<String>) map.get("directPhoneNumbers"));
+        history.setSelectedRecipients((List<String>) map.get("selectedRecipients"));
         history.setTotalRecipients(safeLongToInt(map.get("totalRecipients")));
         history.setInboxSent(safeLongToInt(map.get("inboxSent")));
         history.setInboxSkipped(safeLongToInt(map.get("inboxSkipped")));
@@ -138,6 +141,11 @@ public class BroadcastHistoryFirestore {
 
     public List<String> getDirectPhoneNumbers() { return directPhoneNumbers; }
     public void setDirectPhoneNumbers(List<String> directPhoneNumbers) { this.directPhoneNumbers = directPhoneNumbers; }
+
+    public List<String> getSelectedRecipients() { return selectedRecipients; }
+    public void setSelectedRecipients(List<String> selectedRecipients) { 
+        this.selectedRecipients = selectedRecipients != null ? selectedRecipients : new java.util.ArrayList<>(); 
+    }
 
     public int getTotalRecipients() { return totalRecipients; }
     public void setTotalRecipients(int totalRecipients) { this.totalRecipients = totalRecipients; }

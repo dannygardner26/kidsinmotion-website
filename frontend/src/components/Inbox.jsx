@@ -78,11 +78,33 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
       const savedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
       const systemMessages = savedMessages.filter(msg => msg.isSystem);
 
+      // Normalize timestamps for Firestore messages
+      const normalizedFirestoreMessages = firestoreMessages.map(msg => {
+        // Convert timestamp to Date if it's a number (epoch milliseconds)
+        if (typeof msg.timestamp === 'number') {
+          return { ...msg, timestamp: new Date(msg.timestamp).toISOString() };
+        }
+        // If it's already a string, ensure it's in ISO format
+        if (typeof msg.timestamp === 'string' && !msg.timestamp.includes('T')) {
+          // Try to parse as LocalDateTime format and convert
+          try {
+            return { ...msg, timestamp: new Date(msg.timestamp).toISOString() };
+          } catch (e) {
+            return msg;
+          }
+        }
+        return msg;
+      });
+
       // Combine system messages with Firestore messages
-      const allMessages = [...systemMessages, ...firestoreMessages];
+      const allMessages = [...systemMessages, ...normalizedFirestoreMessages];
 
       // Sort by timestamp (newest first)
-      allMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      allMessages.sort((a, b) => {
+        const timeA = new Date(a.timestamp || 0).getTime();
+        const timeB = new Date(b.timestamp || 0).getTime();
+        return timeB - timeA;
+      });
 
       setMessages(allMessages);
       const unread = allMessages.filter(msg => !msg.read).length;
@@ -225,11 +247,17 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
       localStorage.setItem(`inbox_${currentUser.uid}`, JSON.stringify(systemMessages));
       setUnreadCount(prev => Math.max(0, prev - 1));
     } else {
-      // Handle Firestore messages
+      // Handle Firestore messages - try API first, fallback to direct Firestore update
       try {
-        const messageRef = doc(db, 'users', currentUser.uid, 'messages', messageId);
-        await updateDoc(messageRef, { read: true });
-        console.log('Marked Firestore message as read:', messageId);
+        // Try API endpoint first
+        await apiService.markMessageAsRead(messageId);
+        console.log('Marked message as read via API:', messageId);
+      } catch (apiError) {
+        // Fallback to direct Firestore update
+        try {
+          const messageRef = doc(db, 'users', currentUser.uid, 'messages', messageId);
+          await updateDoc(messageRef, { read: true });
+          console.log('Marked Firestore message as read directly:', messageId);
       } catch (error) {
         console.error('Error marking Firestore message as read:', error);
         // Fallback to local update if Firestore fails

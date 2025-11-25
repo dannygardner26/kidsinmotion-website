@@ -5,11 +5,15 @@ import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.WriteResult;
 import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.Query;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -23,7 +27,6 @@ public class FirestoreService {
     private boolean firebaseEnabled;
 
     private static final String VOLUNTEER_APPLICATIONS_COLLECTION = "volunteerApplications";
-    private static final String MESSAGES_COLLECTION = "messages";
 
     public void syncVolunteerApplication(VolunteerEmployee volunteerEmployee) {
         if (!firebaseEnabled || firestore == null) {
@@ -73,6 +76,75 @@ public class FirestoreService {
             return false;
         } catch (ExecutionException e) {
             System.err.println("Failed to save message to Firestore: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public List<Map<String, Object>> getUserMessages(String userId) {
+        if (!firebaseEnabled || firestore == null) {
+            return new ArrayList<>();
+        }
+
+        if (userId == null || userId.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            CollectionReference messagesRef = firestore.collection("users")
+                .document(userId)
+                .collection("messages");
+
+            List<QueryDocumentSnapshot> documents = messagesRef
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .get()
+                .getDocuments();
+
+            List<Map<String, Object>> messages = new ArrayList<>();
+            for (QueryDocumentSnapshot doc : documents) {
+                Map<String, Object> messageData = new HashMap<>(doc.getData());
+                messageData.put("id", doc.getId());
+                messages.add(messageData);
+            }
+
+            return messages;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupted while fetching messages from Firestore: " + e.getMessage());
+            return new ArrayList<>();
+        } catch (ExecutionException e) {
+            System.err.println("Failed to fetch messages from Firestore: " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    public boolean markMessageAsRead(String userId, String messageId) {
+        if (!firebaseEnabled || firestore == null) {
+            return false;
+        }
+
+        if (userId == null || userId.trim().isEmpty() || messageId == null || messageId.trim().isEmpty()) {
+            return false;
+        }
+
+        try {
+            DocumentReference messageRef = firestore.collection("users")
+                .document(userId)
+                .collection("messages")
+                .document(messageId);
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("read", true);
+            updates.put("readAt", java.time.Instant.now().toEpochMilli());
+
+            messageRef.update(updates).get();
+            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("Interrupted while marking message as read: " + e.getMessage());
+            return false;
+        } catch (ExecutionException e) {
+            System.err.println("Failed to mark message as read: " + e.getMessage());
             return false;
         }
     }

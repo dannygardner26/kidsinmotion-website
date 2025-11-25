@@ -237,6 +237,7 @@ public class MessagesController {
             history.setCategories(request.getCategories());
             history.setDirectEmails(request.getDirectEmails());
             history.setDirectPhoneNumbers(request.getDirectPhoneNumbers());
+            history.setSelectedRecipients(request.getSelectedRecipients()); // Save selected recipients
 
             history.setTotalRecipients(result.getTotalRecipients());
             history.setInboxSent(result.getInboxSent());

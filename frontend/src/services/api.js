@@ -791,6 +791,12 @@ class ApiService {
     }
   }
 
+  async markMessageAsRead(messageId) {
+    return this.makeRequest(`/messages/inbox/${messageId}/read`, {
+      method: 'PUT',
+    });
+  }
+
   async sendMessage(userId, messageData) {
     return this.makeRequest(`/messages/send/${userId}`, {
       method: 'POST',
