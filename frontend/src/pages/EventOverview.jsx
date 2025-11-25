@@ -310,9 +310,18 @@ const EventOverview = () => {
 
     const searchTerm = participantSearch.toLowerCase();
     const childName = (participant.childName || participant.participantName || participant.name || '').toLowerCase();
-    const parentName = participant.parentUser?.firstName && participant.parentUser?.lastName
-      ? `${participant.parentUser.firstName} ${participant.parentUser.lastName}`.toLowerCase()
-      : (participant.parentName || '').toLowerCase();
+    
+    // Check parent name from denormalized fields first, then nested object, then fallback
+    let parentName = '';
+    if (participant.parentUserFullName) {
+      parentName = participant.parentUserFullName.toLowerCase();
+    } else if (participant.parentUserFirstName && participant.parentUserLastName) {
+      parentName = `${participant.parentUserFirstName} ${participant.parentUserLastName}`.toLowerCase();
+    } else if (participant.parentUser?.firstName && participant.parentUser?.lastName) {
+      parentName = `${participant.parentUser.firstName} ${participant.parentUser.lastName}`.toLowerCase();
+    } else if (participant.parentName) {
+      parentName = participant.parentName.toLowerCase();
+    }
 
     return childName.includes(searchTerm) || parentName.includes(searchTerm);
   });
@@ -753,9 +762,18 @@ const EventOverview = () => {
                   {filteredParticipants.map(participant => {
                     // Try to get child name from multiple possible fields
                     const childName = participant.childName || participant.participantName || participant.name;
-                    const parentName = participant.parentUser?.firstName && participant.parentUser?.lastName
-                      ? `${participant.parentUser.firstName} ${participant.parentUser.lastName}`
-                      : participant.parentName || 'Unknown Parent';
+                    
+                    // Get parent name - check denormalized fields first, then nested object, then fallback
+                    let parentName = 'Unknown Parent';
+                    if (participant.parentUserFullName) {
+                      parentName = participant.parentUserFullName;
+                    } else if (participant.parentUserFirstName && participant.parentUserLastName) {
+                      parentName = `${participant.parentUserFirstName} ${participant.parentUserLastName}`;
+                    } else if (participant.parentUser?.firstName && participant.parentUser?.lastName) {
+                      parentName = `${participant.parentUser.firstName} ${participant.parentUser.lastName}`;
+                    } else if (participant.parentName) {
+                      parentName = participant.parentName;
+                    }
 
                     const isPresent = participant.status === 'ATTENDED';
                     const isUpdating = updatingAttendance[participant.id];
@@ -822,9 +840,9 @@ const EventOverview = () => {
                         <div className="parent-info">
                           <div className="parent-name">
                             <i className="fas fa-user mr-2"></i>
-                            <strong>Parent:</strong> {participant.parentUser?.username ? (
+                            <strong>Parent:</strong> {participant.parentUserId ? (
                               <Link
-                                to={`/account/${participant.parentUser.username}`}
+                                to={`/account/${participant.parentUserId}`}
                                 className="parent-link"
                                 title="View parent profile"
                               >
@@ -835,11 +853,11 @@ const EventOverview = () => {
                             )}
                           </div>
                           <div className="contact-info">
-                            {participant.parentUser?.email && (
-                              <div><i className="fas fa-envelope"></i> {participant.parentUser.email}</div>
+                            {participant.parentUserEmail && (
+                              <div><i className="fas fa-envelope"></i> {participant.parentUserEmail}</div>
                             )}
-                            {participant.parentUser?.phoneNumber && (
-                              <div><i className="fas fa-phone"></i> {participant.parentUser.phoneNumber}</div>
+                            {participant.parentUserPhoneNumber && (
+                              <div><i className="fas fa-phone"></i> {participant.parentUserPhoneNumber}</div>
                             )}
                             {participant.emergencyContact && (
                               <div><i className="fas fa-phone-alt"></i> <strong>Emergency:</strong> {participant.emergencyContact}</div>
