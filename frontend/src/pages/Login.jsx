@@ -51,6 +51,7 @@ const Login = () => {
   useEffect(() => {
     if (currentUser && isMountedRef.current) {
       console.log("User authenticated via AuthContext, navigating:", currentUser.uid);
+      setIsLoading(false); // Reset loading state when navigation occurs
       navigate(redirectUrl, { replace: true });
     }
   }, [currentUser, navigate, redirectUrl]);
@@ -103,6 +104,7 @@ const Login = () => {
           localStorage.setItem('isTestAdmin', 'true');
 
           // Navigate to dashboard
+          setIsLoading(false);
           navigate('/dashboard');
           return;
         } else {
@@ -115,6 +117,7 @@ const Login = () => {
 
       if (!identifierResponse.exists) {
         setError('No account found with that username, email, or phone number');
+        setIsLoading(false); // Reset loading state when account doesn't exist
         return;
       }
 
@@ -154,6 +157,13 @@ const Login = () => {
           default:
             userMessage = 'Login failed. Please try again or contact support if the problem persists.';
             break;
+        }
+      } else if (error.message) {
+        // Handle API errors (like from loginWithIdentifier)
+        if (error.message.includes('No account found') || error.message.includes('not found') || error.message.includes('not supported')) {
+          userMessage = 'No account found with that username, email, or phone number';
+        } else {
+          userMessage = error.message;
         }
       }
 
