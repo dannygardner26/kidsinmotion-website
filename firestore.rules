@@ -8,10 +8,16 @@ service cloud.firestore {
     }
 
     // Participants collection - readable by all authenticated users
-    match /participants/{document=**} {
+    match /participants/{participantId} {
       allow read: if request.auth != null;
       // Admins can write everything
       allow write: if request.auth != null && hasAdminRole();
+      // Parents can create registrations for their own children
+      allow create: if request.auth != null &&
+        request.resource.data.parentFirebaseUid == request.auth.uid;
+      // Parents can delete their own registrations
+      allow delete: if request.auth != null &&
+        resource.data.parentFirebaseUid == request.auth.uid;
       // Volunteers can update attendance status only
       allow update: if request.auth != null &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendanceStatus', 'attendanceUpdatedAt', 'updatedAt']) &&

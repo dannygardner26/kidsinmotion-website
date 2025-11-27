@@ -53,7 +53,7 @@ class FirestoreUserService {
       };
 
       const userRef = doc(db, 'users', firebaseUid);
-      await updateDoc(userRef, firestoreUserData);
+      await setDoc(userRef, firestoreUserData, { merge: true });
 
       console.log('User updated successfully in Firestore');
 
