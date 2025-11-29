@@ -121,24 +121,8 @@ const Register = () => {
       });
       console.log("Firebase profile updated with display name.");
 
-      // 2.5. Disable Firebase's automatic email verification by setting email as verified temporarily
-      // We'll handle verification entirely through our custom SendGrid system
-      try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/admin/users/${user.uid}/email-verified`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${await user.getIdToken()}`
-          },
-          body: JSON.stringify({ verified: true })
-        });
-
-        if (response.ok) {
-          console.log("Firebase email verification status set to prevent automatic emails");
-        }
-      } catch (error) {
-        console.warn("Failed to update Firebase email verification status (continuing anyway):", error);
-      }
+      // Note: We use our custom SendGrid verification system instead of Firebase's automatic emails.
+      // The email verification status will be set when the user clicks the verification link.
 
       // 3. Send additional data to your backend to create the user profile
       const profileData = {
