@@ -1220,8 +1220,22 @@ public class UserController {
 
             UserFirestore user = userOpt.get();
 
+            // Validate firebaseUid before trying to update Firebase Auth
+            String firebaseUid = user.getFirebaseUid();
+            if (firebaseUid == null || firebaseUid.trim().isEmpty()) {
+                // Try to use document ID as fallback (should be same as firebaseUid)
+                firebaseUid = user.getId();
+                if (firebaseUid == null || firebaseUid.trim().isEmpty()) {
+                    logger.error("User found by email {} but has no firebaseUid or id", email);
+                    return ResponseEntity.badRequest().body(Map.of("error", "User account is incomplete. Please try logging in again."));
+                }
+                // Update the user's firebaseUid field
+                user.setFirebaseUid(firebaseUid);
+                logger.info("Using document ID as firebaseUid for user: {}", email);
+            }
+
             // Update Firebase verification status
-            firebaseAuthService.setEmailVerified(user.getFirebaseUid(), true);
+            firebaseAuthService.setEmailVerified(firebaseUid, true);
 
             // Update Firestore user
             user.setEmailVerified(true);
