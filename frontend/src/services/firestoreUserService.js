@@ -19,6 +19,7 @@ class FirestoreUserService {
         roles: userData.roles || ['ROLE_USER'],
         phoneNumber: userData.phoneNumber || '',
         emailVerified: userData.emailVerified || false,
+        isBanned: false, // Required for backend queries
         needsOnboarding: userData.needsOnboarding !== undefined ? userData.needsOnboarding : false,
         createdAt: userData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),

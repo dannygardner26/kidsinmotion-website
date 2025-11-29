@@ -189,16 +189,16 @@ public class UserFirestoreRepository {
     }
 
     public List<UserFirestore> findAllExcludingBanned() throws ExecutionException, InterruptedException {
-        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME)
-                .whereEqualTo("isBanned", false)
-                .get();
+        // Get ALL users first, then filter in memory
+        // This is because Firestore doesn't support "whereEqualTo null OR whereEqualTo false"
+        ApiFuture<QuerySnapshot> query = firestore.collection(COLLECTION_NAME).get();
 
         QuerySnapshot querySnapshot = query.get();
         List<UserFirestore> users = new ArrayList<>();
 
         for (DocumentSnapshot document : querySnapshot.getDocuments()) {
             UserFirestore user = UserFirestore.fromMap(document.getData(), document.getId());
-            // Double check - only include if not banned
+            // Include users where isBanned is null, false, or not set
             if (user.getIsBanned() == null || !user.getIsBanned()) {
                 users.add(user);
             }
