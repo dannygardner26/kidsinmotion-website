@@ -33,17 +33,27 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     if (isOpen && currentUser) {
-      loadMessages();
+      loadMessages().then(() => {
+        if (isMounted) setLoading(false);
+      });
     }
+
+    return () => { isMounted = false; };
   }, [isOpen, currentUser]);
 
   useEffect(() => {
-    // Load messages and set up automatic system messages
+    let isMounted = true;
+
     if (currentUser) {
-      loadMessages();
-      generateSystemMessages();
+      loadMessages().then(() => {
+        if (isMounted) generateSystemMessages();
+      });
     }
+
+    return () => { isMounted = false; };
   }, [currentUser, userProfile]);
 
   // Set up real-time subscription for Firestore messages
@@ -472,25 +482,38 @@ const Inbox = ({ isOpen, onClose, isDropdown = false }) => {
 export const useInboxCount = () => {
   const { currentUser } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (currentUser) {
+      setLoading(true);
       const messages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
       const unread = messages.filter(msg => !msg.read).length;
-      setUnreadCount(unread);
+      if (isMounted) {
+        setUnreadCount(unread);
+        setLoading(false);
+      }
 
-      // Set up periodic check for new messages
       const interval = setInterval(() => {
-        const updatedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
-        const updatedUnread = updatedMessages.filter(msg => !msg.read).length;
-        setUnreadCount(updatedUnread);
-      }, 30000); // Check every 30 seconds
+        if (isMounted) {
+          const updatedMessages = JSON.parse(localStorage.getItem(`inbox_${currentUser.uid}`) || '[]');
+          const updatedUnread = updatedMessages.filter(msg => !msg.read).length;
+          setUnreadCount(updatedUnread);
+        }
+      }, 30000);
 
-      return () => clearInterval(interval);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
+    } else {
+      setLoading(false);
     }
   }, [currentUser]);
 
-  return unreadCount;
+  return { unreadCount, loading };
 };
 
 export default Inbox;

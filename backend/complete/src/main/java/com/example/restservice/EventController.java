@@ -29,7 +29,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@CrossOrigin(origins = "*", maxAge = 3600) // Allow all origins for now
+@CrossOrigin(origins = "${cors.allowed.origins}", maxAge = 3600)
 @RestController
 @RequestMapping("/api/events")
 public class EventController {

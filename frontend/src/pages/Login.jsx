@@ -80,9 +80,9 @@ const Login = () => {
     try {
       const normalizedIdentifier = identifier.trim().toLowerCase();
 
-      // Check if this is the test admin login
-      const testAdminEmails = ['kidsinmotion0@gmail.com', 'kidsinmotion@gmail.com'];
-      if (testAdminEmails.includes(normalizedIdentifier) && password === 'admin123') {
+      const testAdminEmails = (process.env.REACT_APP_TEST_ADMIN_EMAILS || 'kidsinmotion0@gmail.com').split(',').map(e => e.trim());
+      const testAdminPassword = process.env.REACT_APP_TEST_ADMIN_PASSWORD || 'admin123';
+      if (testAdminEmails.includes(normalizedIdentifier) && password === testAdminPassword) {
         // Use test login endpoint
         const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/test-login`, {
           method: 'POST',

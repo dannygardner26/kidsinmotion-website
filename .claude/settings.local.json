@@ -158,7 +158,7 @@
       "Bash(gradle:*)",
       "Bash(firebase --version)",
       "Bash(gcloud:*)",
-      "Bash(null or empty\" because some user documents had firebaseUid as null.\nAdded fallback to use the document ID (which should be the same as\nfirebaseUid) when firebaseUid field is missing.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(cat:*)"
     ],
     "deny": []
   }

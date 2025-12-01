@@ -9,7 +9,8 @@ const AuthContext = createContext();
 // Utility function to compute if profile completion is needed
 const computeNeedsProfileCompletion = (profile, user = null) => {
   // Admin accounts are exempt from profile completion requirements
-  if (profile?.userType === 'ADMIN' || user?.email === 'kidsinmotion0@gmail.com' || user?.email === 'danny@dannygardner.com') {
+  const adminEmails = (process.env.REACT_APP_ADMIN_EMAILS || 'kidsinmotion0@gmail.com').split(',').map(e => e.trim());
+  if (profile?.userType === 'ADMIN' || adminEmails.includes(user?.email)) {
     if (process.env.NODE_ENV !== 'production') {
       console.log('Admin account - no profile completion needed:', profile?.userType, user?.email);
     }
@@ -17,7 +18,8 @@ const computeNeedsProfileCompletion = (profile, user = null) => {
   }
 
   // Test accounts are exempt from profile completion requirements
-  if (user?.email === 'parent@test.com' || user?.email === 'volunteer@test.com') {
+  const testEmails = (process.env.REACT_APP_TEST_EMAILS || 'parent@test.com,volunteer@test.com').split(',').map(e => e.trim());
+  if (testEmails.includes(user?.email)) {
     if (process.env.NODE_ENV !== 'production') {
       console.log('Test account - no profile completion needed:', user?.email);
     }
@@ -196,7 +198,8 @@ export const AuthProvider = ({ children }) => {
           const parsed = JSON.parse(cachedProfile);
 
           // Apply admin privileges if needed
-          if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
+          const adminEmails = (process.env.REACT_APP_ADMIN_EMAILS || 'kidsinmotion0@gmail.com').split(',').map(e => e.trim());
+          if (adminEmails.includes(user.email)) {
             parsed.userType = 'ADMIN';
             parsed.roles = ['ROLE_USER', 'ROLE_ADMIN'];
           }
@@ -241,10 +244,11 @@ export const AuthProvider = ({ children }) => {
         };
 
         // Automatically grant admin privileges to specific emails
-        if (user.email === 'kidsinmotion0@gmail.com' || user.email === 'danny@dannygardner.com') {
+        const adminEmails = (process.env.REACT_APP_ADMIN_EMAILS || 'kidsinmotion0@gmail.com').split(',').map(e => e.trim());
+        if (adminEmails.includes(user.email)) {
           defaultProfile.userType = 'ADMIN';
           defaultProfile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
-          defaultProfile.needsOnboarding = false; // Admins skip onboarding
+          defaultProfile.needsOnboarding = false;
           if (process.env.NODE_ENV !== 'production') {
             console.log("Automatically granted admin privileges to:", user.email);
           }
@@ -942,7 +946,8 @@ export const AuthProvider = ({ children }) => {
         };
 
         // Auto-admin for specific emails
-        if (currentUser.email === 'kidsinmotion0@gmail.com' || currentUser.email === 'danny@dannygardner.com') {
+        const adminEmails = (process.env.REACT_APP_ADMIN_EMAILS || 'kidsinmotion0@gmail.com').split(',').map(e => e.trim());
+        if (adminEmails.includes(currentUser.email)) {
           profile.userType = 'ADMIN';
           profile.roles = ['ROLE_USER', 'ROLE_ADMIN'];
           profile.needsOnboarding = false;

@@ -12,7 +12,7 @@ const Layout = ({ children }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [inboxOpen, setInboxOpen] = useState(false);
-  const unreadCount = useInboxCount();
+  const { unreadCount } = useInboxCount();
 
   // Handle scroll event
   useEffect(() => {
@@ -147,10 +147,12 @@ const Layout = ({ children }) => {
             <FirebaseImage src="realKIMlogo-transparent.png" alt="Kids in Motion" width={60} height={60} />
           </Link>
           
-          <button 
-            className={`navbar-toggler ${menuOpen ? 'open' : ''}`} 
+          <button
+            className={`navbar-toggler ${menuOpen ? 'open' : ''}`}
             onClick={toggleMenu}
-            aria-label="Toggle navigation"
+            aria-label="Toggle navigation menu"
+            aria-expanded={menuOpen}
+            aria-controls="navbar-menu"
           >
             <span></span>
             <span></span>
@@ -158,7 +160,7 @@ const Layout = ({ children }) => {
             <span></span>
           </button>
           
-          <ul className={`navbar-menu ${menuOpen ? 'open' : ''}`}>
+          <ul id="navbar-menu" className={`navbar-menu ${menuOpen ? 'open' : ''}`} role="menubar">
             <li className="navbar-item">
               <Link to="/" className={`navbar-link ${location.pathname === '/' ? 'active' : ''}`} onClick={closeMobileMenu}>
                 Home
@@ -194,10 +196,16 @@ const Layout = ({ children }) => {
                 <>
                   <li className="navbar-item">
                     <div className={`dropdown inbox-dropdown ${inboxOpen ? 'open' : ''}`}>
-                      <button className="navbar-link inbox-trigger" onClick={() => setInboxOpen(!inboxOpen)}>
-                        <i className="fas fa-inbox mr-2"></i>
+                      <button
+                        className="navbar-link inbox-trigger"
+                        onClick={() => setInboxOpen(!inboxOpen)}
+                        aria-label={`Inbox${unreadCount > 0 ? `, ${unreadCount} unread messages` : ''}`}
+                        aria-expanded={inboxOpen}
+                        aria-haspopup="true"
+                      >
+                        <i className="fas fa-inbox mr-2" aria-hidden="true"></i>
                         Inbox
-                        {unreadCount > 0 && <span className="unread-badge">{unreadCount}</span>}
+                        {unreadCount > 0 && <span className="unread-badge" aria-label={`${unreadCount} unread`}>{unreadCount}</span>}
                       </button>
                       <div className={`dropdown-menu inbox-dropdown-menu ${inboxOpen ? 'show' : ''}`}>
                         <Inbox isOpen={inboxOpen} onClose={() => setInboxOpen(false)} isDropdown={true} />
@@ -206,19 +214,25 @@ const Layout = ({ children }) => {
                   </li>
                   <li className="navbar-item">
                     <div className={`dropdown ${dropdownOpen ? 'open' : ''}`}>
-                      <button className="navbar-link dropdown-toggle" onClick={toggleDropdown}>
+                      <button
+                        className="navbar-link dropdown-toggle"
+                        onClick={toggleDropdown}
+                        aria-expanded={dropdownOpen}
+                        aria-haspopup="true"
+                        aria-label="User menu"
+                      >
                         {userProfile?.firstName && userProfile?.lastName
                           ? `${userProfile.firstName} ${userProfile.lastName}`
                           : currentUser.displayName || currentUser.email}
-                        <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`}></i>
+                        <i className={`fas fa-chevron-down dropdown-arrow ${dropdownOpen ? 'open' : ''}`} aria-hidden="true"></i>
                       </button>
-                      <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`}>
-                        <button type="button" onClick={handleAccountDetails} className="dropdown-item">
-                          <i className="fas fa-user mr-2"></i>Account Details
+                      <div className={`dropdown-menu ${dropdownOpen ? 'show' : ''}`} role="menu">
+                        <button type="button" onClick={handleAccountDetails} className="dropdown-item" role="menuitem">
+                          <i className="fas fa-user mr-2" aria-hidden="true"></i>Account Details
                         </button>
-                        <div className="dropdown-divider"></div>
-                        <button type="button" onClick={handleLogout} className="dropdown-item">
-                          <i className="fas fa-sign-out-alt mr-2"></i>Logout
+                        <div className="dropdown-divider" role="separator"></div>
+                        <button type="button" onClick={handleLogout} className="dropdown-item" role="menuitem">
+                          <i className="fas fa-sign-out-alt mr-2" aria-hidden="true"></i>Logout
                         </button>
                       </div>
                     </div>
@@ -291,11 +305,11 @@ const Layout = ({ children }) => {
               </div>
               <p className="mb-2">Empowering every kid to play and learn through sports.</p>
               <div className="footer-social">
-                <a href="https://www.facebook.com/profile.php?id=61568245202675" className="social-icon" target="_blank" rel="noopener noreferrer">
-                  <i className="fab fa-facebook-f"></i>
+                <a href="https://www.facebook.com/profile.php?id=61568245202675" className="social-icon" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Facebook">
+                  <i className="fab fa-facebook-f" aria-hidden="true"></i>
                 </a>
-                <a href="https://www.instagram.com/kids_in_motion0/" className="social-icon" target="_blank" rel="noopener noreferrer">
-                  <i className="fab fa-instagram"></i>
+                <a href="https://www.instagram.com/kids_in_motion0/" className="social-icon" target="_blank" rel="noopener noreferrer" aria-label="Follow us on Instagram">
+                  <i className="fab fa-instagram" aria-hidden="true"></i>
                 </a>
               </div>
             </div>
