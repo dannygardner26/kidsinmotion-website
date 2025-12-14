@@ -50,432 +50,221 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error('Error parsing time:', timeValue, error);
       return 'Invalid time';
-    }
-  };
-  const [events, setEvents] = useState([]);
-  const [eventStats, setEventStats] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'events');
-  const [selectedEventForPoster, setSelectedEventForPoster] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+    }, [events]);
 
-  // Debug effect to track when events state changes
-  useEffect(() => {
-    console.log('AdminDashboard: Events state changed - length:', events.length);
-    console.log('AdminDashboard: Current events state:', JSON.stringify(events, null, 2));
-  }, [events]);
+    useEffect(() => {
+      // Subscribe to live events using Firestore listeners
+      firebaseRealtimeService.subscribeToAllEvents(
+        (eventsData) => {
+          console.log('AdminDashboard: Real-time events update:', JSON.stringify(eventsData, null, 2));
+          console.log('AdminDashboard: Previous events state length:', events.length);
+          console.log('AdminDashboard: New events data length:', eventsData.length);
+          setEvents(eventsData);
+          console.log('AdminDashboard: setEvents called with new data');
+          setIsLoading(false); // Set loading to false when data is received
 
-  useEffect(() => {
-    // Subscribe to live events using Firestore listeners
-    firebaseRealtimeService.subscribeToAllEvents(
-      (eventsData) => {
-        console.log('AdminDashboard: Real-time events update:', JSON.stringify(eventsData, null, 2));
-        console.log('AdminDashboard: Previous events state length:', events.length);
-        console.log('AdminDashboard: New events data length:', eventsData.length);
-        setEvents(eventsData);
-        console.log('AdminDashboard: setEvents called with new data');
-        setIsLoading(false); // Set loading to false when data is received
+          // For each event, subscribe to participants and volunteers to keep eventStats in sync
+          eventsData.forEach(event => {
+            // Subscribe to participants for this event
+            firebaseRealtimeService.subscribeToEventParticipants(
+              event.id,
+              (participantsData) => {
+                console.log(`AdminDashboard: Real-time participants update for event ${event.id}:`, participantsData);
+                updateEventStats(event.id, 'participants', participantsData);
+              },
+              (error) => {
+                console.error(`AdminDashboard: Participants listener error for event ${event.id}:`, error);
+              }
+            );
 
-        // For each event, subscribe to participants and volunteers to keep eventStats in sync
-        eventsData.forEach(event => {
-          // Subscribe to participants for this event
-          firebaseRealtimeService.subscribeToEventParticipants(
-            event.id,
-            (participantsData) => {
-              console.log(`AdminDashboard: Real-time participants update for event ${event.id}:`, participantsData);
-              updateEventStats(event.id, 'participants', participantsData);
-            },
-            (error) => {
-              console.error(`AdminDashboard: Participants listener error for event ${event.id}:`, error);
-            }
-          );
-
-          // Subscribe to volunteers for this event
-          firebaseRealtimeService.subscribeToEventVolunteers(
-            event.id,
-            (volunteersData) => {
-              console.log(`AdminDashboard: Real-time volunteers update for event ${event.id}:`, volunteersData);
-              updateEventStats(event.id, 'volunteers', volunteersData);
-            },
-            (error) => {
-              console.error(`AdminDashboard: Volunteers listener error for event ${event.id}:`, error);
-            }
-          );
-        });
-      },
-      (error) => {
-        console.error('AdminDashboard: Events listener error:', error);
-        // Fallback to API call if needed
-        fetchEvents();
-      }
-    );
-
-    return () => {
-      // Clean up all real-time listeners
-      firebaseRealtimeService.unsubscribeAll();
-    };
-  }, []);
-
-  // Helper function to update event stats when real-time data changes
-  const updateEventStats = (eventId, dataType, data) => {
-    setEventStats(prevStats => {
-      const updatedStats = { ...prevStats };
-
-      if (!updatedStats[eventId]) {
-        updatedStats[eventId] = {
-          eventId,
-          registrationCount: 0,
-          registrations: [],
-          volunteerCount: 0,
-          volunteers: [],
-          volunteerError: null,
-          revenue: 0,
-          capacity: null,
-          isFullyBooked: false
-        };
-      }
-
-      if (dataType === 'participants') {
-        updatedStats[eventId].registrationCount = data.length;
-        updatedStats[eventId].registrations = data;
-
-        // Find the corresponding event to calculate revenue
-        const event = events.find(e => e.id === eventId);
-        if (event) {
-          updatedStats[eventId].revenue = data.length * (event.price || 0);
-          updatedStats[eventId].capacity = event.capacity;
-          updatedStats[eventId].isFullyBooked = event.capacity && data.length >= event.capacity;
+            // Subscribe to volunteers for this event
+            firebaseRealtimeService.subscribeToEventVolunteers(
+              event.id,
+              (volunteersData) => {
+                console.log(`AdminDashboard: Real-time volunteers update for event ${event.id}:`, volunteersData);
+                updateEventStats(event.id, 'volunteers', volunteersData);
+              },
+              (error) => {
+                console.error(`AdminDashboard: Volunteers listener error for event ${event.id}:`, error);
+              }
+            );
+          });
+        },
+        (error) => {
+          console.error('AdminDashboard: Events listener error:', error);
+          // Fallback to API call if needed
+          fetchEvents();
         }
-      } else if (dataType === 'volunteers') {
-        updatedStats[eventId].volunteerCount = data.length;
-        updatedStats[eventId].volunteers = data;
-        updatedStats[eventId].volunteerError = null;
+      );
+
+      return () => {
+        // Clean up all real-time listeners
+        firebaseRealtimeService.unsubscribeAll();
+      };
+    }, []);
+
+    // Helper function to update event stats when real-time data changes
+    const updateEventStats = (eventId, dataType, data) => {
+      setEventStats(prevStats => {
+        const updatedStats = { ...prevStats };
+
+        if (!updatedStats[eventId]) {
+          updatedStats[eventId] = {
+            eventId,
+            registrationCount: 0,
+            registrations: [],
+            volunteerCount: 0,
+            volunteers: [],
+            volunteerError: null,
+            revenue: 0,
+            capacity: null,
+            isFullyBooked: false
+          };
+        }
+
+        if (dataType === 'participants') {
+          updatedStats[eventId].registrationCount = data.length;
+          updatedStats[eventId].registrations = data;
+
+          // Find the corresponding event to calculate revenue
+          const event = events.find(e => e.id === eventId);
+          if (event) {
+            updatedStats[eventId].revenue = data.length * (event.price || 0);
+            updatedStats[eventId].capacity = event.capacity;
+            updatedStats[eventId].isFullyBooked = event.capacity && data.length >= event.capacity;
+          }
+        } else if (dataType === 'volunteers') {
+          updatedStats[eventId].volunteerCount = data.length;
+          updatedStats[eventId].volunteers = data;
+          updatedStats[eventId].volunteerError = null;
+        }
+
+        return updatedStats;
+      });
+    };
+
+    const fetchEvents = async () => {
+      try {
+        // Fetch events only - stats are managed by real-time Firestore listeners
+        const eventsData = await apiService.getEvents();
+
+        console.log('Admin dashboard fetched events:', eventsData);
+        setEvents(eventsData);
+
+      } catch (error) {
+        console.error('Error fetching events:', error);
+        setError(error.message);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    };
+
+    const handleDeleteEvent = async (eventId) => {
+      if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        return;
       }
 
-      return updatedStats;
-    });
-  };
+      try {
+        await apiService.deleteEvent(eventId);
+        setEvents(events.filter(event => event.id !== eventId));
+      } catch (error) {
+        console.error('Error deleting event:', error);
+        alert('Failed to delete event: ' + error.message);
+      }
+    };
 
-  const fetchEvents = async () => {
-    try {
-      // Fetch events only - stats are managed by real-time Firestore listeners
-      const eventsData = await apiService.getEvents();
 
-      console.log('Admin dashboard fetched events:', eventsData);
-      setEvents(eventsData);
 
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+    // Check if user is admin
+    const isAdmin = userProfile?.userType === 'ADMIN';
+
+    if (!isAdmin) {
+      return (
+        <>
+          <div className="container mt-4">
+            <div className="card">
+              <div className="card-body text-center">
+                <h2>Access Denied</h2>
+                <p>You don't have permission to access the admin dashboard.</p>
+                <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
+              </div>
+            </div>
+          </div>
+        </>
+      );
     }
-  };
 
-  const handleDeleteEvent = async (eventId) => {
-    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      return;
+    if (isLoading) {
+      return (
+        <>
+          <div className="container mt-4">
+            <div className="loading-container">
+              <div className="loading-spinner"></div>
+              <p>Loading admin dashboard...</p>
+            </div>
+          </div>
+        </>
+      );
     }
 
-    try {
-      await apiService.deleteEvent(eventId);
-      setEvents(events.filter(event => event.id !== eventId));
-    } catch (error) {
-      console.error('Error deleting event:', error);
-      alert('Failed to delete event: ' + error.message);
-    }
-  };
-
-
-
-  // Check if user is admin
-  const isAdmin = userProfile?.userType === 'ADMIN';
-
-  if (!isAdmin) {
     return (
       <>
         <div className="container mt-4">
-          <div className="card">
-            <div className="card-body text-center">
-              <h2>Access Denied</h2>
-              <p>You don't have permission to access the admin dashboard.</p>
-              <Link to="/dashboard" className="btn btn-primary">Go to Dashboard</Link>
-            </div>
+          <div className="admin-header mb-4">
+            <h1>Admin Dashboard</h1>
+            <p>Manage events, users, and system settings</p>
           </div>
-        </div>
-      </>
-    );
-  }
 
-  if (isLoading) {
-    return (
-      <>
-        <div className="container mt-4">
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading admin dashboard...</p>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div className="container mt-4">
-        <div className="admin-header mb-4">
-          <h1>Admin Dashboard</h1>
-          <p>Manage events, users, and system settings</p>
-        </div>
-
-        <div className="admin-tabs mb-4">
-          <button 
-            className={`tab-btn ${activeTab === 'events' ? 'active' : ''}`}
-            onClick={() => setActiveTab('events')}
-          >
-            Events Management
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'messaging' ? 'active' : ''}`}
-            onClick={() => setActiveTab('messaging')}
-          >
-            Announcements
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
-            onClick={() => setActiveTab('users')}
-          >
-            User Management
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reports')}
-          >
-            Reports
-          </button>
-        </div>
-
-        {activeTab === 'events' && (
-          <div className="admin-section">
-            <div className="section-header">
-              <h2>Events Management</h2>
-              <div>
-                <button
-                  onClick={() => {
-                    setIsRefreshing(true);
-                    fetchEvents();
-                  }}
-                  className="btn btn-secondary mr-3"
-                  disabled={isRefreshing}
-                >
-                  <i className={`fas fa-sync-alt mr-2 ${isRefreshing ? 'fa-spin' : ''}`}></i>Refresh
-                </button>
-                <Link to="/admin/events/new" className="btn btn-primary">
-                  <i className="fas fa-plus mr-2"></i>Create New Event
-                </Link>
-              </div>
-            </div>
-
-            {error && (
-              <div className="alert alert-danger">
-                {error}
-              </div>
-            )}
-
-            <div className="events-table">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Event Name</th>
-                    <th>Date</th>
-                    <th>Location</th>
-                    <th>Registration Stats</th>
-                    <th>Revenue</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map(event => {
-                    const stats = eventStats[event.id] || {};
-                    const registrationCount = stats.registrationCount || 0;
-                    const volunteerCount = stats.volunteerCount || 0;
-                    const capacity = event.capacity;
-                    const isUpcoming = new Date(event.date + 'T00:00:00') > new Date();
-                    const revenue = stats.revenue || 0;
-
-                    return (
-                      <tr key={event.id}>
-                        <td>
-                          <strong>{event.name}</strong>
-                          <div className="text-muted small">
-                            {formatAgeRange(event)}
-                          </div>
-                        </td>
-                        <td>
-                          <div>{formatEventDateLocal(event.date)}</div>
-                          {event.startTime && event.endTime ? (
-                            <div className="small text-info">
-                              {formatEventTime(event.startTime)} - {formatEventTime(event.endTime)}
-                            </div>
-                          ) : event.startTime ? (
-                            <div className="small text-info">{formatEventTime(event.startTime)}</div>
-                          ) : (
-                            <div className="small text-muted">No time set</div>
-                          )}
-                          <div className={`small ${isUpcoming ? 'text-success' : 'text-muted'}`}>
-                            {isUpcoming ? 'Upcoming' : 'Past'}
-                          </div>
-                        </td>
-                        <td>
-                          {event.location || 'TBD'}
-                        </td>
-                        <td>
-                          <div className="stats-cell">
-                            <div className="stat-item">
-                              <strong>{isLoading ? '...' : registrationCount}</strong>
-                              <span className="small"> registrations</span>
-                            </div>
-                            <div className="stat-item">
-                              <strong>{isLoading ? '...' : volunteerCount}</strong>
-                              <span className="small"> volunteers</span>
-                              {stats.volunteerError && volunteerCount === 0 && (
-                                <i className="fas fa-exclamation-triangle text-warning ml-1" title="Error loading volunteers"></i>
-                              )}
-                            </div>
-                            {capacity && (
-                              <div className="small text-muted">
-                                {registrationCount}/{capacity} capacity
-                                <div className="capacity-bar">
-                                  <div
-                                    className="capacity-fill"
-                                    style={{
-                                      width: `${Math.min((registrationCount / capacity) * 100, 100)}%`,
-                                      backgroundColor: registrationCount >= capacity ? '#dc3545' : '#28a745'
-                                    }}
-                                  ></div>
-                                </div>
-                              </div>
-                            )}
-                            {!capacity && (
-                              <div className="small text-muted">Unlimited capacity</div>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="revenue-cell">
-                            {event.price > 0 ? (
-                              <>
-                                <strong>${revenue.toFixed(2)}</strong>
-                                <div className="small text-muted">${event.price} each</div>
-                              </>
-                            ) : (
-                              <span className="text-success">Free Event</span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="status-cell">
-                            {isUpcoming ? (
-                              <>
-                                {stats.isFullyBooked ? (
-                                  <span className="status-badge fully-booked">Fully Booked</span>
-                                ) : capacity && registrationCount >= capacity * 0.8 ? (
-                                  <span className="status-badge nearly-full">Nearly Full</span>
-                                ) : (
-                                  <span className="status-badge open">Open</span>
-                                )}
-                              </>
-                            ) : (
-                              <span className="status-badge completed">Completed</span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="action-buttons">
-                            <Link
-                              to={`/admin/events/edit/${event.id}`}
-                              className="btn btn-sm btn-warning"
-                              title="Edit event"
-                            >
-                              <i className="fas fa-edit mr-1"></i>
-                              Edit
-                            </Link>
-                            <Link
-                              to={`/admin/events/${event.id}/overview`}
-                              className="btn btn-sm btn-primary"
-                              title="View complete event overview"
-                            >
-                              <i className="fas fa-eye mr-1"></i>
-                              Overview
-                            </Link>
-                            <button
-                              onClick={() => setSelectedEventForPoster(event)}
-                              className="btn btn-sm btn-primary"
-                              title="Generate promotional poster"
-                            >
-                              <i className="fas fa-image mr-1"></i>
-                              Poster
-                            </button>
-                            <button
-                              onClick={() => handleDeleteEvent(event.id)}
-                              className="btn btn-sm btn-danger"
-                              title="Delete event"
-                            >
-                              <i className="fas fa-trash"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              {events.length === 0 && (
-                <div className="text-center py-4">
-                  <p>No events found.</p>
-                  <Link to="/admin/events/new" className="btn btn-primary">
-                    Create Your First Event
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-
-        {activeTab === 'messaging' && (
-          <div className="admin-section">
+          <div className="admin-tabs mb-4">
+            <button
+              className={`tab-btn ${activeTab === 'events' ? 'active' : ''}`}
+              onClick={() => setActiveTab('events')}
+            >
+              Events Management
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'messaging' ? 'active' : ''}`}
+              onClick={() => setActiveTab('messaging')}
+            >
+              Announcements
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+              onClick={() => setActiveTab('users')}
+            >
+              User Management
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'reports' ? 'active' : ''}`}
+              onClick={() => setActiveTab('reports')}
             <AdminMessaging />
           </div>
         )}
 
 
-        {activeTab === 'users' && (
-          <div className="admin-section">
-            <UsersAndRegistrations />
-          </div>
+          {activeTab === 'users' && (
+            <div className="admin-section">
+              <UsersAndRegistrations />
+            </div>
+          )}
+
+          {activeTab === 'reports' && (
+            <div className="admin-section">
+              <ReportsAndAnalytics />
+            </div>
+          )}
+        </div>
+
+        {/* Poster Template Selector Modal */}
+        {selectedEventForPoster && (
+          <PosterTemplateSelector
+            event={selectedEventForPoster}
+            onClose={() => setSelectedEventForPoster(null)}
+          />
         )}
 
-        {activeTab === 'reports' && (
-          <div className="admin-section">
-            <ReportsAndAnalytics />
-          </div>
-        )}
-      </div>
-
-      {/* Poster Template Selector Modal */}
-      {selectedEventForPoster && (
-        <PosterTemplateSelector
-          event={selectedEventForPoster}
-          onClose={() => setSelectedEventForPoster(null)}
-        />
-      )}
-
-      <style>{`
+        <style>{`
         .admin-header {
           text-align: center;
           padding: 2rem 0;
@@ -777,8 +566,8 @@ const AdminDashboard = () => {
           }
         }
       `}</style>
-    </>
-  );
-};
+      </>
+    );
+  };
 
-export default AdminDashboard;
+  export default AdminDashboard;

@@ -18,7 +18,7 @@ const Events = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
 
-  
+
   useEffect(() => {
     // Set up real-time event listeners
     let eventListenerMethod;
@@ -85,7 +85,7 @@ const Events = () => {
       return () => clearTimeout(timer);
     }
   }, [isLoading, events]);
-  
+
   const fetchEvents = async () => {
     setIsLoading(true);
 
@@ -146,7 +146,7 @@ const Events = () => {
       setIsLoading(false);
     }
   };
-  
+
   // Format date and time for display - using fixed timezone utility
   const formatDate = (dateString, startTime, endTime) => {
     return formatEventDateTime(dateString, startTime, endTime);
@@ -177,7 +177,7 @@ const Events = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       if (!(event.name && event.name.toLowerCase().includes(query)) &&
-          !(event.description && event.description.toLowerCase().includes(query))) {
+        !(event.description && event.description.toLowerCase().includes(query))) {
         return false;
       }
     }
@@ -193,93 +193,98 @@ const Events = () => {
       }
     }
 
+    // Filter out volunteer-only events (must have KID_EVENT tag to show publicly)
+    // If eventTypes is missing, assume it's a kid event for backward compatibility
+    if (event.eventTypes && !event.eventTypes.includes('KID_EVENT')) {
+      return false;
+    }
+
     return true;
   });
-  
+
   return (
     <div className="events-page">
       {/* Content Container */}
       <div className="events-content">
         {/* Modern Filter Bar */}
         <div className="filter-bar">
-        <div className="container">
-          <div className="filter-content">
-            {/* Page Title and Search Row */}
-            <div className="filter-row">
-              {/* Page Title */}
-              <div className="page-title">
-                <h1>Event Dashboard</h1>
-              </div>
-              {/* Search Input */}
-              <div className="search-input-container">
-                <Search className="search-icon" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search events by name or description..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="search-input"
-                />
-              </div>
+          <div className="container">
+            <div className="filter-content">
+              {/* Page Title and Search Row */}
+              <div className="filter-row">
+                {/* Page Title */}
+                <div className="page-title">
+                  <h1>Event Dashboard</h1>
+                </div>
+                {/* Search Input */}
+                <div className="search-input-container">
+                  <Search className="search-icon" size={20} />
+                  <input
+                    type="text"
+                    placeholder="Search events by name or description..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
 
 
-              {/* Time Period Filter */}
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="filter-select"
-              >
-                <option value="upcoming">Upcoming Events</option>
-                <option value="past">Past Events</option>
-                <option value="all">All Events</option>
-              </select>
-
-              {/* Clear Filters Button */}
-              {hasActiveFilters && (
-                <button
-                  onClick={handleClearFilters}
-                  className="clear-filters-btn"
+                {/* Time Period Filter */}
+                <select
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                  className="filter-select"
                 >
-                  <X size={16} />
-                  Clear
-                </button>
-              )}
+                  <option value="upcoming">Upcoming Events</option>
+                  <option value="past">Past Events</option>
+                  <option value="all">All Events</option>
+                </select>
 
-              {/* Refresh Button */}
-              <button
-                onClick={() => {
-                  setIsLoading(true);
-                  fetchEvents();
-                }}
-                className="refresh-btn-filter"
-                disabled={isLoading}
-                title="Refresh Events"
-              >
-                <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
-                Refresh
-              </button>
-            </div>
-
-            {/* Tag Filter Row */}
-            <div className="tag-filter-row">
-              <p className="tag-filter-label">Filter by tags:</p>
-              <div className="tag-container">
-                {availableTags.map(tag => (
+                {/* Clear Filters Button */}
+                {hasActiveFilters && (
                   <button
-                    key={tag}
-                    className={`tag-badge ${
-                      selectedTags.includes(tag) ? 'tag-badge-selected' : 'tag-badge-outline'
-                    }`}
-                    onClick={() => toggleTag(tag)}
+                    onClick={handleClearFilters}
+                    className="clear-filters-btn"
                   >
-                    {tag}
+                    <X size={16} />
+                    Clear
                   </button>
-                ))}
+                )}
+
+                {/* Refresh Button */}
+                <button
+                  onClick={() => {
+                    setIsLoading(true);
+                    fetchEvents();
+                  }}
+                  className="refresh-btn-filter"
+                  disabled={isLoading}
+                  title="Refresh Events"
+                >
+                  <RefreshCw size={16} className={isLoading ? 'spinning' : ''} />
+                  Refresh
+                </button>
+              </div>
+
+              {/* Tag Filter Row */}
+              <div className="tag-filter-row">
+                <p className="tag-filter-label">Filter by tags:</p>
+                <div className="tag-container">
+                  {availableTags.map(tag => (
+                    <button
+                      key={tag}
+                      className={`tag-badge ${selectedTags.includes(tag) ? 'tag-badge-selected' : 'tag-badge-outline'
+                        }`}
+                      onClick={() => toggleTag(tag)}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
 
       <section className="section">

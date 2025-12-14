@@ -177,6 +177,7 @@ const EventDetail = () => {
   }
 
   const isPastEvent = new Date(event.date + 'T00:00:00') < new Date();
+  const isVolunteerOnly = event.eventTypes && !event.eventTypes.includes('KID_EVENT');
   const sportBackground = getSportBackground(event.ageGroup);
 
   return (
@@ -206,7 +207,8 @@ const EventDetail = () => {
           <div className="event-info-column">
             {/* Event Header */}
             <div className="event-header">
-              <div className="event-badge">{formatAgeRange(event)}</div>
+              {!isVolunteerOnly && <div className="event-badge">{formatAgeRange(event)}</div>}
+              {isVolunteerOnly && <div className="event-badge" style={{ background: '#ffc107', color: '#000' }}>Volunteer Opportunity</div>}
               <h1 className="event-title">{event.name}</h1>
               <div className="event-quick-meta">
                 <div className="meta-item">
@@ -217,7 +219,7 @@ const EventDetail = () => {
                   <i className="fas fa-map-marker-alt"></i>
                   <span>{event.location || 'TBD'}</span>
                 </div>
-                {event.price > 0 && (
+                {event.price > 0 && !isVolunteerOnly && (
                   <div className="meta-item">
                     <i className="fas fa-dollar-sign"></i>
                     <span>${event.price}</span>
@@ -240,10 +242,12 @@ const EventDetail = () => {
                   <h4>Event Details</h4>
                 </div>
                 <div className="detail-list">
-                  <div className="detail-item">
-                    <span className="label">Age Range:</span>
-                    <span className="value">{formatAgeRange(event)}</span>
-                  </div>
+                  {!isVolunteerOnly && (
+                    <div className="detail-item">
+                      <span className="label">Age Range:</span>
+                      <span className="value">{formatAgeRange(event)}</span>
+                    </div>
+                  )}
                   {event.capacity && (
                     <div className="detail-item">
                       <span className="label">Capacity:</span>
@@ -309,65 +313,67 @@ const EventDetail = () => {
               </div>
             )}
 
-            {/* Registration Card */}
-            <div className="action-card registration-card">
-              <div className="card-header">
-                <h3>
-                  <i className="fas fa-user-plus"></i>
-                  Child Registration
-                </h3>
-              </div>
-              <div className="card-content">
-                {isPastEvent ? (
-                  <div className="status-message">
-                    <div className="status-icon past">
-                      <i className="fas fa-history"></i>
+            {/* Registration Card - Only for Kid Events */}
+            {!isVolunteerOnly && (
+              <div className="action-card registration-card">
+                <div className="card-header">
+                  <h3>
+                    <i className="fas fa-user-plus"></i>
+                    Child Registration
+                  </h3>
+                </div>
+                <div className="card-content">
+                  {isPastEvent ? (
+                    <div className="status-message">
+                      <div className="status-icon past">
+                        <i className="fas fa-history"></i>
+                      </div>
+                      <p>This event has ended</p>
+                      <Link to="/events" className="btn-secondary">View Upcoming Events</Link>
                     </div>
-                    <p>This event has ended</p>
-                    <Link to="/events" className="btn-secondary">View Upcoming Events</Link>
-                  </div>
-                ) : (
-                  <>
-                    <div className="capacity-display">
-                      <div className="capacity-number">{event.capacity || '∞'}</div>
-                      <div className="capacity-label">Available Spots</div>
-                    </div>
-                    <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.875rem', color: '#64748b' }}>
-                      For parents to register their children
-                    </div>
+                  ) : (
+                    <>
+                      <div className="capacity-display">
+                        <div className="capacity-number">{event.capacity || '∞'}</div>
+                        <div className="capacity-label">Available Spots</div>
+                      </div>
+                      <div style={{ textAlign: 'center', marginBottom: '1rem', fontSize: '0.875rem', color: '#64748b' }}>
+                        For parents to register their children
+                      </div>
 
-                    {currentUser ? (
-                      <div className="action-buttons">
-                        <Link
-                          to={`/events/${event.id}/register`}
-                          className="btn-primary register-pulse"
-                        >
-                          <i className="fas fa-plus-circle"></i>
-                          Register Child for Event
-                        </Link>
-                      </div>
-                    ) : (
-                      <div className="action-buttons">
-                        <Link
-                          to={`/login?redirect=/events/${event.id}/register`}
-                          className="btn-primary"
-                        >
-                          <i className="fas fa-sign-in-alt"></i>
-                          Login to Register Child
-                        </Link>
-                        <Link
-                          to="/register"
-                          className="btn-outline"
-                        >
-                          <i className="fas fa-user-plus"></i>
-                          Create Parent Account
-                        </Link>
-                      </div>
-                    )}
-                  </>
-                )}
+                      {currentUser ? (
+                        <div className="action-buttons">
+                          <Link
+                            to={`/events/${event.id}/register`}
+                            className="btn-primary register-pulse"
+                          >
+                            <i className="fas fa-plus-circle"></i>
+                            Register Child for Event
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="action-buttons">
+                          <Link
+                            to={`/login?redirect=/events/${event.id}/register`}
+                            className="btn-primary"
+                          >
+                            <i className="fas fa-sign-in-alt"></i>
+                            Login to Register Child
+                          </Link>
+                          <Link
+                            to="/register"
+                            className="btn-outline"
+                          >
+                            <i className="fas fa-user-plus"></i>
+                            Create Parent Account
+                          </Link>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Volunteer Card */}
             {!isPastEvent && (
@@ -429,15 +435,17 @@ const EventDetail = () => {
                       <span className="info-value">{formatDuration(event.date, event.startTime, event.endTime)}</span>
                     </div>
                   </div>
-                  <div className="quick-info-item">
-                    <div className="info-icon">
-                      <i className="fas fa-users"></i>
+                  {!isVolunteerOnly && (
+                    <div className="quick-info-item">
+                      <div className="info-icon">
+                        <i className="fas fa-users"></i>
+                      </div>
+                      <div className="info-text">
+                        <span className="info-label">Ages</span>
+                        <span className="info-value">{formatAgeRange(event)}</span>
+                      </div>
                     </div>
-                    <div className="info-text">
-                      <span className="info-label">Ages</span>
-                      <span className="info-value">{formatAgeRange(event)}</span>
-                    </div>
-                  </div>
+                  )}
                   <div className="quick-info-item">
                     <div className="info-icon">
                       <i className="fas fa-phone"></i>
