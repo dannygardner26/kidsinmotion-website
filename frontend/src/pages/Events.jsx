@@ -10,7 +10,7 @@ import { formatAgeRange, formatEventDate, formatEventDateTime } from '../utils/e
 import firebaseRealtimeService from '../services/firebaseRealtimeService';
 
 const Events = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, userProfile } = useAuth();
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('upcoming'); // 'upcoming', 'past', or 'all'
@@ -193,10 +193,18 @@ const Events = () => {
       }
     }
 
-    // Filter out volunteer-only events (must have KID_EVENT tag to show publicly)
-    // If eventTypes is missing, assume it's a kid event for backward compatibility
-    if (event.eventTypes && !event.eventTypes.includes('KID_EVENT')) {
-      return false;
+    // Filter volunteer-only events based on user role
+    // Volunteer-only = has eventTypes but doesn't include KID_EVENT
+    const isVolunteerOnlyEvent = event.eventTypes && !event.eventTypes.includes('KID_EVENT');
+
+    if (isVolunteerOnlyEvent) {
+      // Volunteers and Admins can see volunteer-only events
+      const isVolunteer = userProfile?.userType === 'VOLUNTEER';
+      const isAdmin = userProfile?.userType === 'ADMIN';
+
+      if (!isVolunteer && !isAdmin) {
+        return false;  // Hide from parents and logged-out users
+      }
     }
 
     return true;
@@ -411,6 +419,11 @@ const Events = () => {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Contact Section */}
+        <div className="contact-section">
+          <p>Contact us with issues about the website: <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a></p>
         </div>
       </section>
 
@@ -916,6 +929,28 @@ const Events = () => {
           .banner-actions .btn {
             width: 100%;
           }
+        }
+
+        .contact-section {
+          text-align: center;
+          padding: 2rem 0;
+          margin-top: 2rem;
+          border-top: 1px solid rgba(47, 80, 106, 0.15);
+        }
+
+        .contact-section p {
+          color: #6b7280;
+          font-size: 0.875rem;
+          margin: 0;
+        }
+
+        .contact-section a {
+          color: var(--primary);
+          text-decoration: none;
+        }
+
+        .contact-section a:hover {
+          text-decoration: underline;
         }
 
         @keyframes spin {
