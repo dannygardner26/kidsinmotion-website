@@ -118,35 +118,404 @@ const CreateEvent = () => {
   };
 
   const handleRemoveTag = (tagToRemove) => {
-    disabled = { isLoading }
-      >
-    {
-      isLoading?(
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }));
+  };
+
+  const handleEventTypeChange = (eventType) => {
+    setFormData(prev => {
+      const currentEventTypes = prev.eventTypes || [];
+      if (currentEventTypes.includes(eventType)) {
+        return {
+          ...prev,
+          eventTypes: currentEventTypes.filter(et => et !== eventType)
+        };
+      } else {
+        return {
+          ...prev,
+          eventTypes: [...currentEventTypes, eventType]
+        };
+      }
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Client-side validation for age bounds and constraints
+      const minAge = formData.minAge === '' ? null : parseInt(formData.minAge, 10);
+      const maxAge = formData.maxAge === '' ? null : parseInt(formData.maxAge, 10);
+
+      if (minAge !== null && (minAge < 0 || minAge > 21)) {
+        setError('Minimum age must be between 0 and 21');
+        setIsLoading(false);
+        return;
+      }
+      if (maxAge !== null && (maxAge < 0 || maxAge > 21)) {
+        setError('Maximum age must be between 0 and 21');
+        setIsLoading(false);
+        return;
+      }
+      if (minAge !== null && maxAge !== null && minAge > maxAge) {
+        setError('Minimum age cannot be greater than maximum age');
+        setIsLoading(false);
+        return;
+      }
+
+      // Prepare event data
+      const eventData = {
+        ...formData,
+        minAge: minAge,
+        maxAge: maxAge,
+        tags: formData.tags.join(','),
+        eventTypes: formData.eventTypes.length > 0 ? formData.eventTypes.join(', ') : '',
+        capacity: formData.capacity ? parseInt(formData.capacity) : null,
+        price: formData.price ? parseFloat(formData.price) : 0.0,
+        // Ensure times are null if empty, not empty strings
+        startTime: formData.startTime && formData.startTime.trim() !== '' ? formData.startTime : null,
+        endTime: formData.endTime && formData.endTime.trim() !== '' ? formData.endTime : null
+      };
+
+      console.log('=== FRONTEND EVENT UPDATE DEBUG ===');
+      console.log('Original stored event data:', JSON.stringify(originalEvent, null, 2));
+      console.log('Current form data:', JSON.stringify(formData, null, 2));
+      console.log('Processed event data for update:', JSON.stringify(eventData, null, 2));
+
+      // Add update timestamp to ensure change detection
+      eventData.updatedAt = new Date().toISOString();
+
+      // Compare key fields to see what's actually changing
+      if (originalEvent) {
+        console.log('Field comparison:');
+        console.log('Date:', { from: originalEvent.date, to: eventData.date, changed: originalEvent.date !== eventData.date });
+        console.log('Name:', { from: originalEvent.name, to: eventData.name, changed: originalEvent.name !== eventData.name });
+        console.log('Time:', {
+          from: { start: originalEvent.startTime, end: originalEvent.endTime },
+          to: { start: eventData.startTime, end: eventData.endTime },
+          changed: originalEvent.startTime !== eventData.startTime || originalEvent.endTime !== eventData.endTime
+        });
+      }
+
+      if (isEditMode) {
+        // Use Firestore directly for real-time sync across all components
+        await firestoreEventService.updateEvent(eventId, eventData);
+        console.log('Event updated via Firestore for real-time sync');
+        navigate('/admin', {
+          state: { message: 'Event updated successfully!' }
+        });
+      } else {
+        // Use Firestore directly for real-time sync across all components
+        await firestoreEventService.createEvent(eventData);
+        console.log('Event created via Firestore for real-time sync');
+        navigate('/admin', {
+          state: { message: 'Event created successfully!' }
+        });
+      }
+    } catch (error) {
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} event:`, error);
+      setError(error.message || `Failed to ${isEditMode ? 'update' : 'create'} event`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate('/admin');
+  };
+
+  return (
+    <>
+      <div className="container mt-4" style={{ marginBottom: '4rem' }}>
+        <div className="row justify-content-center">
+          <div className="col-md-8">
+            <div className="card">
+              <div className="card-header">
+                <p className="subtitle-fancy" style={{ color: 'white' }}>
+                  {isEditMode ? `✏️ Edit Event: ${originalEvent?.name || 'Loading...'} 🌟` : '🏃‍♂️ Add a New Sports Event or Clinic for Kids! 🌟'}
+                </p>
+              </div>
+              <div className="card-body">
+                {error && (
+                  <div className="alert alert-danger">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit}>
+                  <div className="form-group">
+                    <label htmlFor="name">Event Name *</label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      className="form-control"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="e.g., Soccer Skills Clinic"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="description">Description *</label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      className="form-control"
+                      rows="4"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Describe what kids will learn and do at this event..."
+                    />
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="date">Date *</label>
+                        <input
+                          type="date"
+                          id="date"
+                          name="date"
+                          className="form-control"
+                          value={formData.date}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="startTime">Start Time</label>
+                        <input
+                          type="time"
+                          id="startTime"
+                          name="startTime"
+                          className="form-control"
+                          value={formData.startTime || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="endTime">End Time</label>
+                        <input
+                          type="time"
+                          id="endTime"
+                          name="endTime"
+                          className="form-control"
+                          value={formData.endTime || ''}
+                          onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="location">Location</label>
+                    <input
+                      type="text"
+                      id="location"
+                      name="location"
+                      className="form-control"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Community Park Field 1"
+                    />
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-2">
+                      <div className="form-group">
+                        <label htmlFor="minAge">Minimum Age</label>
+                        <input
+                          type="number"
+                          id="minAge"
+                          name="minAge"
+                          className="form-control"
+                          value={formData.minAge}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="21"
+                          placeholder="e.g., 5"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-2">
+                      <div className="form-group">
+                        <label htmlFor="maxAge">Maximum Age</label>
+                        <input
+                          type="number"
+                          id="maxAge"
+                          name="maxAge"
+                          className="form-control"
+                          value={formData.maxAge}
+                          onChange={handleInputChange}
+                          min="0"
+                          max="21"
+                          placeholder="e.g., 12"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="capacity">Capacity</label>
+                        <input
+                          type="number"
+                          id="capacity"
+                          name="capacity"
+                          className="form-control"
+                          value={formData.capacity}
+                          onChange={handleInputChange}
+                          min="1"
+                          placeholder="Leave empty for unlimited"
+                        />
+                      </div>
+                    </div>
+                    <div className="col-md-4">
+                      <div className="form-group">
+                        <label htmlFor="price">Price ($)</label>
+                        <input
+                          type="number"
+                          id="price"
+                          name="price"
+                          className="form-control"
+                          value={formData.price}
+                          onChange={handleInputChange}
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00 for free"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Event Tags</label>
+                    <div className="mb-3">
+                      <div className="row">
+                        {predefinedTags.map(tag => (
+                          <div key={tag} className="col-md-4 mb-2">
+                            <label className="checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={formData.tags.includes(tag)}
+                                onChange={() => handleTagToggle(tag)}
+                              />
+                              <span className="checkmark"></span>
+                              {tag}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-8">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Add custom tag"
+                          value={formData.customTag}
+                          onChange={(e) => setFormData(prev => ({...prev, customTag: e.target.value}))}
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomTag())}
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={handleAddCustomTag}
+                          disabled={!formData.customTag.trim()}
+                        >
+                          Add Tag
+                        </button>
+                      </div>
+                    </div>
+                    {formData.tags.length > 0 && (
+                      <div className="mt-3">
+                        <label className="form-label">Selected Tags:</label>
+                        <div className="tags-display">
+                          {formData.tags.map(tag => (
+                            <span key={tag} className="tag-badge">
+                              {tag}
+                              <button
+                                type="button"
+                                className="tag-remove"
+                                onClick={() => handleRemoveTag(tag)}
+                                title="Remove tag"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="row">
+                    <div className="col-md-6">
+                      <div className="form-group">
+                        <label>Event Types *</label>
+                        <div className="event-type-multiselect">
+                          {['VOLUNTEER', 'KID_EVENT'].map(eventType => (
+                            <label key={eventType} className="checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={formData.eventTypes.includes(eventType)}
+                                onChange={() => handleEventTypeChange(eventType)}
+                              />
+                              <span className="checkmark"></span>
+                              {eventType === 'VOLUNTEER' ? 'Volunteer Event' : 'Kid Event'}
+                            </label>
+                          ))}
+                        </div>
+                        <small className="text-muted">
+                          Select whether this is a volunteer opportunity, kid event, or both
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-actions">
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
                         <>
-      <div className="loading-spinner-small"></div>
-    { isEditMode ? 'Updating Event...' : 'Creating Event...' }
+                          <div className="loading-spinner-small"></div>
+                          {isEditMode ? 'Updating Event...' : 'Creating Event...'}
                         </>
                       ) : (
-  isEditMode ? 'Update Event' : 'Create Event'
-)}
-                    </button >
-  <button
-    type="button"
-    className="btn btn-outline ml-3"
-    onClick={handleCancel}
-    disabled={isLoading}
-  >
-    Cancel
-  </button>
-                  </div >
-                </form >
-              </div >
-            </div >
-          </div >
-        </div >
-      </div >
+                        isEditMode ? 'Update Event' : 'Create Event'
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline ml-3"
+                      onClick={handleCancel}
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <style>{`
+      <style>{`
         .subtitle-fancy {
           font-size: 1.4rem;
           font-weight: 600;
