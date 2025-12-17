@@ -21,6 +21,7 @@ class FirestoreEventService {
         minAge: eventData.minAge ?? null,
         maxAge: eventData.maxAge ?? null,
         tags: eventData.tags || '',
+        eventTypes: eventData.eventTypes || '',
         requiresParentSignup: eventData.requiresParentSignup || false,
         status: 'ACTIVE',
         createdAt: new Date().toISOString(),
@@ -64,6 +65,7 @@ class FirestoreEventService {
         minAge: eventData.minAge ?? null,
         maxAge: eventData.maxAge ?? null,
         tags: eventData.tags || '',
+        eventTypes: eventData.eventTypes || '',
         requiresParentSignup: eventData.requiresParentSignup || false,
         updatedAt: new Date().toISOString()
       };
