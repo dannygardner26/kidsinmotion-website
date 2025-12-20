@@ -6,6 +6,7 @@ import { apiService } from '../services/api';
 import { assetUrls } from '../utils/firebaseAssets';
 import { formatAgeRange, formatEventDateTime } from '../utils/eventFormatters';
 import firebaseRealtimeService from '../services/firebaseRealtimeService';
+import { TimeslotListView } from '../components/timeslots';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -13,6 +14,7 @@ const EventDetail = () => {
   const [event, setEvent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('info'); // 'info' or 'shifts'
 
   useEffect(() => {
     // Set up real-time listener for this specific event
@@ -178,6 +180,7 @@ const EventDetail = () => {
 
   const isPastEvent = new Date(event.date + 'T00:00:00') < new Date();
   const isVolunteerOnly = event.eventTypes && !event.eventTypes.includes('KID_EVENT');
+  const isFundraiser = event.tags && event.tags.toLowerCase().includes('fundraiser');
   const sportBackground = getSportBackground(event.ageGroup);
 
   return (
@@ -228,74 +231,119 @@ const EventDetail = () => {
               </div>
             </div>
 
-            {/* Event Description */}
-            <div className="event-description-box">
-              <h3>About This Event</h3>
-              <p>{event.description}</p>
-            </div>
-
-            {/* Event Details Grid */}
-            <div className="details-grid">
-              <div className="detail-card">
-                <div className="detail-header">
+            {/* Tab Navigation for Fundraiser Events */}
+            {isFundraiser && (
+              <div className="event-tabs">
+                <button
+                  className={`tab-btn ${activeTab === 'info' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('info')}
+                >
                   <i className="fas fa-info-circle"></i>
-                  <h4>Event Details</h4>
-                </div>
-                <div className="detail-list">
-                  {!isVolunteerOnly && (
-                    <div className="detail-item">
-                      <span className="label">Age Range:</span>
-                      <span className="value">{formatAgeRange(event)}</span>
-                    </div>
-                  )}
-                  {event.capacity && (
-                    <div className="detail-item">
-                      <span className="label">Capacity:</span>
-                      <span className="value">{event.capacity}</span>
-                    </div>
-                  )}
-                  {event.tags && event.tags.trim() && (
-                    <div className="detail-item">
-                      <span className="label">Tags:</span>
-                      <div className="event-tags-display">
-                        {event.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
-                          <span key={tag} className="event-tag-badge">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  Event Info
+                </button>
+                <button
+                  className={`tab-btn ${activeTab === 'shifts' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('shifts')}
+                >
+                  <i className="fas fa-clock"></i>
+                  Volunteer Shifts
+                </button>
               </div>
+            )}
 
-              <div className="detail-card">
-                <div className="detail-header">
-                  <i className="fas fa-backpack"></i>
-                  <h4>What to Bring</h4>
-                </div>
-                <div className="bring-list">
-                  <div className="bring-item">
-                    <i className="fas fa-tint"></i>
-                    <span>Water bottle</span>
-                  </div>
-                  <div className="bring-item">
-                    <i className="fas fa-tshirt"></i>
-                    <span>Athletic clothes</span>
-                  </div>
-                  <div className="bring-item">
-                    <i className="fas fa-shoe-prints"></i>
-                    <span>Athletic footwear</span>
-                  </div>
-                  <div className="bring-item">
-                    <i className="fas fa-smile"></i>
-                    <span>Positive attitude!</span>
-                  </div>
-                  <div className="equipment-notice">
+            {/* Event Description - Show when not fundraiser or on info tab */}
+            {(!isFundraiser || activeTab === 'info') && (
+              <div className="event-description-box">
+                <h3>About This Event</h3>
+                <p>{event.description}</p>
+              </div>
+            )}
+
+            {/* Event Details Grid - Show when not fundraiser or on info tab */}
+            {(!isFundraiser || activeTab === 'info') && (
+              <div className="details-grid">
+                <div className="detail-card">
+                  <div className="detail-header">
                     <i className="fas fa-info-circle"></i>
-                    <span><strong>Equipment:</strong> Bring whatever equipment you have. Contact us at <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a> or <a href="tel:+14848856284">(484) 885-6284</a> if you need something.</span>
+                    <h4>Event Details</h4>
+                  </div>
+                  <div className="detail-list">
+                    {!isVolunteerOnly && (
+                      <div className="detail-item">
+                        <span className="label">Age Range:</span>
+                        <span className="value">{formatAgeRange(event)}</span>
+                      </div>
+                    )}
+                    {event.capacity && (
+                      <div className="detail-item">
+                        <span className="label">Capacity:</span>
+                        <span className="value">{event.capacity}</span>
+                      </div>
+                    )}
+                    {event.tags && event.tags.trim() && (
+                      <div className="detail-item">
+                        <span className="label">Tags:</span>
+                        <div className="event-tags-display">
+                          {event.tags.split(',').map(tag => tag.trim()).filter(Boolean).map(tag => (
+                            <span key={tag} className="event-tag-badge">{tag}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="detail-card">
+                  <div className="detail-header">
+                    <i className="fas fa-backpack"></i>
+                    <h4>What to Bring</h4>
+                  </div>
+                  <div className="bring-list">
+                    <div className="bring-item">
+                      <i className="fas fa-tint"></i>
+                      <span>Water bottle</span>
+                    </div>
+                    <div className="bring-item">
+                      <i className="fas fa-tshirt"></i>
+                      <span>Athletic clothes</span>
+                    </div>
+                    <div className="bring-item">
+                      <i className="fas fa-shoe-prints"></i>
+                      <span>Athletic footwear</span>
+                    </div>
+                    <div className="bring-item">
+                      <i className="fas fa-smile"></i>
+                      <span>Positive attitude!</span>
+                    </div>
+                    <div className="equipment-notice">
+                      <i className="fas fa-info-circle"></i>
+                      <span><strong>Equipment:</strong> Bring whatever equipment you have. Contact us at <a href="mailto:info@kidsinmotionpa.org">info@kidsinmotionpa.org</a> or <a href="tel:+14848856284">(484) 885-6284</a> if you need something.</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Volunteer Shifts Tab Content - Only for Fundraiser Events */}
+            {isFundraiser && activeTab === 'shifts' && (
+              <div className="shifts-tab-content">
+                <div className="shifts-header">
+                  <h3>
+                    <i className="fas fa-clock"></i>
+                    Available Volunteer Shifts
+                  </h3>
+                  <p>Sign up for a shift to help at this event. You can sign up for multiple shifts!</p>
+                </div>
+                <TimeslotListView
+                  eventId={event.id}
+                  eventDate={event.date}
+                  isLoggedIn={!!currentUser}
+                  onSignupSuccess={(slot) => {
+                    console.log('Signed up for slot:', slot);
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Right Column: Actions */}
@@ -981,6 +1029,82 @@ const EventDetail = () => {
           to { transform: rotate(360deg); }
         }
 
+        /* Tabs Styles */
+        .event-tabs {
+          display: flex;
+          gap: 0.5rem;
+          background: white;
+          padding: 0.5rem;
+          border-radius: 1rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-btn {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 0.875rem 1.5rem;
+          border: none;
+          border-radius: 0.75rem;
+          background: transparent;
+          color: #64748b;
+          font-weight: 600;
+          font-size: 1rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+          background: rgba(47, 80, 106, 0.05);
+          color: var(--primary);
+        }
+
+        .tab-btn.active {
+          background: var(--primary);
+          color: white;
+          box-shadow: 0 2px 8px rgba(47, 80, 106, 0.3);
+        }
+
+        .tab-btn i {
+          font-size: 1.1rem;
+        }
+
+        /* Shifts Tab Content */
+        .shifts-tab-content {
+          background: white;
+          border-radius: 1rem;
+          padding: 1.5rem;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .shifts-header {
+          margin-bottom: 1.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .shifts-header h3 {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          color: var(--primary);
+          margin: 0 0 0.5rem 0;
+          font-size: 1.5rem;
+          font-weight: 600;
+        }
+
+        .shifts-header h3 i {
+          color: var(--secondary);
+        }
+
+        .shifts-header p {
+          color: #64748b;
+          margin: 0;
+          font-size: 0.95rem;
+        }
+
         /* Mobile responsiveness */
         @media (max-width: 1024px) {
           .event-layout {
@@ -1015,6 +1139,22 @@ const EventDetail = () => {
             flex-direction: column;
             text-align: center;
             gap: 1rem;
+          }
+
+          .event-tabs {
+            flex-direction: column;
+          }
+
+          .tab-btn {
+            padding: 1rem;
+          }
+
+          .shifts-tab-content {
+            padding: 1rem;
+          }
+
+          .shifts-header h3 {
+            font-size: 1.25rem;
           }
         }
       `}</style>

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import firestoreEventService from '../services/firestoreEventService';
+import { TimeslotManager } from '../components/timeslots';
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -511,6 +512,46 @@ const CreateEvent = () => {
                 </form>
               </div>
             </div>
+
+            {/* Timeslot Manager - Only show in edit mode for Fundraiser events */}
+            {isEditMode && originalEvent && formData.tags.some(tag => tag.toLowerCase() === 'fundraiser') && (
+              <div className="card mt-4">
+                <div className="card-header" style={{ background: 'var(--secondary)' }}>
+                  <p className="subtitle-fancy" style={{ color: 'white', margin: 0 }}>
+                    <i className="fas fa-clock" style={{ marginRight: '0.5rem' }}></i>
+                    Manage Volunteer Shifts
+                  </p>
+                </div>
+                <div className="card-body">
+                  <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                    Create and manage volunteer timeslots for this fundraiser event. Volunteers can sign up for shifts directly from the event page.
+                  </p>
+                  <TimeslotManager
+                    eventId={eventId}
+                    eventDate={formData.date}
+                    eventStartTime={formData.startTime}
+                    eventEndTime={formData.endTime}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Hint to save first for new events */}
+            {!isEditMode && formData.tags.some(tag => tag.toLowerCase() === 'fundraiser') && (
+              <div className="card mt-4" style={{ background: '#fef3c7', border: '1px solid #fbbf24' }}>
+                <div className="card-body" style={{ padding: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <i className="fas fa-info-circle" style={{ color: '#92400e', fontSize: '1.25rem' }}></i>
+                    <div>
+                      <strong style={{ color: '#92400e' }}>Volunteer Shifts</strong>
+                      <p style={{ margin: 0, color: '#92400e', fontSize: '0.9rem' }}>
+                        After creating this event, you can add volunteer timeslots by editing it.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -687,6 +728,10 @@ const CreateEvent = () => {
 
         .ml-3 {
           margin-left: 1rem;
+        }
+
+        .mt-4 {
+          margin-top: 1.5rem;
         }
 
         .row {

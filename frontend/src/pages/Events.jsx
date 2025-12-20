@@ -31,8 +31,6 @@ const Events = () => {
 
     eventListenerMethod(
       (eventsData) => {
-        console.log('Events page: Real-time events update:', eventsData);
-
         // Filter events based on filter setting
         let filteredData = eventsData;
         if (filter === 'upcoming') {
