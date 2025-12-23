@@ -844,40 +844,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Verification helper methods - now using custom SendGrid system
+  // Verification helper methods - using Firebase's built-in email verification
   const sendEmailVerification = async () => {
     if (!currentUser) throw new Error('No user logged in');
 
     setVerificationLoading(true);
     try {
-      // Use our custom backend SendGrid verification system
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/users/send-verification-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await currentUser.getIdToken()}`
-        },
-        body: JSON.stringify({
-          email: currentUser.email,
-          name: currentUser.displayName || 'User'
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        // Check for rate limiting or other specific errors
-        if (response.status === 429) {
-          throw new Error('Too many verification requests. Please wait before requesting another.');
-        }
-        throw new Error(errorData.error || 'Failed to send verification email');
-      }
+      // Use Firebase's built-in email verification
+      const { sendEmailVerification: firebaseSendEmailVerification } = await import('firebase/auth');
+      await firebaseSendEmailVerification(currentUser);
 
       if (process.env.NODE_ENV !== 'production') {
-        console.log('Custom email verification sent via SendGrid');
+        console.log('Firebase email verification sent');
       }
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
-        console.error('Error sending custom email verification:', error);
+        console.error('Error sending Firebase email verification:', error);
+      }
+      // Handle Firebase rate limiting
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Too many verification requests. Please wait before requesting another.');
       }
       throw error;
     } finally {

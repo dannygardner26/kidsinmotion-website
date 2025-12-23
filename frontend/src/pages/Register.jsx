@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithCredential, signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from '../firebaseConfig'; // Import the auth instance
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -173,35 +173,11 @@ const Register = () => {
         // This is not critical, continue with email verification
       }
 
-      // 4. Send email verification using our custom SendGrid system
-      // Wait a moment to ensure user token is fully ready and profile is saved
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      // 4. Send email verification using Firebase's built-in system
       try {
-        // Get fresh token to ensure it's valid
-        const token = await user.getIdToken(true); // Force refresh
-        
-        console.log("Sending verification email to:", user.email);
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/users/send-verification-email`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            email: user.email,
-            name: `${formData.firstName} ${formData.lastName}`
-          })
-        });
-
-        const responseData = await response.json().catch(() => ({}));
-        
-        if (!response.ok) {
-          console.error("Verification email response error:", response.status, responseData);
-          throw new Error(responseData.error || `Failed to send verification email (${response.status})`);
-        }
-
-        console.log("Custom email verification sent successfully via SendGrid:", responseData);
+        console.log("Sending Firebase verification email to:", user.email);
+        await sendEmailVerification(user);
+        console.log("Firebase verification email sent successfully");
 
         // Add success notification
         addNotification({
@@ -215,7 +191,7 @@ const Register = () => {
         addNotification({
           type: 'warning',
           title: 'Email Verification',
-          message: `Account created successfully, but verification email failed to send: ${verificationError.message}. You can request it again from your dashboard.`
+          message: `Account created successfully, but verification email failed to send. You can request it again from your dashboard.`
         });
       }
 
